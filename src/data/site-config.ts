@@ -38,7 +38,7 @@ export const siteConfig = {
   },
 
   seo: {
-    siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://coastproappliance.com",
+    siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://coastpro.us",
     locale: "en_US",
     twitterHandle: "@coastproappliance",
   },
