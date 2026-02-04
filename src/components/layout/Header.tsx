@@ -58,10 +58,7 @@ export function Header() {
         <nav className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">CP</span>
-              </div>
+            <Link href="/" className="flex items-center">
               <div className="hidden sm:block">
                 <div className="font-heading font-bold text-xl text-gray-900">
                   CoastPro Appliance
