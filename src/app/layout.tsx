@@ -147,12 +147,6 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${montserrat.variable}`}>
       <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-      </head>
-      <body className="font-sans min-h-screen flex flex-col">
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-W9Q0EMD7Q5"
           strategy="afterInteractive"
@@ -165,6 +159,12 @@ export default function RootLayout({
             gtag('config', 'G-W9Q0EMD7Q5');
           `}
         </Script>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
+      <body className="font-sans min-h-screen flex flex-col">
         <Header />
         <main id="main-content" className="flex-grow">
           {children}
