@@ -37,8 +37,8 @@ const contactInfo = [
   {
     icon: Clock,
     title: 'Business Hours',
-    content: 'Mon-Fri: 7AM-8PM',
-    description: `Sat: ${siteConfig.businessHours.saturday} | Sun: ${siteConfig.businessHours.sunday}`,
+    content: 'Every Day: 9:00 AM - 8:00 PM',
+    description: 'Open 7 days a week',
   },
 ];
 
@@ -138,12 +138,17 @@ export default function ContactPage() {
               We proudly serve all of Orange County, California
             </p>
           </div>
-          <div className="bg-gray-200 rounded-xl h-96 flex items-center justify-center">
-            <div className="text-center text-gray-500">
-              <MapPin className="h-12 w-12 mx-auto mb-4" />
-              <p>Interactive map would be displayed here</p>
-              <p className="text-sm">Google Maps integration available</p>
-            </div>
+          <div className="rounded-xl h-96 overflow-hidden">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d212740.24932670413!2d-117.93701268261718!3d33.6839473!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x80dcdd0e689140e3%3A0xa77ab575604a9a39!2sIrvine%2C%20CA!5e0!3m2!1sen!2sus!4v1700000000000!5m2!1sen!2sus"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="CoastPro Appliance Repair Service Area - Irvine, Orange County"
+            />
           </div>
         </div>
       </section>
