@@ -23,13 +23,6 @@ export const siteConfig = {
     emergency: "24/7 Emergency Service Available",
   },
 
-  social: {
-    facebook: "https://facebook.com/coastproappliance",
-    instagram: "https://instagram.com/coastproappliance",
-    yelp: "https://yelp.com/biz/coastpro-appliance",
-    google: "https://g.page/coastpro-appliance",
-  },
-
   trustSignals: {
     repairsCompleted: "50,000+",
     satisfactionRate: "98%",

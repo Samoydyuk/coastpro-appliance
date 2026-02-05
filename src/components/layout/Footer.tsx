@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Phone, Mail, MapPin, Clock, Facebook, Instagram } from 'lucide-react';
+import { Phone, Mail, MapPin, Clock } from 'lucide-react';
 import { siteConfig } from '@/data/site-config';
 import { services } from '@/data/services';
 import { serviceAreas } from '@/data/service-areas';
@@ -30,35 +30,6 @@ export function Footer() {
             <p className="text-gray-400 mb-6">
               {siteConfig.tagline}. Professional appliance repair services throughout Orange County.
             </p>
-            <div className="flex gap-4">
-              <a
-                href={siteConfig.social.facebook}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"
-                aria-label="Facebook"
-              >
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a
-                href={siteConfig.social.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"
-                aria-label="Instagram"
-              >
-                <Instagram className="h-5 w-5" />
-              </a>
-              <a
-                href={siteConfig.social.yelp}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"
-                aria-label="Yelp"
-              >
-                <span className="font-bold text-sm">Y!</span>
-              </a>
-            </div>
           </div>
 
           {/* Services */}
