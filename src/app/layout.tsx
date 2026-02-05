@@ -140,6 +140,8 @@ export default function RootLayout({
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
             gtag('config', 'G-W9Q0EMD7Q5');
+            // Google Ads: uncomment and replace AW-XXXXXXXXX with your Conversion ID
+            // gtag('config', 'AW-XXXXXXXXX');
           `}
         </Script>
         <script

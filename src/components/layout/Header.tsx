@@ -6,6 +6,7 @@ import { Menu, X, Phone, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { siteConfig } from '@/data/site-config';
 import { cn } from '@/lib/utils';
+import { trackPhoneClick, trackBookNowClick } from '@/lib/gtag';
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -46,6 +47,7 @@ export function Header() {
           <a
             href={`tel:${siteConfig.contact.phoneClean}`}
             className="flex items-center gap-2 hover:text-primary-200 transition-colors"
+            onClick={() => trackPhoneClick('top_bar')}
           >
             <Phone className="h-4 w-4" />
             <span className="font-semibold">{siteConfig.contact.phone}</span>
@@ -109,11 +111,12 @@ export function Header() {
               <a
                 href={`tel:${siteConfig.contact.phoneClean}`}
                 className="hidden md:flex items-center gap-2 text-primary-600 font-semibold hover:text-primary-700 transition-colors"
+                onClick={() => trackPhoneClick('header')}
               >
                 <Phone className="h-5 w-5" />
                 <span>{siteConfig.contact.phone}</span>
               </a>
-              <Link href="/book-appointment">
+              <Link href="/book-appointment" onClick={() => trackBookNowClick('header')}>
                 <Button size="md" className="hidden sm:flex">
                   Book Now
                 </Button>
@@ -169,6 +172,7 @@ export function Header() {
                 <a
                   href={`tel:${siteConfig.contact.phoneClean}`}
                   className="flex items-center gap-3 px-4 py-3 bg-primary-50 rounded-lg text-primary-600 font-semibold"
+                  onClick={() => trackPhoneClick('mobile_menu')}
                 >
                   <Phone className="h-5 w-5" />
                   <span>Call {siteConfig.contact.phone}</span>

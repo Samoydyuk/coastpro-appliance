@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button, Input, Textarea, Select } from '@/components/ui';
 import { services } from '@/data/services';
 import { Send, CheckCircle } from 'lucide-react';
+import { trackFormSubmit } from '@/lib/gtag';
 
 const serviceOptions = [
   { value: '', label: 'Select a service' },
@@ -56,6 +57,7 @@ export function ContactForm() {
       });
 
       if (response.ok) {
+        trackFormSubmit('contact_form');
         setIsSubmitted(true);
       } else {
         throw new Error('Failed to send message');

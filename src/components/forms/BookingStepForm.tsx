@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, MapPin, User, Phone, Mail, Wrench } from 'lucide
 import { Button, Input, Textarea, Select, Card, CardContent } from '@/components/ui';
 import { CalendlyEmbed } from '@/components/integrations';
 import { services } from '@/data/services';
+import { trackFormSubmit, trackBookNowClick } from '@/lib/gtag';
 
 interface FormData {
   name: string;
@@ -75,6 +76,8 @@ export function BookingStepForm() {
   const handleContinue = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
+      trackFormSubmit('booking_step1');
+      trackBookNowClick('booking_form');
       setStep(2);
     }
   };
