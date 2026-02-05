@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import { Inter, Montserrat } from 'next/font/google';
 import { Header, Footer } from '@/components/layout';
 import { siteConfig } from '@/data/site-config';
@@ -152,6 +153,18 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans min-h-screen flex flex-col">
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-W9Q0EMD7Q5"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-W9Q0EMD7Q5');
+          `}
+        </Script>
         <Header />
         <main id="main-content" className="flex-grow">
           {children}
