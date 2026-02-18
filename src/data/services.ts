@@ -49,7 +49,7 @@ export const services: Service[] = [
     relatedServices: ["ice-maker", "freezer"],
     seo: {
       title: "Refrigerator Repair Orange County | Same-Day Service",
-      description: "Professional refrigerator repair in Orange County. All brands serviced including Samsung, LG, Sub-Zero. Same-day appointments. 90-day warranty. Call (949) 555-0123.",
+      description: "Professional refrigerator repair in Orange County. All brands serviced including Samsung, LG, Sub-Zero. Same-day appointments. 90-day warranty. Call (949) 449-1008.",
       keywords: ["refrigerator repair orange county", "fridge repair near me", "samsung refrigerator repair", "lg refrigerator repair irvine"]
     }
   },
@@ -101,7 +101,7 @@ export const services: Service[] = [
     relatedServices: ["dryer"],
     seo: {
       title: "Washer Repair Orange County | All Brands Serviced",
-      description: "Expert washing machine repair in Orange County. Front-load & top-load. Samsung, LG, Whirlpool & more. Same-day service. Call (949) 555-0123.",
+      description: "Expert washing machine repair in Orange County. Front-load & top-load. Samsung, LG, Whirlpool & more. Same-day service. Call (949) 449-1008.",
       keywords: ["washer repair orange county", "washing machine repair near me", "samsung washer repair", "lg washer repair"]
     }
   },
@@ -153,7 +153,7 @@ export const services: Service[] = [
     relatedServices: ["washer"],
     seo: {
       title: "Dryer Repair Orange County | Gas & Electric",
-      description: "Professional dryer repair in Orange County. Gas and electric dryers. Fix no heat, noise, won't start. Same-day service. Call (949) 555-0123.",
+      description: "Professional dryer repair in Orange County. Gas and electric dryers. Fix no heat, noise, won't start. Same-day service. Call (949) 449-1008.",
       keywords: ["dryer repair orange county", "dryer not heating", "gas dryer repair", "electric dryer repair near me"]
     }
   },
@@ -205,7 +205,7 @@ export const services: Service[] = [
     relatedServices: ["garbage-disposal"],
     seo: {
       title: "Dishwasher Repair Orange County | All Brands",
-      description: "Expert dishwasher repair in Orange County. Bosch, KitchenAid, Samsung & more. Fix leaks, drainage, cleaning issues. Call (949) 555-0123.",
+      description: "Expert dishwasher repair in Orange County. Bosch, KitchenAid, Samsung & more. Fix leaks, drainage, cleaning issues. Call (949) 449-1008.",
       keywords: ["dishwasher repair orange county", "bosch dishwasher repair", "dishwasher not draining", "dishwasher repair near me"]
     }
   },
@@ -257,7 +257,7 @@ export const services: Service[] = [
     relatedServices: ["microwave"],
     seo: {
       title: "Oven & Range Repair Orange County | Gas & Electric",
-      description: "Expert oven and stove repair in Orange County. Gas & electric. Fix heating, ignition, temperature issues. Same-day service. Call (949) 555-0123.",
+      description: "Expert oven and stove repair in Orange County. Gas & electric. Fix heating, ignition, temperature issues. Same-day service. Call (949) 449-1008.",
       keywords: ["oven repair orange county", "stove repair near me", "gas range repair", "electric oven repair"]
     }
   },
@@ -309,7 +309,7 @@ export const services: Service[] = [
     relatedServices: ["oven-range"],
     seo: {
       title: "Microwave Repair Orange County | Built-In & Countertop",
-      description: "Professional microwave repair in Orange County. Samsung, LG, GE & more. Fix heating, turntable, display issues. Call (949) 555-0123.",
+      description: "Professional microwave repair in Orange County. Samsung, LG, GE & more. Fix heating, turntable, display issues. Call (949) 449-1008.",
       keywords: ["microwave repair orange county", "microwave not heating", "built-in microwave repair", "over the range microwave repair"]
     }
   },
@@ -361,7 +361,7 @@ export const services: Service[] = [
     relatedServices: ["dishwasher"],
     seo: {
       title: "Garbage Disposal Repair Orange County | Fast Service",
-      description: "Expert garbage disposal repair in Orange County. Fix jams, leaks, motor issues. Installation available. Same-day service. Call (949) 555-0123.",
+      description: "Expert garbage disposal repair in Orange County. Fix jams, leaks, motor issues. Installation available. Same-day service. Call (949) 449-1008.",
       keywords: ["garbage disposal repair orange county", "disposal not working", "insinkerator repair", "garbage disposal installation"]
     }
   },
@@ -413,7 +413,7 @@ export const services: Service[] = [
     relatedServices: ["refrigerator"],
     seo: {
       title: "Ice Maker Repair Orange County | All Types",
-      description: "Professional ice maker repair in Orange County. Built-in, standalone, commercial. Fix production, quality issues. Call (949) 555-0123.",
+      description: "Professional ice maker repair in Orange County. Built-in, standalone, commercial. Fix production, quality issues. Call (949) 449-1008.",
       keywords: ["ice maker repair orange county", "ice machine repair", "sub-zero ice maker repair", "commercial ice maker repair"]
     }
   }

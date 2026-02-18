@@ -149,7 +149,7 @@ export function BookingStepForm() {
               name="phone"
               label="Phone Number"
               type="tel"
-              placeholder="(949) 555-0123"
+              placeholder="(949) 449-1008"
               value={formData.phone}
               onChange={handleChange}
               error={errors.phone}

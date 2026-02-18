@@ -4,8 +4,8 @@ export const siteConfig = {
   description: "Professional appliance repair services in Orange County, CA. Same-day service, 90-day warranty on all repairs. We fix refrigerators, washers, dryers, dishwashers, and more.",
 
   contact: {
-    phone: "(949) 544-5542",
-    phoneClean: "9495445542",
+    phone: "(949) 449-1008",
+    phoneClean: "9494491008",
     email: "appliance@coastpro.us",
     address: {
       street: "",
