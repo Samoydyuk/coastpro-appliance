@@ -144,7 +144,9 @@ export default function RootLayout({
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
             gtag('config', 'G-W9Q0EMD7Q5');
-            gtag('config', 'AW-17933522484');
+            gtag('config', 'AW-17933522484', {
+              'phone_conversion_number': '(949) 449-1008'
+            });
           `}
         </Script>
         <script
