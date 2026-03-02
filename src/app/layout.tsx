@@ -134,14 +134,17 @@ export default function RootLayout({
           src="https://www.googletagmanager.com/gtag/js?id=G-W9Q0EMD7Q5"
           strategy="afterInteractive"
         />
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=AW-17933522484"
+          strategy="afterInteractive"
+        />
         <Script id="google-analytics" strategy="afterInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
             gtag('config', 'G-W9Q0EMD7Q5');
-            // Google Ads: uncomment and replace AW-XXXXXXXXX with your Conversion ID
-            // gtag('config', 'AW-XXXXXXXXX');
+            gtag('config', 'AW-17933522484');
           `}
         </Script>
         <script
