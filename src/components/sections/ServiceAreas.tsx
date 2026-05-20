@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { MapPin, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { serviceAreas } from '@/data/service-areas';
+import { getInitials } from '@/lib/utils';
 
 interface ServiceAreasProps {
   showAll?: boolean;
@@ -31,7 +32,9 @@ export function ServiceAreas({ showAll = false }: ServiceAreasProps) {
               href={`/service-areas/${area.slug}`}
               className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all group"
             >
-              <MapPin className="h-5 w-5 text-primary-600 shrink-0" />
+              <div className="w-9 h-9 rounded-full bg-primary-600 text-white flex items-center justify-center text-xs font-bold shrink-0 group-hover:bg-primary-700 transition-colors">
+                {getInitials(area.name)}
+              </div>
               <span className="font-medium text-gray-900 group-hover:text-primary-600 transition-colors">
                 {area.name}
               </span>

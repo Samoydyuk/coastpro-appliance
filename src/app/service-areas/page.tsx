@@ -1,10 +1,11 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { MapPin, ArrowRight, Phone } from 'lucide-react';
+import { ArrowRight, Phone } from 'lucide-react';
 import { Card, CardContent, Button } from '@/components/ui';
 import { CTABanner } from '@/components/sections';
 import { serviceAreas } from '@/data/service-areas';
 import { siteConfig } from '@/data/site-config';
+import { getInitials } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'Service Areas in Orange County',
@@ -48,8 +49,10 @@ export default function ServiceAreasPage() {
                 <Card hover className="h-full cursor-pointer group">
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center shrink-0 group-hover:bg-primary-600 transition-colors">
-                        <MapPin className="h-6 w-6 text-primary-600 group-hover:text-white transition-colors" />
+                      <div className="w-12 h-12 rounded-full bg-primary-600 flex items-center justify-center shrink-0 group-hover:bg-primary-700 transition-colors">
+                        <span className="text-white font-bold text-sm">
+                          {getInitials(area.name)}
+                        </span>
                       </div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg text-gray-900 group-hover:text-primary-600 transition-colors mb-1">
