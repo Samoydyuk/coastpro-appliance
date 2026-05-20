@@ -40,7 +40,7 @@ export const services: Service[] = [
       "All major brands serviced",
       "90-day warranty on repairs",
       "Upfront pricing - no surprises",
-      "Factory-trained technicians"
+      "Experienced technicians"
     ],
     priceRange: { min: 150, max: 450, unit: "repair" },
     estimatedTime: "1-2 hours",

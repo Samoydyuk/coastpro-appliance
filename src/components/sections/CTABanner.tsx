@@ -50,7 +50,7 @@ export function CTABanner({
             </a>
           </div>
           <p className="mt-6 text-sm text-white/70">
-            ${siteConfig.serviceFee.diagnostic} diagnostic fee - {siteConfig.serviceFee.note}
+            ${siteConfig.serviceFee.diagnostic} diagnostic fee — waived with repair
           </p>
         </div>
       </div>

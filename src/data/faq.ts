@@ -19,7 +19,7 @@ export const faqItems: FAQItem[] = [
   {
     id: "brands-serviced",
     question: "What brands do you service?",
-    answer: "We service all major appliance brands including Samsung, LG, Whirlpool, GE, Frigidaire, KitchenAid, Maytag, Bosch, Sub-Zero, Viking, Wolf, Thermador, Miele, Kenmore, Speed Queen, and many more. Our technicians are factory-trained on most brands.",
+    answer: "We service all major appliance brands including Samsung, LG, Whirlpool, GE, Frigidaire, KitchenAid, Maytag, Bosch, Sub-Zero, Viking, Wolf, Thermador, Miele, Kenmore, Speed Queen, and many more. Our technicians are experienced with all major brands.",
     category: "general",
     order: 3
   },
@@ -28,7 +28,7 @@ export const faqItems: FAQItem[] = [
   {
     id: "service-call-cost",
     question: "How much does a service call cost?",
-    answer: "Our diagnostic service call is $89, which covers the technician visit and complete diagnosis of the problem. This fee is waived if you proceed with the repair, meaning you only pay for the actual repair cost.",
+    answer: "Our diagnostic service call is $75, waived with repair. It covers the technician visit and complete diagnosis of the problem — if you proceed with the repair, the fee is waived and you only pay for the actual repair cost.",
     category: "pricing",
     order: 1
   },

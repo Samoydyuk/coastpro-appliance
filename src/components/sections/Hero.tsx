@@ -1,12 +1,12 @@
 import Link from 'next/link';
-import { Phone, CheckCircle, Clock, Award } from 'lucide-react';
+import { Phone, Clock, Award, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { siteConfig } from '@/data/site-config';
 
 const trustBadges = [
   { icon: Clock, text: 'Same-Day Service' },
   { icon: Award, text: '90-Day Warranty' },
-  { icon: CheckCircle, text: `${siteConfig.trustSignals.satisfactionRate} Satisfaction` },
+  { icon: MapPin, text: 'Local, Orange County' },
 ];
 
 export function Hero() {
@@ -29,14 +29,13 @@ export function Hero() {
 
           {/* Headline */}
           <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-            Orange County&apos;s Trusted{' '}
-            <span className="text-accent-300">Appliance Repair</span> Experts
+            Appliance Repair You Can Count On —{' '}
+            <span className="text-accent-300">Across Orange County</span>
           </h1>
 
           {/* Subheadline */}
           <p className="text-xl md:text-2xl text-primary-100 mb-10 max-w-2xl mx-auto">
-            Fast, reliable repairs for refrigerators, washers, dryers, and more.
-            Expert technicians ready to help today.
+            Fast, honest repairs for refrigerators, washers, dryers, dishwashers and ovens.
           </p>
 
           {/* CTA Buttons */}

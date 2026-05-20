@@ -1,36 +1,40 @@
-import { Clock, Award, ThumbsUp, Wrench, BadgeCheck, Users } from 'lucide-react';
-import { siteConfig } from '@/data/site-config';
+import { Clock, Award, FileText, Tag, Camera, CalendarCheck, MapPin } from 'lucide-react';
 
 const signals = [
   {
     icon: Clock,
     title: 'Same-Day Service',
-    description: 'Book before noon for same-day repair appointments',
+    description: "Call before noon and we'll do our best to get to you the same day.",
   },
   {
     icon: Award,
-    title: `${siteConfig.trustSignals.warrantyDays}-Day Warranty`,
-    description: 'All repairs backed by our comprehensive warranty',
+    title: '90-Day Warranty',
+    description: 'Every repair is backed by a 90-day workmanship warranty.',
   },
   {
-    icon: ThumbsUp,
-    title: `${siteConfig.trustSignals.satisfactionRate} Satisfaction`,
-    description: 'Based on thousands of customer reviews',
+    icon: FileText,
+    title: 'Upfront, Transparent Pricing',
+    description: 'You approve an estimate before any work begins. No hidden fees.',
   },
   {
-    icon: Wrench,
-    title: `${siteConfig.trustSignals.repairsCompleted} Repairs`,
-    description: 'Trusted by Orange County homeowners',
+    icon: Tag,
+    title: 'Parts at Fair Price',
+    description: 'We source parts from established suppliers and charge standard retail price — no hidden markups.',
   },
   {
-    icon: BadgeCheck,
-    title: 'Upfront Pricing',
-    description: 'No hidden fees or surprise charges',
+    icon: Camera,
+    title: 'Photo-Documented Work',
+    description: 'We document each repair with before/after photos.',
   },
   {
-    icon: Users,
-    title: 'Expert Technicians',
-    description: 'Factory-trained on all major brands',
+    icon: CalendarCheck,
+    title: 'We Respect Your Time',
+    description: 'We confirm your appointment and give advance notice before arrival.',
+  },
+  {
+    icon: MapPin,
+    title: 'Locally Owned & Operated',
+    description: 'A local Orange County business.',
   },
 ];
 

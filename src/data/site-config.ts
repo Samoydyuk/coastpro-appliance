@@ -24,8 +24,6 @@ export const siteConfig = {
   },
 
   trustSignals: {
-    repairsCompleted: "50,000+",
-    satisfactionRate: "98%",
     sameDayService: true,
     warrantyDays: 90,
   },
@@ -37,7 +35,7 @@ export const siteConfig = {
   },
 
   serviceFee: {
-    diagnostic: 89,
+    diagnostic: 75,
     note: "Waived with repair",
   },
 } as const;

@@ -2,7 +2,6 @@ import { Metadata } from 'next';
 import { CheckCircle, Award, Users, Clock, Wrench } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui';
 import { CTABanner } from '@/components/sections';
-import { siteConfig } from '@/data/site-config';
 
 export const metadata: Metadata = {
   title: 'About Us',
@@ -12,12 +11,6 @@ export const metadata: Metadata = {
     description: 'Professional appliance repair services in Orange County.',
   },
 };
-
-const stats = [
-  { value: siteConfig.trustSignals.repairsCompleted, label: 'Repairs Completed' },
-  { value: siteConfig.trustSignals.satisfactionRate, label: 'Satisfaction Rate' },
-  { value: '24/7', label: 'Emergency Service' },
-];
 
 const values = [
   {
@@ -32,8 +25,8 @@ const values = [
   },
   {
     icon: Wrench,
-    title: 'Expert Technicians',
-    description: 'Factory-trained and certified on all major brands. Continuous education keeps us current.',
+    title: 'Experienced Technicians',
+    description: 'Experienced with all major brands. We keep learning to stay current with new appliances.',
   },
   {
     icon: Users,
@@ -57,20 +50,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="py-12 bg-white border-b">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-3 gap-8">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-4xl font-bold text-primary-600 mb-2">{stat.value}</div>
-                <div className="text-gray-600">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Story Section */}
       <section className="py-16">
         <div className="container mx-auto px-4">
@@ -86,7 +65,7 @@ export default function AboutPage() {
                 Over the years, we&apos;ve built our reputation one repair at a time. We believe in doing things right the first time, communicating clearly with our customers, and standing behind our work. That&apos;s why we offer a 90-day warranty on all repairs - we&apos;re confident in the quality of our service.
               </p>
               <p>
-                Today, we&apos;re proud to be one of the most trusted appliance repair companies in Orange County. Our team of factory-trained technicians can handle everything from basic repairs to complex diagnostics on all major appliance brands. Whether it&apos;s a refrigerator that&apos;s not cooling or a washer that won&apos;t spin, we&apos;ve seen it all and fixed it all.
+                Our experienced technicians work on all major appliance brands and handle everything from basic repairs to complex diagnostics. Whether it&apos;s a refrigerator that&apos;s not cooling or a washer that won&apos;t spin, we approach every job with the same care.
               </p>
             </div>
           </div>
@@ -124,14 +103,14 @@ export default function AboutPage() {
             </h2>
             <div className="grid md:grid-cols-2 gap-6">
               {[
-                'Factory-trained on all major brands',
+                'Experienced with all major brands',
                 'Same-day service available',
                 'Upfront pricing with no hidden fees',
                 '90-day warranty on all repairs',
                 'Background-checked technicians',
                 'Fully stocked service vehicles',
                 'Respectful of your home',
-                'Trusted by Orange County homeowners',
+                'Locally owned and operated in Orange County',
               ].map((item) => (
                 <div key={item} className="flex items-start gap-3">
                   <CheckCircle className="h-6 w-6 text-green-500 shrink-0 mt-0.5" />
@@ -143,31 +122,9 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Certifications */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="font-heading text-3xl font-bold text-gray-900 mb-4">
-            Factory Trained & Certified
-          </h2>
-          <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-            Our technicians are factory-trained and certified to work on all major appliance brands
-          </p>
-          <div className="flex flex-wrap justify-center items-center gap-8">
-            <div className="flex items-center gap-2">
-              <Award className="h-8 w-8 text-primary-600" />
-              <span className="font-semibold text-gray-700">Certified</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Wrench className="h-8 w-8 text-primary-600" />
-              <span className="font-semibold text-gray-700">Factory Trained</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <CTABanner
-        title="Ready to Experience the Difference?"
-        subtitle="Join thousands of satisfied customers who trust CoastPro Appliance Repair"
+        title="Ready to Get Your Appliance Fixed?"
+        subtitle="Local, honest appliance repair across Orange County."
       />
     </>
   );

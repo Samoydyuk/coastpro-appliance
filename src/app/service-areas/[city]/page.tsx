@@ -2,10 +2,9 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { MapPin, Phone, CheckCircle, ArrowRight } from 'lucide-react';
-import { Button, Card, CardContent, Badge } from '@/components/ui';
+import { Button, Badge } from '@/components/ui';
 import { CTABanner, ServicesGrid } from '@/components/sections';
 import { serviceAreas, getServiceAreaBySlug, getNeighboringAreas } from '@/data/service-areas';
-import { getTestimonialsByLocation } from '@/data/testimonials';
 import { siteConfig } from '@/data/site-config';
 
 interface CityPageProps {
@@ -48,7 +47,6 @@ export default async function CityPage({ params }: CityPageProps) {
   }
 
   const neighboringAreas = getNeighboringAreas(city);
-  const localTestimonials = getTestimonialsByLocation(area.name);
 
   // JSON-LD for Local Business in this city
   const localBusinessSchema = {
@@ -162,7 +160,7 @@ export default async function CityPage({ params }: CityPageProps) {
               <div className="grid md:grid-cols-2 gap-4">
                 {[
                   `Same-day service throughout ${area.name}`,
-                  'Expert factory-trained technicians',
+                  'Experienced technicians for all major brands',
                   `${siteConfig.trustSignals.warrantyDays}-day warranty on all repairs`,
                   'Upfront, transparent pricing',
                   'All major appliance brands',
@@ -203,33 +201,6 @@ export default async function CityPage({ params }: CityPageProps) {
         title={`Appliance Services in ${area.name}`}
         subtitle="We repair all major household appliances"
       />
-
-      {/* Local Testimonials */}
-      {localTestimonials.length > 0 && (
-        <section className="py-16">
-          <div className="container mx-auto px-4">
-            <h2 className="font-heading text-3xl font-bold text-gray-900 mb-8 text-center">
-              What {area.name} Customers Say
-            </h2>
-            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-              {localTestimonials.slice(0, 2).map((testimonial) => (
-                <Card key={testimonial.id}>
-                  <CardContent className="p-6">
-                    <p className="text-gray-700 mb-4">&quot;{testimonial.reviewText}&quot;</p>
-                    <div className="font-semibold text-gray-900">{testimonial.customerName}</div>
-                    <div className="text-sm text-gray-500">{testimonial.location}</div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            <div className="text-center mt-8">
-              <Link href="/reviews">
-                <Button variant="outline">View All Reviews</Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* Neighboring Areas */}
       {neighboringAreas.length > 0 && (

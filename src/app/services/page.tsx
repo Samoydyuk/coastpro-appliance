@@ -42,7 +42,7 @@ export default function ServicesPage() {
               Brands We Service
             </h2>
             <p className="text-xl text-gray-600">
-              Factory-trained technicians for all major appliance brands
+              Experienced with all major appliance brands
             </p>
           </div>
           <div className="flex flex-wrap justify-center items-center gap-8 text-gray-400">

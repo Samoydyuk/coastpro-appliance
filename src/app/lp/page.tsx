@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { Phone, CheckCircle, Clock, Shield, Star, Wrench, ArrowRight } from 'lucide-react';
+import { Phone, CheckCircle, Clock, Shield, MapPin, Wrench, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { siteConfig } from '@/data/site-config';
 
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 const benefits = [
   { icon: Clock, text: 'Same-Day Service Available' },
   { icon: Shield, text: '90-Day Warranty on All Repairs' },
-  { icon: Star, text: '4.9★ Rating from 500+ Customers' },
+  { icon: MapPin, text: 'Locally Owned in Orange County' },
   { icon: Wrench, text: 'All Major Brands & Appliances' },
 ];
 
@@ -45,7 +45,7 @@ export default function LandingPage() {
 
             <p className="text-xl md:text-2xl text-primary-100 mb-8 max-w-2xl mx-auto">
               Fast, affordable, and reliable repairs for all major appliances.
-              Trusted by thousands of OC families.
+              Local Orange County technicians.
             </p>
 
             {/* CTA Buttons */}

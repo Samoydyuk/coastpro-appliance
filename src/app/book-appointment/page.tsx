@@ -18,7 +18,7 @@ const benefits = [
   'Same-day appointments available',
   'Flexible 2-hour windows',
   'Confirmation call 30 min before arrival',
-  'Expert factory-trained technicians',
+  'Experienced with all major brands',
   'Upfront pricing - no surprises',
   `${siteConfig.trustSignals.warrantyDays}-day warranty on all repairs`,
 ];

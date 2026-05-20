@@ -1,4 +1,4 @@
-import { Hero, ServicesGrid, TrustSignals, Testimonials, ServiceAreas, CTABanner } from '@/components/sections';
+import { Hero, ServicesGrid, TrustSignals, ServiceAreas, CTABanner } from '@/components/sections';
 
 export default function HomePage() {
   return (
@@ -6,7 +6,6 @@ export default function HomePage() {
       <Hero />
       <TrustSignals />
       <ServicesGrid />
-      <Testimonials />
       <ServiceAreas />
       <CTABanner />
     </>

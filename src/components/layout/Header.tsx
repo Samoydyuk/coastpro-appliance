@@ -25,7 +25,6 @@ const navigation = [
   },
   { name: 'Service Areas', href: '/service-areas' },
   { name: 'About', href: '/about' },
-  { name: 'Reviews', href: '/reviews' },
   { name: 'FAQ', href: '/faq' },
   { name: 'Contact', href: '/contact' },
 ];
@@ -65,7 +64,7 @@ export function Header() {
                 <div className="font-heading font-bold text-xl text-gray-900">
                   CoastPro Appliance
                 </div>
-                <div className="text-xs text-gray-500">Orange County&apos;s #1 Choice</div>
+                <div className="text-xs text-gray-500">Orange County Appliance Repair</div>
               </div>
             </Link>
 
