@@ -14,7 +14,7 @@ export const serviceAreas: ServiceArea[] = [
     neighboringCities: ["tustin", "newport-beach", "costa-mesa", "lake-forest"],
     seo: {
       title: "Appliance Repair Irvine CA | Same-Day Service | CoastPro Appliance",
-      description: "Professional appliance repair in Irvine, CA. Refrigerator, washer, dryer, dishwasher repair. 90-day warranty. Same-day service. Call (949) 449-1008.",
+      description: "Professional appliance repair in Irvine, CA. Refrigerator, washer, dryer, dishwasher repair. 90-day warranty. Same-day service. Call (949) 749-0006.",
       keywords: ["appliance repair irvine", "refrigerator repair irvine ca", "washer repair irvine", "dryer repair irvine"]
     }
   },
@@ -31,7 +31,7 @@ export const serviceAreas: ServiceArea[] = [
     neighboringCities: ["costa-mesa", "irvine", "huntington-beach", "laguna-beach"],
     seo: {
       title: "Appliance Repair Newport Beach CA | Premium Service",
-      description: "Expert appliance repair in Newport Beach. Sub-Zero, Viking, Wolf specialists. High-end refrigerator, range repair. Same-day service. Call (949) 449-1008.",
+      description: "Expert appliance repair in Newport Beach. Sub-Zero, Viking, Wolf specialists. High-end refrigerator, range repair. Same-day service. Call (949) 749-0006.",
       keywords: ["appliance repair newport beach", "sub-zero repair newport beach", "viking repair newport beach", "luxury appliance repair"]
     }
   },
@@ -48,7 +48,7 @@ export const serviceAreas: ServiceArea[] = [
     neighboringCities: ["newport-beach", "huntington-beach", "irvine", "santa-ana"],
     seo: {
       title: "Appliance Repair Costa Mesa CA | Affordable & Fast",
-      description: "Professional appliance repair in Costa Mesa. All brands serviced. Refrigerator, washer, dryer repair. 90-day warranty. Call (949) 449-1008.",
+      description: "Professional appliance repair in Costa Mesa. All brands serviced. Refrigerator, washer, dryer repair. 90-day warranty. Call (949) 749-0006.",
       keywords: ["appliance repair costa mesa", "refrigerator repair costa mesa", "washer repair costa mesa", "dryer repair costa mesa"]
     }
   },
@@ -65,7 +65,7 @@ export const serviceAreas: ServiceArea[] = [
     neighboringCities: ["costa-mesa", "fountain-valley", "westminster", "seal-beach"],
     seo: {
       title: "Appliance Repair Huntington Beach CA | Same-Day Service",
-      description: "Fast appliance repair in Huntington Beach. Refrigerator, washer, dryer, dishwasher repair. All brands. 90-day warranty. Call (949) 449-1008.",
+      description: "Fast appliance repair in Huntington Beach. Refrigerator, washer, dryer, dishwasher repair. All brands. 90-day warranty. Call (949) 749-0006.",
       keywords: ["appliance repair huntington beach", "refrigerator repair huntington beach", "washer repair huntington beach"]
     }
   },
@@ -82,7 +82,7 @@ export const serviceAreas: ServiceArea[] = [
     neighboringCities: ["orange", "fullerton", "placentia", "yorba-linda"],
     seo: {
       title: "Appliance Repair Anaheim CA | Fast & Reliable",
-      description: "Trusted appliance repair in Anaheim. Refrigerator, washer, dryer repair. Serving Anaheim Hills to West Anaheim. 90-day warranty. Call (949) 449-1008.",
+      description: "Trusted appliance repair in Anaheim. Refrigerator, washer, dryer repair. Serving Anaheim Hills to West Anaheim. 90-day warranty. Call (949) 749-0006.",
       keywords: ["appliance repair anaheim", "refrigerator repair anaheim", "washer repair anaheim", "appliance repair anaheim hills"]
     }
   },
@@ -99,7 +99,7 @@ export const serviceAreas: ServiceArea[] = [
     neighboringCities: ["orange", "tustin", "costa-mesa", "garden-grove"],
     seo: {
       title: "Appliance Repair Santa Ana CA | Affordable Service",
-      description: "Quality appliance repair in Santa Ana. Refrigerator, washer, dryer repair. Affordable pricing, 90-day warranty. Call (949) 449-1008.",
+      description: "Quality appliance repair in Santa Ana. Refrigerator, washer, dryer repair. Affordable pricing, 90-day warranty. Call (949) 749-0006.",
       keywords: ["appliance repair santa ana", "refrigerator repair santa ana", "washer repair santa ana", "affordable appliance repair"]
     }
   },
@@ -116,7 +116,7 @@ export const serviceAreas: ServiceArea[] = [
     neighboringCities: ["anaheim", "santa-ana", "tustin", "villa-park"],
     seo: {
       title: "Appliance Repair Orange CA | Professional Service",
-      description: "Expert appliance repair in Orange, CA. All major brands. Refrigerator, washer, dryer repair. Same-day service available. Call (949) 449-1008.",
+      description: "Expert appliance repair in Orange, CA. All major brands. Refrigerator, washer, dryer repair. Same-day service available. Call (949) 749-0006.",
       keywords: ["appliance repair orange ca", "refrigerator repair orange", "washer repair orange ca"]
     }
   },
@@ -133,7 +133,7 @@ export const serviceAreas: ServiceArea[] = [
     neighboringCities: ["irvine", "santa-ana", "orange"],
     seo: {
       title: "Appliance Repair Tustin CA | Same-Day Appointments",
-      description: "Reliable appliance repair in Tustin. Serving Tustin Ranch, Old Town & Legacy. All brands repaired. 90-day warranty. Call (949) 449-1008.",
+      description: "Reliable appliance repair in Tustin. Serving Tustin Ranch, Old Town & Legacy. All brands repaired. 90-day warranty. Call (949) 749-0006.",
       keywords: ["appliance repair tustin", "refrigerator repair tustin", "washer repair tustin", "tustin ranch appliance repair"]
     }
   },
@@ -150,7 +150,7 @@ export const serviceAreas: ServiceArea[] = [
     neighboringCities: ["newport-beach", "laguna-niguel", "aliso-viejo"],
     seo: {
       title: "Appliance Repair Laguna Beach CA | Coastal Experts",
-      description: "Premium appliance repair in Laguna Beach. High-end and luxury appliances. Sub-Zero, Viking, Wolf specialists. Call (949) 449-1008.",
+      description: "Premium appliance repair in Laguna Beach. High-end and luxury appliances. Sub-Zero, Viking, Wolf specialists. Call (949) 749-0006.",
       keywords: ["appliance repair laguna beach", "luxury appliance repair laguna beach", "sub-zero repair laguna beach"]
     }
   },
@@ -167,7 +167,7 @@ export const serviceAreas: ServiceArea[] = [
     neighboringCities: ["lake-forest", "laguna-hills", "rancho-santa-margarita"],
     seo: {
       title: "Appliance Repair Mission Viejo CA | Trusted Service",
-      description: "Dependable appliance repair in Mission Viejo. Family-owned, quality service. All brands repaired. 90-day warranty. Call (949) 449-1008.",
+      description: "Dependable appliance repair in Mission Viejo. Family-owned, quality service. All brands repaired. 90-day warranty. Call (949) 749-0006.",
       keywords: ["appliance repair mission viejo", "refrigerator repair mission viejo", "washer repair mission viejo"]
     }
   },
@@ -184,7 +184,7 @@ export const serviceAreas: ServiceArea[] = [
     neighboringCities: ["mission-viejo", "irvine", "laguna-hills"],
     seo: {
       title: "Appliance Repair Lake Forest CA | Fast & Friendly",
-      description: "Fast appliance repair in Lake Forest. Refrigerator, washer, dryer repair. Serving Foothill Ranch area. 90-day warranty. Call (949) 449-1008.",
+      description: "Fast appliance repair in Lake Forest. Refrigerator, washer, dryer repair. Serving Foothill Ranch area. 90-day warranty. Call (949) 749-0006.",
       keywords: ["appliance repair lake forest", "refrigerator repair lake forest", "appliance repair foothill ranch"]
     }
   },
@@ -201,7 +201,7 @@ export const serviceAreas: ServiceArea[] = [
     neighboringCities: ["anaheim", "placentia", "brea", "la-habra"],
     seo: {
       title: "Appliance Repair Fullerton CA | Expert Technicians",
-      description: "Expert appliance repair in Fullerton. All brands serviced. Refrigerator, washer, dryer repair. Same-day service. Call (949) 449-1008.",
+      description: "Expert appliance repair in Fullerton. All brands serviced. Refrigerator, washer, dryer repair. Same-day service. Call (949) 749-0006.",
       keywords: ["appliance repair fullerton", "refrigerator repair fullerton", "washer repair fullerton ca"]
     }
   },
@@ -218,7 +218,7 @@ export const serviceAreas: ServiceArea[] = [
     neighboringCities: ["placentia", "anaheim", "brea"],
     seo: {
       title: "Appliance Repair Yorba Linda CA | Premium Service",
-      description: "Premium appliance repair in Yorba Linda. All brands including high-end. Refrigerator, washer, dryer repair. Call (949) 449-1008.",
+      description: "Premium appliance repair in Yorba Linda. All brands including high-end. Refrigerator, washer, dryer repair. Call (949) 749-0006.",
       keywords: ["appliance repair yorba linda", "refrigerator repair yorba linda", "washer repair yorba linda"]
     }
   },
@@ -235,7 +235,7 @@ export const serviceAreas: ServiceArea[] = [
     neighboringCities: ["fullerton", "placentia", "yorba-linda", "la-habra"],
     seo: {
       title: "Appliance Repair Brea CA | Quality Service",
-      description: "Quality appliance repair in Brea. All major brands. Refrigerator, washer, dryer repair. 90-day warranty. Call (949) 449-1008.",
+      description: "Quality appliance repair in Brea. All major brands. Refrigerator, washer, dryer repair. 90-day warranty. Call (949) 749-0006.",
       keywords: ["appliance repair brea", "refrigerator repair brea", "washer repair brea ca"]
     }
   },
@@ -252,7 +252,7 @@ export const serviceAreas: ServiceArea[] = [
     neighboringCities: ["fullerton", "yorba-linda", "anaheim"],
     seo: {
       title: "Appliance Repair Placentia CA | Dependable Service",
-      description: "Dependable appliance repair in Placentia. Refrigerator, washer, dryer repair. All brands. 90-day warranty. Call (949) 449-1008.",
+      description: "Dependable appliance repair in Placentia. Refrigerator, washer, dryer repair. All brands. 90-day warranty. Call (949) 749-0006.",
       keywords: ["appliance repair placentia", "refrigerator repair placentia", "washer repair placentia"]
     }
   }

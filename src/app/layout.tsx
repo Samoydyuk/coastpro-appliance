@@ -146,7 +146,7 @@ export default function RootLayout({
             gtag('config', 'G-W9Q0EMD7Q5');
             gtag('config', 'AW-17933522484');
             gtag('config', 'AW-17933522484/6jxqCNLHq4EcELSsr-dC', {
-              'phone_conversion_number': '(949) 449-1008'
+              'phone_conversion_number': '(949) 749-0006'
             });
           `}
         </Script>

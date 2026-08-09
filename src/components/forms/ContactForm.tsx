@@ -117,7 +117,7 @@ export function ContactForm() {
           name="phone"
           label="Phone Number"
           type="tel"
-          placeholder="(949) 449-1008"
+          placeholder="(949) 749-0006"
           required
           error={errors.phone}
         />
