@@ -38,7 +38,7 @@ const contactInfo = [
   {
     icon: Clock,
     title: 'Business Hours',
-    content: 'Every Day: 9:00 AM - 8:00 PM',
+    content: `Every Day: ${siteConfig.businessHours.weekdays}`,
     description: 'Open 7 days a week',
   },
 ];

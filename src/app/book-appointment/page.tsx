@@ -17,8 +17,8 @@ export const metadata: Metadata = {
 
 const benefits = [
   'Same-day appointments available',
-  'Flexible 2-hour windows',
-  'Confirmation call 30 min before arrival',
+  `Flexible ${siteConfig.appointment.arrivalWindow} arrival windows`,
+  `Call no later than ${siteConfig.appointment.noticeMinutes} min before arrival`,
   'Experienced with all major brands',
   'Upfront pricing - no surprises',
   `${siteConfig.trustSignals.warrantyDays}-day warranty on all repairs`,
@@ -146,7 +146,7 @@ export default function BookAppointmentPage() {
             {[
               { step: '1', title: 'Book Online', desc: 'Select a date and time that works for you' },
               { step: '2', title: 'Confirmation', desc: "We'll confirm your appointment via text/email" },
-              { step: '3', title: 'Technician Visit', desc: "We'll call 30 minutes before arrival" },
+              { step: '3', title: 'Technician Visit', desc: `We call no later than ${siteConfig.appointment.noticeMinutes} minutes before arrival` },
               { step: '4', title: 'Repair Complete', desc: 'Get your appliance working again!' },
             ].map((item) => (
               <div key={item.step} className="p-8 border-b border-r border-primary-500/20">

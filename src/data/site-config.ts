@@ -16,6 +16,11 @@ export const siteConfig = {
     },
   },
 
+  appointment: {
+    arrivalWindow: "3-hour",
+    noticeMinutes: 30,
+  },
+
   businessHours: {
     weekdays: "9:00 AM - 8:00 PM",
     saturday: "9:00 AM - 8:00 PM",

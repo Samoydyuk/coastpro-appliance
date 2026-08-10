@@ -31,7 +31,7 @@ const signals = [
   {
     icon: CalendarCheck,
     title: 'We Respect Your Time',
-    description: 'We confirm your appointment and give advance notice before arrival.',
+    description: `We book a ${siteConfig.appointment.arrivalWindow} arrival window and call no later than ${siteConfig.appointment.noticeMinutes} minutes before arriving.`,
   },
   {
     icon: MapPin,

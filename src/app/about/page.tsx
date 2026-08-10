@@ -15,7 +15,7 @@ const values = [
   {
     icon: Clock,
     title: 'Prompt Service',
-    description: 'We value your time. Same-day service and 2-hour appointment windows mean less waiting.',
+    description: 'We value your time. Same-day service and a 3-hour arrival window mean less waiting.',
   },
   {
     icon: Award,

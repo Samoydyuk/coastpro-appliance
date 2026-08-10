@@ -12,7 +12,7 @@ const steps = [
   {
     n: '02',
     title: 'Diagnose',
-    text: `We confirm the appointment, call ahead before arrival, and diagnose the fault. The $${siteConfig.serviceCall.minimum} minimum service call covers ${siteConfig.serviceCall.includes}.`,
+    text: `You get a ${siteConfig.appointment.arrivalWindow} arrival window and a call no later than ${siteConfig.appointment.noticeMinutes} minutes before we arrive. The $${siteConfig.serviceCall.minimum} minimum service call covers ${siteConfig.serviceCall.includes}.`,
   },
   {
     n: '03',
