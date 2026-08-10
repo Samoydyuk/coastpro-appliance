@@ -1,4 +1,5 @@
 export { Hero } from './Hero';
+export { HeroSlider } from './HeroSlider';
 export { ServicesGrid } from './ServicesGrid';
 export { TrustSignals } from './TrustSignals';
 export { ServiceAreas } from './ServiceAreas';

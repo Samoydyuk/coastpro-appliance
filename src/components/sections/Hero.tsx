@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { Phone, Clock, Award, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { HeroSlider } from './HeroSlider';
 import { siteConfig } from '@/data/site-config';
+import { getHeroSlides } from '@/lib/hero-photos';
 
 const trustBadges = [
   { icon: Clock, text: 'Same-Day Service' },
@@ -10,14 +12,19 @@ const trustBadges = [
 ];
 
 export function Hero() {
+  const heroSlides = getHeroSlides();
+  const hasPhotos = heroSlides.length > 0;
+
   return (
     <section className="relative bg-cream overflow-hidden">
       {/* Espresso field on the right, cut on a diagonal — the signature of the
           brand creatives. Decorative only, hidden below lg. */}
       <div
-        aria-hidden="true"
+        aria-hidden={!hasPhotos}
         className="hidden lg:block absolute inset-y-0 right-0 w-[38%] bg-primary-800 diagonal-cut"
-      />
+      >
+        {hasPhotos && <HeroSlider slides={heroSlides} priority />}
+      </div>
 
       <div className="relative container mx-auto px-4 py-20 lg:py-28">
         <div className="max-w-3xl">
@@ -78,6 +85,14 @@ export function Hero() {
               </div>
             ))}
           </div>
+
+          {/* Below lg the diagonal panel is hidden, so the photos run
+              full-bleed under the hero copy instead of disappearing. */}
+          {hasPhotos && (
+            <div className="lg:hidden relative -mx-4 mt-12 aspect-[4/3] bg-primary-800">
+              <HeroSlider slides={heroSlides} />
+            </div>
+          )}
 
           {/* Location marker, as on the creatives */}
           <div className="flex items-center gap-2 mt-10 text-primary-600">
