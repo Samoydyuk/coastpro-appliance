@@ -422,7 +422,7 @@ export const services: Service[] = [
     slug: "dryer-vent-cleaning",
     name: "Dryer Vent Cleaning",
     shortDescription: "Dryer vent cleaning that restores airflow, cuts drying times, and clears lint buildup.",
-    fullDescription: "A lint-clogged dryer vent makes the dryer work harder, adds a second cycle to every load, and is one of the most common causes of laundry room fires. We clean the full duct run from the dryer to the exterior termination and check airflow before we leave. This service is priced by duct length against a minimum order, and we do not perform roof work \u2014 see the pricing below.",
+    fullDescription: "A lint-clogged dryer vent makes the dryer work harder, adds a second cycle to every load, and is one of the most common causes of laundry room fires. We clean the full duct run from the dryer to the exterior termination and check airflow before we leave. The $200 minimum order covers the first 6 feet of duct, which is the whole job for most dryers, and we do not perform roof work \u2014 see the pricing below.",
     icon: "AirVent",
     image: "/images/appliances/dryer-vent.jpg",
     commonProblems: [
@@ -454,19 +454,21 @@ export const services: Service[] = [
     features: [
       "Full duct run cleaned",
       "Airflow checked on completion",
-      "Priced by duct length",
+      "First 6 feet included",
       "$200 minimum order",
       "No roof access work"
     ],
     priceRange: { min: 200, max: 200, unit: "job" },
     pricing: {
       lines: [
-        { label: "First 3 feet", value: "$65" },
+        { label: "Minimum order — first 6 feet", value: "$200" },
         { label: "Each additional foot", value: "$50" }
       ],
       minimum: 200,
+      includedFeet: 6,
+      summary: "$200 covers the first 6 feet of duct, then $50 for each additional foot",
       notes: [
-        "A $200 minimum order applies to every dryer vent cleaning job.",
+        "Most dryer runs fall inside the first 6 feet, so $200 is the whole job.",
         "We do not perform work at height. If the vent terminates in a roof cap that cannot be cleaned without going onto the roof, the $200 minimum order applies."
       ]
     },
@@ -476,7 +478,7 @@ export const services: Service[] = [
     relatedServices: ["dryer"],
     seo: {
       title: "Dryer Vent Cleaning Orange County | CoastPro",
-      description: "Dryer vent cleaning in Orange County. $65 for the first 3 feet, $50 each additional foot, $200 minimum order. Restore airflow and cut drying times. Call (949) 749-0006.",
+      description: "Dryer vent cleaning in Orange County. $200 covers the first 6 feet, $50 each additional foot. Restore airflow and cut drying times. Call (949) 749-0006.",
       keywords: ["dryer vent cleaning orange county", "dryer duct cleaning irvine", "lint removal dryer vent", "dryer vent cleaning near me"]
     }
   }

@@ -22,6 +22,10 @@ export interface Service {
   pricing?: {
     lines: { label: string; value: string }[];
     minimum: number;
+    /** Feet of duct the minimum order already covers. */
+    includedFeet: number;
+    /** One-line form of the rate card, for sidebars and banners. */
+    summary: string;
     notes: string[];
   };
   estimatedTime: string;

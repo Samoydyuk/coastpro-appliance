@@ -53,10 +53,9 @@ export default function TermsPage() {
           {ventCleaning?.pricing && (
             <LegalSection number="03" title="Dryer Vent Cleaning">
               <p>
-                Dryer vent cleaning is charged by duct length:{' '}
-                {ventCleaning.pricing.lines[0].value} for the first 3 feet and{' '}
-                {ventCleaning.pricing.lines[1].value} for each additional foot, against a $
-                {ventCleaning.pricing.minimum} minimum order.
+                Dryer vent cleaning carries a ${ventCleaning.pricing.minimum} minimum order, which
+                covers the first {ventCleaning.pricing.includedFeet} feet of duct. Each additional
+                foot is {ventCleaning.pricing.lines[1].value}.
               </p>
               <p>
                 We do not perform work at height. Where the vent terminates in a roof cap that

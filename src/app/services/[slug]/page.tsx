@@ -153,10 +153,12 @@ export default async function ServicePage({ params }: ServicePageProps) {
                   <h2 className="headline text-2xl mb-6">What it costs</h2>
 
                   <div className="border-t border-primary-500/20">
-                    {service.pricing.lines.map((line) => (
+                    {service.pricing.lines.map((line, i) => (
                       <div
                         key={line.label}
-                        className="flex items-baseline justify-between gap-6 py-5 border-b border-primary-500/20"
+                        className={`flex items-baseline justify-between gap-6 py-5 border-b border-primary-500/20 ${
+                          i === 0 ? 'bg-cream-dark/50 px-4 -mx-4' : ''
+                        }`}
                       >
                         <span className="font-heading text-sm font-bold uppercase tracking-label text-ink">
                           {line.label}
@@ -166,14 +168,22 @@ export default async function ServicePage({ params }: ServicePageProps) {
                         </span>
                       </div>
                     ))}
-                    <div className="flex items-baseline justify-between gap-6 py-5 border-b border-primary-500/20 bg-cream-dark/50 px-4 -mx-4">
-                      <span className="font-heading text-sm font-bold uppercase tracking-label text-ink">
-                        Minimum order
-                      </span>
-                      <span className="font-heading text-2xl font-extrabold text-ink leading-none">
-                        ${service.pricing.minimum}
-                      </span>
-                    </div>
+                  </div>
+
+                  {/* Worked examples beat a rate card for a per-foot price */}
+                  <div className="mt-8 flex flex-wrap gap-x-10 gap-y-3">
+                    {[0, 2, 4].map((extra) => {
+                      const feet = service.pricing!.includedFeet + extra;
+                      const total = service.pricing!.minimum + extra * 50;
+                      return (
+                        <div key={feet}>
+                          <div className="font-heading text-[11px] font-semibold uppercase tracking-label text-primary-500 mb-1">
+                            {feet} ft duct
+                          </div>
+                          <div className="font-heading text-xl font-extrabold text-ink">${total}</div>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   <ul className="mt-8 space-y-4">
@@ -264,7 +274,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
                   </div>
                   <p className="text-gray-600 text-sm mb-4">
                     {service.pricing
-                      ? `${service.pricing.lines[0].value} for the first 3 feet, then ${service.pricing.lines[1].value} per foot.`
+                      ? `${service.pricing.summary}.`
                       : `Covers the visit, a full diagnosis and ${siteConfig.serviceCall.includes}.`}
                   </p>
                   {!service.pricing && (
@@ -318,7 +328,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
         subtitle="Our technicians are standing by. Same-day service available."
         note={
           service.pricing
-            ? `$${service.pricing.minimum} minimum order — ${service.pricing.lines[0].value} for the first 3 feet, then ${service.pricing.lines[1].value} per foot`
+            ? service.pricing.summary
             : undefined
         }
       />
