@@ -60,7 +60,7 @@ export function HeroSlider({ slides, priority = false, fit = 'cover' }: HeroSlid
   const hasCaption = Boolean(active.location || active.caption);
 
   const frameClass = isContained
-    ? 'absolute top-[10%] bottom-[36%] left-[8%] right-[8%] lg:top-[11%] lg:bottom-[36%] lg:left-[22%] lg:right-[8%]'
+    ? 'absolute top-[9%] bottom-[27%] left-0 right-0 lg:top-[10%] lg:bottom-[32%]'
     : 'absolute inset-0';
 
   // Everything in the caption column lines up with the print above it.
@@ -99,7 +99,7 @@ export function HeroSlider({ slides, priority = false, fit = 'cover' }: HeroSlid
       {isContained ? (
         <>
           {/* Eyebrow, set to the left edge of the print */}
-          <div className={`${railClass} top-[5%]`}>
+          <div className={`${railClass} top-[3%] lg:top-[4%]`}>
             <div className="flex items-center gap-3">
               <span className="h-px w-6 bg-cream/40" />
               <span className="font-heading text-[10px] font-semibold uppercase tracking-label text-cream/70">
@@ -109,7 +109,7 @@ export function HeroSlider({ slides, priority = false, fit = 'cover' }: HeroSlid
           </div>
 
           {/* Rule under the print, which also runs the autoplay timer */}
-          <div className={`${railClass} top-[64%]`}>
+          <div className={`${railClass} top-[75%] lg:top-[71%]`}>
             <div className="relative h-px w-full bg-cream/20 overflow-hidden">
               {slides.length > 1 && !reducedMotion && (
                 <span
@@ -125,7 +125,7 @@ export function HeroSlider({ slides, priority = false, fit = 'cover' }: HeroSlid
           </div>
 
           {hasCaption && (
-            <div className={`${railClass} top-[69%]`}>
+            <div className={`${railClass} top-[79%] lg:top-[76%]`}>
               {active.location && (
                 <div className="flex items-center gap-2 mb-3 text-cream/70">
                   <MapPin className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
@@ -144,7 +144,7 @@ export function HeroSlider({ slides, priority = false, fit = 'cover' }: HeroSlid
 
           {/* Frame numbers, as on a contact sheet */}
           {slides.length > 1 && (
-            <div className={`${railClass} bottom-[6%]`}>
+            <div className={`${railClass} bottom-[3%] lg:bottom-[6%]`}>
               <div className="flex items-center gap-4">
                 {slides.map((slide, i) => (
                   <button
