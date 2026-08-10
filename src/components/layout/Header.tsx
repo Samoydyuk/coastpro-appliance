@@ -25,6 +25,7 @@ const navigation = [
     ],
   },
   { name: 'Service Areas', href: '/service-areas' },
+  { name: 'Gallery', href: '/gallery' },
   { name: 'About', href: '/about' },
   { name: 'FAQ', href: '/faq' },
   { name: 'Contact', href: '/contact' },

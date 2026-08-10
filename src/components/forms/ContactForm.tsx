@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button, Input, Textarea, Select } from '@/components/ui';
 import { services } from '@/data/services';
+import { siteConfig } from '@/data/site-config';
 import { Send, CheckCircle } from 'lucide-react';
 import { trackFormSubmit } from '@/lib/gtag';
 
@@ -60,10 +61,18 @@ export function ContactForm() {
         trackFormSubmit('contact_form');
         setIsSubmitted(true);
       } else {
-        throw new Error('Failed to send message');
+        // Surface the server's own wording — it names the phone number to
+        // call, which matters more than a generic failure notice.
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error);
       }
-    } catch {
-      setErrors({ form: 'Failed to send message. Please try again or call us directly.' });
+    } catch (error) {
+      setErrors({
+        form:
+          error instanceof Error && error.message
+            ? error.message
+            : `We couldn't send your message. Please call us at ${siteConfig.contact.phone}.`,
+      });
     } finally {
       setIsSubmitting(false);
     }
