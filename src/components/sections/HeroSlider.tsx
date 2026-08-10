@@ -12,11 +12,12 @@ interface HeroSliderProps {
   /** Marks the copy of the slider that is decorative on this breakpoint. */
   priority?: boolean;
   /**
-   * 'cover' fills the parent, cropping to fit. 'contain' sits the whole photo
-   * inside the parent with espresso around it — what the tall hero panel
-   * needs, since filling it would scale a small crop past its own size.
+   * 'bleed' fills the whole parent. 'plate' sets the photo in a fixed window
+   * inside the parent, sized so every slide runs the full width and none is
+   * scaled far past its own resolution — the window ratio (~0.93) sits
+   * between the landscape and portrait crops so each loses a similar margin.
    */
-  fit?: 'cover' | 'contain';
+  layout?: 'bleed' | 'plate';
 }
 
 /**
@@ -24,7 +25,7 @@ interface HeroSliderProps {
  * photo essay: eyebrow, the print itself, a rule that doubles as the autoplay
  * timer, the caption, then the frame numbers.
  */
-export function HeroSlider({ slides, priority = false, fit = 'cover' }: HeroSliderProps) {
+export function HeroSlider({ slides, priority = false, layout = 'bleed' }: HeroSliderProps) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -56,11 +57,11 @@ export function HeroSlider({ slides, priority = false, fit = 'cover' }: HeroSlid
   if (slides.length === 0) return null;
 
   const active = slides[index];
-  const isContained = fit === 'contain';
+  const isContained = layout === 'plate';
   const hasCaption = Boolean(active.location || active.caption);
 
   const frameClass = isContained
-    ? 'absolute top-[9%] bottom-[27%] left-0 right-0 lg:top-[10%] lg:bottom-[32%]'
+    ? 'absolute top-[5%] bottom-[23%] left-0 right-0 lg:top-[10%] lg:bottom-[28%]'
     : 'absolute inset-0';
 
   // Everything in the caption column lines up with the print above it.
@@ -90,7 +91,7 @@ export function HeroSlider({ slides, priority = false, fit = 'cover' }: HeroSlid
             alt={slide.alt}
             fill
             sizes="(min-width: 1024px) 32vw, 100vw"
-            className={isContained ? 'object-contain object-bottom' : 'object-cover'}
+            className="object-cover object-center"
             priority={priority && i === 0}
           />
         </div>
@@ -109,7 +110,7 @@ export function HeroSlider({ slides, priority = false, fit = 'cover' }: HeroSlid
           </div>
 
           {/* Rule under the print, which also runs the autoplay timer */}
-          <div className={`${railClass} top-[75%] lg:top-[71%]`}>
+          <div className={`${railClass} top-[79%] lg:top-[75%]`}>
             <div className="relative h-px w-full bg-cream/20 overflow-hidden">
               {slides.length > 1 && !reducedMotion && (
                 <span
@@ -125,7 +126,7 @@ export function HeroSlider({ slides, priority = false, fit = 'cover' }: HeroSlid
           </div>
 
           {hasCaption && (
-            <div className={`${railClass} top-[79%] lg:top-[76%]`}>
+            <div className={`${railClass} top-[82%] lg:top-[79%]`}>
               {active.location && (
                 <div className="flex items-center gap-2 mb-3 text-cream/70">
                   <MapPin className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
@@ -144,7 +145,7 @@ export function HeroSlider({ slides, priority = false, fit = 'cover' }: HeroSlid
 
           {/* Frame numbers, as on a contact sheet */}
           {slides.length > 1 && (
-            <div className={`${railClass} bottom-[3%] lg:bottom-[6%]`}>
+            <div className={`${railClass} bottom-[2%] lg:bottom-[5%]`}>
               <div className="flex items-center gap-4">
                 {slides.map((slide, i) => (
                   <button
