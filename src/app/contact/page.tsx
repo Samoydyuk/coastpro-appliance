@@ -62,6 +62,7 @@ export default function ContactPage() {
             <div className="lg:col-span-2">
               <Card>
                 <CardContent className="p-8">
+                  <div className="eyebrow mb-3">01 — Message Us</div>
                   <h2 className="font-heading text-sm font-bold uppercase tracking-label text-ink mb-3">
                     Send Us a Message
                   </h2>
@@ -128,7 +129,7 @@ export default function ContactPage() {
       <section className="py-20 bg-cream-light border-t border-primary-500/20">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mb-10">
-            <div className="eyebrow">Coverage</div>
+            <div className="eyebrow">02 — Coverage</div>
             <h2 className="headline text-2xl sm:text-3xl md:text-4xl mt-4 mb-6">
               Our service
               <br />

@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { ServicesGrid, CTABanner, PageHeader } from '@/components/sections';
+import { ServicesGrid, CTABanner, PageHeader, StatsBand } from '@/components/sections';
 import { siteConfig } from '@/data/site-config';
 
 export const metadata: Metadata = {
@@ -21,10 +21,12 @@ export default function ServicesPage() {
         subtitle="Expert repair services for all major household appliances. Same-day appointments available throughout Orange County."
       />
 
+      <StatsBand />
+
       {/* Services Grid */}
       <ServicesGrid
         showAll={true}
-        eyebrow="Catalog"
+        eyebrow="01 — Catalog"
         title="All services"
         subtitle="Select any service to learn more about common problems and solutions."
       />
@@ -33,7 +35,7 @@ export default function ServicesPage() {
       <section className="py-20 bg-cream-light border-t border-primary-500/20">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mb-12">
-            <div className="eyebrow">Brands</div>
+            <div className="eyebrow">02 — Brands</div>
             <h2 className="headline text-2xl sm:text-3xl md:text-4xl mt-4 mb-6">
               Every major
               <br />

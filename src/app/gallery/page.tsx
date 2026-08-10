@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { Camera } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui';
-import { CTABanner, PageHeader } from '@/components/sections';
+import { CTABanner, PageHeader, StatsBand } from '@/components/sections';
 
 export const metadata: Metadata = {
   title: 'Our Work Gallery',
@@ -35,8 +35,13 @@ export default function GalleryPage() {
         subtitle="Examples of appliance repairs we've completed throughout Orange County."
       />
 
+      <StatsBand />
+
       {/* Gallery Grid */}
       <section className="py-20 bg-cream">
+        <div className="container mx-auto px-4 mb-12">
+          <div className="eyebrow">01 — Recent Work</div>
+        </div>
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {galleryItems.map((item) => (

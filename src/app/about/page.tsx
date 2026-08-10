@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { Check, Award, Users, Clock, Wrench } from 'lucide-react';
-import { CTABanner, PageHeader } from '@/components/sections';
+import { CTABanner, PageHeader, StatsBand, ProcessSteps } from '@/components/sections';
 
 export const metadata: Metadata = {
   title: 'About Us',
@@ -45,13 +45,24 @@ export default function AboutPage() {
         location="Irvine, CA"
       />
 
+      <StatsBand />
+
       {/* Story Section */}
-      <section className="py-20 bg-cream">
+      <section className="py-20 lg:py-24 bg-cream">
         <div className="container mx-auto px-4">
-          <div className="max-w-3xl">
-            <div className="eyebrow">Our Story</div>
-            <div className="rule-short my-6" />
-            <div className="space-y-6 text-lg leading-relaxed text-gray-600 max-w-prose">
+          <div className="grid lg:grid-cols-12 gap-12 lg:gap-16">
+            <div className="lg:col-span-4">
+              <div className="lg:sticky lg:top-32">
+                <div className="eyebrow">01 — Our Story</div>
+                <h2 className="headline text-2xl sm:text-3xl md:text-4xl mt-4 mb-6">
+                  One repair
+                  <br />
+                  <span className="headline-muted">at a time.</span>
+                </h2>
+                <div className="rule-short" />
+              </div>
+            </div>
+            <div className="lg:col-span-8 space-y-6 text-lg leading-relaxed text-gray-600 max-w-prose">
               <p>
                 CoastPro Appliance Repair was founded with a simple mission: to provide Orange County homeowners with honest, reliable, and affordable appliance repair services. What started as a one-man operation has grown into a team of skilled technicians serving all of Orange County.
               </p>
@@ -70,7 +81,7 @@ export default function AboutPage() {
       <section className="py-20 bg-cream-light border-t border-primary-500/20">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mb-12">
-            <div className="eyebrow">Our Values</div>
+            <div className="eyebrow">02 — Our Values</div>
             <h2 className="headline text-2xl sm:text-3xl md:text-4xl mt-4 mb-6">
               How we work,
               <br />
@@ -94,13 +105,22 @@ export default function AboutPage() {
         </div>
       </section>
 
+      <ProcessSteps />
+
       {/* Why Choose Us */}
-      <section className="py-20 bg-cream">
+      <section className="py-20 lg:py-24 bg-cream">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl">
-            <div className="eyebrow">Why Choose Us</div>
-            <div className="rule-short my-6 mb-10" />
-            <div className="grid md:grid-cols-2 gap-x-10 gap-y-5">
+          <div className="max-w-2xl mb-12">
+            <div className="eyebrow">04 — Why Choose Us</div>
+            <h2 className="headline text-2xl sm:text-3xl md:text-4xl mt-4 mb-6">
+              Eight reasons
+              <br />
+              <span className="headline-muted">to call us first.</span>
+            </h2>
+            <div className="rule-short" />
+          </div>
+          <div className="max-w-5xl">
+            <div className="grid md:grid-cols-2 gap-x-12 gap-y-0">
               {[
                 'Experienced with all major brands',
                 'Same-day service available',

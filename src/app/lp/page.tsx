@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { Phone, Check, Clock, Shield, MapPin, Wrench, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { StatsBand } from '@/components/sections';
 import { siteConfig } from '@/data/site-config';
 
 export const metadata: Metadata = {
@@ -108,8 +109,10 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <StatsBand />
+
       {/* What we fix */}
-      <section className="py-20 bg-cream-light border-t border-primary-500/20">
+      <section className="py-20 bg-cream-light">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mb-12">
             <div className="eyebrow">What We Fix</div>

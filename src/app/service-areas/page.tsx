@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Phone } from 'lucide-react';
 import { Button } from '@/components/ui';
-import { CTABanner, PageHeader } from '@/components/sections';
+import { CTABanner, PageHeader, StatsBand } from '@/components/sections';
 import { serviceAreas } from '@/data/service-areas';
 import { siteConfig } from '@/data/site-config';
 import { getInitials } from '@/lib/utils';
@@ -26,11 +26,13 @@ export default function ServiceAreasPage() {
         subtitle="Proudly serving Orange County with fast, reliable appliance repair."
       />
 
+      <StatsBand />
+
       {/* Areas Grid */}
       <section className="py-20 bg-cream">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mb-12">
-            <div className="eyebrow">Cities We Serve</div>
+            <div className="eyebrow">01 — Cities We Serve</div>
             <div className="rule-short my-6" />
             <p className="text-lg text-gray-600">
               Select a city to learn more about our services in your area.
@@ -74,7 +76,7 @@ export default function ServiceAreasPage() {
       <section className="py-20 bg-cream-light border-t border-primary-500/20">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl">
-            <div className="eyebrow">Not Listed?</div>
+            <div className="eyebrow">02 — Not Listed?</div>
             <h2 className="headline text-2xl sm:text-3xl md:text-4xl mt-4 mb-6">
               Don&apos;t see
               <br />
