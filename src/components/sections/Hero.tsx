@@ -23,7 +23,7 @@ export function Hero() {
         aria-hidden={!hasPhotos}
         className="hidden lg:block absolute inset-y-0 right-0 w-[38%] bg-primary-800 diagonal-cut"
       >
-        {hasPhotos && <HeroSlider slides={heroSlides} priority />}
+        {hasPhotos && <HeroSlider slides={heroSlides} priority fit="contain" />}
       </div>
 
       <div className="relative container mx-auto px-4 py-20 lg:py-28">
@@ -90,7 +90,7 @@ export function Hero() {
               full-bleed under the hero copy instead of disappearing. */}
           {hasPhotos && (
             <div className="lg:hidden relative -mx-4 mt-12 aspect-[4/5] bg-primary-800">
-              <HeroSlider slides={heroSlides} />
+              <HeroSlider slides={heroSlides} fit="contain" />
             </div>
           )}
 
