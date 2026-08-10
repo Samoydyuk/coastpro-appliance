@@ -14,6 +14,20 @@ export interface Service {
     max: number;
     unit: string;
   };
+  /**
+   * Set for services billed by measure rather than as a flat repair, e.g.
+   * dryer vent cleaning charged per foot of duct against a minimum order.
+   * When present it replaces the priceRange display.
+   */
+  pricing?: {
+    lines: { label: string; value: string }[];
+    minimum: number;
+    /** Feet of duct the minimum order already covers. */
+    includedFeet: number;
+    /** One-line form of the rate card, for sidebars and banners. */
+    summary: string;
+    notes: string[];
+  };
   estimatedTime: string;
   warranty: string;
   brands: string[];

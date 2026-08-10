@@ -1,4 +1,6 @@
-import { Clock, Award, FileText, Tag, Camera, CalendarCheck, MapPin } from 'lucide-react';
+import { Clock, Award, FileText, Tag, Camera, CalendarCheck, MapPin, Phone } from 'lucide-react';
+import { Button } from '@/components/ui';
+import { siteConfig } from '@/data/site-config';
 
 const signals = [
   {
@@ -29,7 +31,7 @@ const signals = [
   {
     icon: CalendarCheck,
     title: 'We Respect Your Time',
-    description: 'We confirm your appointment and give advance notice before arrival.',
+    description: `We book a ${siteConfig.appointment.arrivalWindow} arrival window and call no later than ${siteConfig.appointment.noticeMinutes} minutes before arriving.`,
   },
   {
     icon: MapPin,
@@ -38,36 +40,76 @@ const signals = [
   },
 ];
 
+/**
+ * Two-column split: the headline holds the left rail while the reasons scroll
+ * past as a numbered list. Intentionally not a card grid — the sections either
+ * side of it already use one.
+ */
 export function TrustSignals() {
   return (
-    <section className="py-16 bg-white">
+    <section className="py-20 lg:py-24 bg-cream-light">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Why Choose CoastPro Appliance Repair?
-          </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            We&apos;re committed to providing the best appliance repair experience in Orange County
-          </p>
-        </div>
+        <div className="grid lg:grid-cols-12 gap-12 lg:gap-16">
+          {/* Left rail */}
+          <div className="lg:col-span-5">
+            <div className="lg:sticky lg:top-32">
+              <div className="eyebrow">02 — Why CoastPro</div>
+              <h2 className="headline text-2xl sm:text-3xl md:text-4xl mt-4 mb-6">
+                Built on doing it
+                <br />
+                <span className="headline-muted">the right way.</span>
+              </h2>
+              <div className="rule-short mb-6" />
+              <p className="text-lg text-gray-600 max-w-sm mb-10">
+                Seven standards we hold to on every job in Orange County.
+              </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {signals.map((signal) => (
-            <div
-              key={signal.title}
-              className="flex items-start gap-4 p-6 rounded-xl hover:bg-gray-50 transition-colors"
-            >
-              <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center shrink-0">
-                <signal.icon className="h-6 w-6 text-primary-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                  {signal.title}
-                </h3>
-                <p className="text-gray-600">{signal.description}</p>
+              {/* Fills the rail and puts the price and the phone where the
+                  reasons are being read. */}
+              <div className="border border-primary-500/25 p-6 max-w-sm">
+                <div className="flex items-baseline gap-2">
+                  <span className="font-heading text-3xl font-extrabold text-ink leading-none">
+                    ${siteConfig.serviceCall.minimum}
+                  </span>
+                  <span className="font-heading text-[11px] font-semibold uppercase tracking-label text-primary-500">
+                    Minimum call
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mt-3 mb-6">
+                  Covers the visit and a full diagnosis. Resets, adjustments, leveling and
+                  other quick work are covered by the call itself.
+                </p>
+                <a href={`tel:${siteConfig.contact.phoneClean}`} className="block">
+                  <Button className="w-full" leftIcon={<Phone className="h-4 w-4" />}>
+                    {siteConfig.contact.phone}
+                  </Button>
+                </a>
               </div>
             </div>
-          ))}
+          </div>
+
+          {/* Numbered list */}
+          <div className="lg:col-span-7">
+            {signals.map((signal, i) => (
+              <div
+                key={signal.title}
+                className="group flex gap-6 py-7 border-t border-primary-500/20 last:border-b"
+              >
+                <span className="font-heading text-xs font-bold text-primary-400 pt-1 w-6 shrink-0">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <signal.icon className="h-4 w-4 text-primary-500 shrink-0" strokeWidth={1.5} />
+                    <h3 className="font-heading text-sm font-bold uppercase tracking-label text-ink">
+                      {signal.title}
+                    </h3>
+                  </div>
+                  <p className="text-gray-600 leading-relaxed">{signal.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>

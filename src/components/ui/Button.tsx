@@ -28,24 +28,23 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          'inline-flex items-center justify-center rounded-lg font-semibold transition-all duration-200',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+          'inline-flex items-center justify-center rounded-card font-heading font-semibold uppercase tracking-label transition-colors duration-200',
+          'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-offset-2 focus-visible:ring-offset-cream',
           'disabled:pointer-events-none disabled:opacity-50',
-          'active:scale-[0.98]',
           {
-            'bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-primary-500 shadow-md hover:shadow-lg':
+            'bg-ink text-cream hover:bg-primary-800 focus-visible:ring-ink':
               variant === 'primary',
-            'bg-gray-100 text-gray-900 hover:bg-gray-200 focus-visible:ring-gray-500':
+            'bg-primary-500 text-cream hover:bg-primary-600 focus-visible:ring-primary-600':
               variant === 'secondary',
-            'border-2 border-primary-600 text-primary-600 hover:bg-primary-50 focus-visible:ring-primary-500':
+            'border border-ink/80 text-ink hover:bg-ink hover:text-cream focus-visible:ring-ink':
               variant === 'outline',
-            'text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-500':
+            'text-primary-600 hover:text-ink focus-visible:ring-primary-500':
               variant === 'ghost',
           },
           {
-            'h-9 px-4 text-sm gap-1.5': size === 'sm',
-            'h-11 px-6 text-base gap-2': size === 'md',
-            'h-14 px-8 text-lg gap-2.5': size === 'lg',
+            'h-9 px-5 text-[11px] gap-1.5': size === 'sm',
+            'h-11 px-7 text-xs gap-2': size === 'md',
+            'h-14 px-10 text-sm gap-2.5': size === 'lg',
           },
           className
         )}

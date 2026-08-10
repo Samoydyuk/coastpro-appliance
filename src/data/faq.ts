@@ -12,7 +12,7 @@ export const faqItems: FAQItem[] = [
   {
     id: "appliance-types",
     question: "What types of appliances do you repair?",
-    answer: "We repair all major household appliances including refrigerators, washers, dryers, dishwashers, ovens, ranges, cooktops, microwaves, garbage disposals, and ice makers. We work on both gas and electric appliances from all major brands.",
+    answer: "We repair all major household appliances including refrigerators, washers, dryers, dishwashers, ovens, ranges, cooktops, microwaves, garbage disposals and ice makers, on both gas and electric units from all major brands. We also clean dryer vents and install washers, dryers, dishwashers and garbage disposals.",
     category: "general",
     order: 2
   },
@@ -28,14 +28,14 @@ export const faqItems: FAQItem[] = [
   {
     id: "service-call-cost",
     question: "How much does a service call cost?",
-    answer: "Our diagnostic service call is $75, waived with repair. It covers the technician visit and complete diagnosis of the problem — if you proceed with the repair, the fee is waived and you only pay for the actual repair cost.",
+    answer: "Our minimum service call is $150. It covers the technician visit and a complete diagnosis. Quick fixes are included in that call rather than billed on top — resetting the appliance, adjustments, leveling and anything else that only takes a few minutes. If the job needs parts or more extensive work, we quote it for your approval before we start.",
     category: "pricing",
     order: 1
   },
   {
     id: "repair-cost",
     question: "How much will my repair cost?",
-    answer: "Repair costs vary depending on the appliance type, the specific problem, and parts needed. After diagnosing the issue, our technician will provide a detailed, upfront quote before any work begins. There are no hidden fees or surprises.",
+    answer: "Most repairs land between $150 and $450 including parts, and nothing is billed below the $150 minimum service call. The exact figure depends on the appliance, the fault and the parts needed — high-end brands such as Sub-Zero, Viking, Wolf and Miele, and jobs that are awkward to access, can run above that range. Either way our technician gives you a detailed, upfront quote after diagnosing the issue, and no work starts until you approve it. There are no hidden fees or surprises.",
     category: "pricing",
     order: 2
   },
@@ -58,14 +58,14 @@ export const faqItems: FAQItem[] = [
   {
     id: "appointment-window",
     question: "What is your appointment window?",
-    answer: "We offer 2-hour appointment windows to minimize your wait time. Our technician will call 30 minutes before arrival so you know exactly when to expect them.",
+    answer: "We book a 3-hour arrival window so you are not waiting all day. Your technician calls no later than 30 minutes before arriving, so you know when to expect them.",
     category: "scheduling",
     order: 2
   },
   {
     id: "weekend-service",
     question: "Do you work on weekends?",
-    answer: "Yes, we offer service 7 days a week. Our weekend hours are Saturday 8 AM - 6 PM and Sunday 9 AM - 5 PM. Emergency service is available 24/7 for urgent situations.",
+    answer: "Yes, we work 7 days a week, 9:00 AM to 8:00 PM every day including Saturday and Sunday. Emergency service is available 24/7 for urgent situations.",
     category: "scheduling",
     order: 3
   },
@@ -118,14 +118,14 @@ export const faqItems: FAQItem[] = [
   {
     id: "installation",
     question: "Do you install new appliances?",
-    answer: "Our primary focus is repair, but we do offer installation services for garbage disposals and can help with basic hookups. For full appliance installation, we can recommend trusted partners.",
+    answer: "Yes. Alongside repair we install washers, dryers, dishwashers and garbage disposals, and we can handle basic hookups. For anything outside that — built-in refrigeration, ranges and other full installations — we can recommend trusted partners.",
     category: "services",
     order: 3
   },
   {
     id: "second-opinions",
     question: "Can I get a second opinion on a repair quote?",
-    answer: "Absolutely! We're confident in our fair pricing, but we understand you may want to compare. Our diagnostic fee still applies, but we'll provide a detailed written quote you can compare with others.",
+    answer: "Absolutely. We're confident in our fair pricing, but we understand you may want to compare. The $150 minimum service call still applies for the visit, and we'll provide a detailed written quote you can compare with others.",
     category: "services",
     order: 4
   },

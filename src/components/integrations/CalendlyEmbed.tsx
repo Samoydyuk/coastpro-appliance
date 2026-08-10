@@ -36,11 +36,11 @@ export function CalendlyEmbed({
           minWidth: '320px',
         }}
         pageSettings={{
-          backgroundColor: 'ffffff',
+          backgroundColor: 'f8f7f4',
           hideEventTypeDetails: false,
           hideLandingPageDetails: false,
-          primaryColor: '2563eb',
-          textColor: '1f2937',
+          primaryColor: '8b7b6e',
+          textColor: '111111',
         }}
         prefill={prefill}
         utm={utm}

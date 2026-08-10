@@ -1,9 +1,9 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { CheckCircle, Clock, Shield, ArrowRight, Phone, Wrench } from 'lucide-react';
+import { Check, Clock, Shield, ArrowRight, Phone, Wrench, Info } from 'lucide-react';
 import { Button, Card, CardContent, Badge } from '@/components/ui';
-import { CTABanner } from '@/components/sections';
+import { CTABanner, StatsBand } from '@/components/sections';
 import { services, getServiceBySlug, getRelatedServices } from '@/data/services';
 import { siteConfig } from '@/data/site-config';
 
@@ -48,54 +48,76 @@ export default async function ServicePage({ params }: ServicePageProps) {
 
   const relatedServices = getRelatedServices(slug);
 
+  // Section numbering shifts when a service carries a pricing table.
+  const sections = [
+    'Overview',
+    ...(service.pricing ? ['Pricing'] : []),
+    'Diagnosis',
+    ...(service.brands.length > 0 ? ['Brands'] : []),
+  ];
+  const step = (label: string) =>
+    `${String(sections.indexOf(label) + 1).padStart(2, '0')} — ${label}`;
+
   return (
     <>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary-900 to-primary-800 text-white py-16">
+      <section className="bg-cream border-b border-primary-500/20 py-16 lg:py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl">
-            <nav className="flex items-center gap-2 text-sm text-primary-200 mb-6">
-              <Link href="/" className="hover:text-white transition-colors">Home</Link>
+            <nav className="flex items-center gap-2 text-sm text-primary-500 mb-8">
+              <Link href="/" className="hover:text-ink transition-colors">Home</Link>
               <span>/</span>
-              <Link href="/services" className="hover:text-white transition-colors">Services</Link>
+              <Link href="/services" className="hover:text-ink transition-colors">Services</Link>
               <span>/</span>
-              <span className="text-white">{service.name}</span>
+              <span className="text-ink">{service.name}</span>
             </nav>
 
-            <h1 className="font-heading text-4xl md:text-5xl font-bold mb-4">
-              {service.name} in Orange County
+            <div className="eyebrow mb-4">Service</div>
+            <h1 className="headline text-3xl sm:text-4xl md:text-5xl">
+              {service.name}
+              <br />
+              <span className="headline-muted">in Orange County.</span>
             </h1>
-            <p className="text-xl text-primary-100 mb-8 max-w-2xl">
+            <div className="rule-short my-8" />
+            <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-prose">
               {service.shortDescription}
             </p>
 
             <div className="flex flex-wrap gap-4 mb-8">
-              <div className="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2">
-                <Clock className="h-5 w-5 text-accent-300" />
+              <div className="flex items-center gap-2 border border-primary-500/30 px-4 py-2">
+                <Clock className="h-4 w-4 text-primary-500" strokeWidth={1.5} />
                 <span>{service.estimatedTime}</span>
               </div>
-              <div className="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2">
-                <Shield className="h-5 w-5 text-accent-300" />
+              <div className="flex items-center gap-2 border border-primary-500/30 px-4 py-2">
+                <Shield className="h-4 w-4 text-primary-500" strokeWidth={1.5} />
                 <span>{service.warranty}</span>
               </div>
-              <div className="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2">
-                <Wrench className="h-5 w-5 text-accent-300" />
-                <span>${service.priceRange.min} - ${service.priceRange.max}</span>
+              <div className="flex items-center gap-2 border border-primary-500/30 px-4 py-2">
+                <Wrench className="h-4 w-4 text-primary-500" strokeWidth={1.5} />
+                <span>
+                  {service.pricing
+                    ? `$${service.pricing.minimum} minimum`
+                    : `$${service.priceRange.min} - $${service.priceRange.max}+`}
+                </span>
               </div>
             </div>
 
+            {!service.pricing && (
+              <p className="text-sm text-gray-600 mb-8 max-w-prose">
+                {siteConfig.pricing.rangeNote}
+              </p>
+            )}
+
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/book-appointment">
-                <Button size="lg" className="bg-accent-500 hover:bg-accent-600">
-                  Schedule Service
-                </Button>
+                <Button size="lg">Schedule Service</Button>
               </Link>
               <a href={`tel:${siteConfig.contact.phoneClean}`}>
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-white text-white hover:bg-white/10"
-                  leftIcon={<Phone className="h-5 w-5" />}
+                  className="border-ink text-ink hover:bg-ink hover:text-cream"
+                  leftIcon={<Phone className="h-4 w-4" />}
                 >
                   {siteConfig.contact.phone}
                 </Button>
@@ -105,32 +127,85 @@ export default async function ServicePage({ params }: ServicePageProps) {
         </div>
       </section>
 
+      <StatsBand />
+
       {/* Main Content */}
-      <section className="py-16">
+      <section className="py-20 bg-cream">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-3 gap-12">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-12">
               {/* Description */}
               <div>
-                <h2 className="font-heading text-2xl font-bold text-gray-900 mb-4">
-                  Expert {service.name} Services
+                <div className="eyebrow mb-4">{step('Overview')}</div>
+                <h2 className="headline text-2xl mb-6">
+                  Expert {service.name.toLowerCase()} services
                 </h2>
                 <p className="text-gray-600 text-lg leading-relaxed">
                   {service.fullDescription}
                 </p>
               </div>
 
+              {/* Pricing — only for services billed by measure */}
+              {service.pricing && (
+                <div>
+                  <div className="eyebrow mb-4">{step('Pricing')}</div>
+                  <h2 className="headline text-2xl mb-6">What it costs</h2>
+
+                  <div className="border-t border-primary-500/20">
+                    {service.pricing.lines.map((line, i) => (
+                      <div
+                        key={line.label}
+                        className={`flex items-baseline justify-between gap-6 py-5 border-b border-primary-500/20 ${
+                          i === 0 ? 'bg-cream-dark/50 px-4 -mx-4' : ''
+                        }`}
+                      >
+                        <span className="font-heading text-sm font-bold uppercase tracking-label text-ink">
+                          {line.label}
+                        </span>
+                        <span className="font-heading text-2xl font-extrabold text-ink leading-none">
+                          {line.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Worked examples beat a rate card for a per-foot price */}
+                  <div className="mt-8 flex flex-wrap gap-x-10 gap-y-3">
+                    {[0, 2, 4].map((extra) => {
+                      const feet = service.pricing!.includedFeet + extra;
+                      const total = service.pricing!.minimum + extra * 50;
+                      return (
+                        <div key={feet}>
+                          <div className="font-heading text-[11px] font-semibold uppercase tracking-label text-primary-500 mb-1">
+                            {feet} ft duct
+                          </div>
+                          <div className="font-heading text-xl font-extrabold text-ink">${total}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <ul className="mt-8 space-y-4">
+                    {service.pricing.notes.map((note) => (
+                      <li key={note} className="flex gap-3 text-gray-600 leading-relaxed">
+                        <Info className="h-4 w-4 text-primary-500 shrink-0 mt-1" strokeWidth={1.5} />
+                        <span>{note}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {/* Common Problems */}
               <div>
-                <h2 className="font-heading text-2xl font-bold text-gray-900 mb-6">
-                  Common Problems We Fix
-                </h2>
+                <div className="eyebrow mb-4">{step('Diagnosis')}</div>
+                <h2 className="headline text-2xl mb-6">Common problems we fix</h2>
                 <div className="space-y-4">
                   {service.commonProblems.map((problem, index) => (
                     <Card key={index}>
                       <CardContent className="p-6">
-                        <h3 className="font-semibold text-lg text-gray-900 mb-2">
+                        <h3 className="font-heading text-sm font-bold uppercase tracking-label text-ink mb-3">
                           {problem.title}
                         </h3>
                         <p className="text-gray-600 mb-3">{problem.description}</p>
@@ -154,18 +229,19 @@ export default async function ServicePage({ params }: ServicePageProps) {
               </div>
 
               {/* Brands */}
+              {service.brands.length > 0 && (
               <div>
-                <h2 className="font-heading text-2xl font-bold text-gray-900 mb-4">
-                  Brands We Service
-                </h2>
+                <div className="eyebrow mb-4">{step('Brands')}</div>
+                <h2 className="headline text-2xl mb-6">Brands we service</h2>
                 <div className="flex flex-wrap gap-3">
                   {service.brands.map((brand) => (
-                    <Badge key={brand} variant="info" size="md">
+                    <Badge key={brand} size="md">
                       {brand}
                     </Badge>
                   ))}
                 </div>
               </div>
+              )}
             </div>
 
             {/* Sidebar */}
@@ -173,13 +249,13 @@ export default async function ServicePage({ params }: ServicePageProps) {
               {/* Features Card */}
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-lg text-gray-900 mb-4">
+                  <h3 className="font-heading text-sm font-bold uppercase tracking-label text-ink mb-5">
                     Why Choose Us
                   </h3>
                   <ul className="space-y-3">
                     {service.features.map((feature, index) => (
                       <li key={index} className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                        <Check className="h-4 w-4 text-primary-500 shrink-0 mt-1" strokeWidth={2} />
                         <span className="text-gray-600">{feature}</span>
                       </li>
                     ))}
@@ -188,17 +264,25 @@ export default async function ServicePage({ params }: ServicePageProps) {
               </Card>
 
               {/* Quick Quote Card */}
-              <Card className="bg-primary-50 border-primary-200">
+              <Card className="bg-cream-dark">
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-lg text-gray-900 mb-2">
-                    Service Call Fee
+                  <h3 className="font-heading text-sm font-bold uppercase tracking-label text-ink mb-3">
+                    {service.pricing ? 'Minimum Order' : 'Minimum Service Call'}
                   </h3>
-                  <div className="text-3xl font-bold text-primary-600 mb-2">
-                    ${siteConfig.serviceFee.diagnostic}
+                  <div className="font-heading text-4xl font-extrabold text-ink mb-3">
+                    ${service.pricing ? service.pricing.minimum : siteConfig.serviceCall.minimum}
                   </div>
                   <p className="text-gray-600 text-sm mb-4">
-                    {siteConfig.serviceFee.note}
+                    {service.pricing
+                      ? `${service.pricing.summary}.`
+                      : `Covers the visit, a full diagnosis and ${siteConfig.serviceCall.includes}.`}
                   </p>
+                  {!service.pricing && (
+                    <p className="text-gray-600 text-sm mb-4">
+                      Most {service.name.replace(' Repair', '').toLowerCase()} jobs land between $
+                      {service.priceRange.min} and ${service.priceRange.max}, parts included.
+                    </p>
+                  )}
                   <Link href="/book-appointment">
                     <Button className="w-full">
                       Book Appointment
@@ -211,7 +295,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
               {relatedServices.length > 0 && (
                 <Card>
                   <CardContent className="p-6">
-                    <h3 className="font-semibold text-lg text-gray-900 mb-4">
+                    <h3 className="font-heading text-sm font-bold uppercase tracking-label text-ink mb-5">
                       Related Services
                     </h3>
                     <ul className="space-y-3">
@@ -236,8 +320,17 @@ export default async function ServicePage({ params }: ServicePageProps) {
       </section>
 
       <CTABanner
-        title={`Ready to Fix Your ${service.name.replace(' Repair', '')}?`}
-        subtitle="Our expert technicians are standing by. Same-day service available!"
+        title={
+          service.name.endsWith(' Repair')
+            ? `Ready to fix your ${service.name.replace(' Repair', '').toLowerCase()}?`
+            : `Ready to book ${service.name.toLowerCase()}?`
+        }
+        subtitle="Our technicians are standing by. Same-day service available."
+        note={
+          service.pricing
+            ? service.pricing.summary
+            : undefined
+        }
       />
     </>
   );

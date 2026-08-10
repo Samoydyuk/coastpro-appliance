@@ -1,83 +1,105 @@
 import { Metadata } from 'next';
-import { Camera } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui';
-import { CTABanner } from '@/components/sections';
+import Image from 'next/image';
+import Link from 'next/link';
+import { Camera, MapPin } from 'lucide-react';
+import { Button } from '@/components/ui';
+import { CTABanner, PageHeader, StatsBand } from '@/components/sections';
+import { getWorkPhotos } from '@/lib/work-photos';
+import { siteConfig } from '@/data/site-config';
 
 export const metadata: Metadata = {
   title: 'Our Work Gallery',
-  description: 'See examples of our appliance repair work throughout Orange County. Before and after photos of refrigerator, washer, dryer, and other appliance repairs.',
+  description:
+    'Photos of appliance repairs CoastPro has completed across Orange County — refrigerators, washers, dryers and dryer vent cleaning.',
   openGraph: {
     title: 'Gallery | CoastPro Appliance Repair',
     description: 'Photos of our appliance repair work in Orange County.',
   },
 };
 
-// Placeholder gallery items
-const galleryItems = [
-  { id: 1, title: 'Refrigerator Compressor Repair', location: 'Irvine', category: 'Refrigerator' },
-  { id: 2, title: 'Washer Drum Bearing Replacement', location: 'Newport Beach', category: 'Washer' },
-  { id: 3, title: 'Gas Range Igniter Fix', location: 'Costa Mesa', category: 'Oven' },
-  { id: 4, title: 'Dryer Heating Element Repair', location: 'Huntington Beach', category: 'Dryer' },
-  { id: 5, title: 'Dishwasher Pump Replacement', location: 'Anaheim', category: 'Dishwasher' },
-  { id: 6, title: 'Microwave Magnetron Repair', location: 'Santa Ana', category: 'Microwave' },
-  { id: 7, title: 'Ice Maker Water Line Fix', location: 'Orange', category: 'Ice Maker' },
-  { id: 8, title: 'Sub-Zero Refrigerator Service', location: 'Laguna Beach', category: 'Refrigerator' },
-  { id: 9, title: 'Front-Load Washer Door Seal', location: 'Mission Viejo', category: 'Washer' },
-];
-
 export default function GalleryPage() {
+  const photos = getWorkPhotos();
+
   return (
     <>
-      {/* Page Header */}
-      <section className="bg-gradient-to-br from-primary-900 to-primary-800 text-white py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="font-heading text-4xl md:text-5xl font-bold mb-4">
-            Our Work Gallery
-          </h1>
-          <p className="text-xl text-primary-100 max-w-2xl mx-auto">
-            See examples of appliance repairs we&apos;ve completed throughout Orange County
-          </p>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="Our Work"
+        title="Problem solved."
+        titleMuted="Back to normal."
+        subtitle="Photos from jobs we've completed across Orange County."
+      />
 
-      {/* Gallery Grid */}
-      <section className="py-16">
+      <StatsBand />
+
+      <section className="py-20 bg-cream">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {galleryItems.map((item) => (
-              <Card key={item.id} hover className="cursor-pointer group">
-                <CardContent className="p-0">
-                  {/* Image Placeholder */}
-                  <div className="aspect-[4/3] bg-gray-200 flex items-center justify-center group-hover:bg-gray-300 transition-colors">
-                    <Camera className="h-12 w-12 text-gray-400" />
-                  </div>
-                  <div className="p-4">
-                    <div className="text-xs text-primary-600 font-medium mb-1">
-                      {item.category}
-                    </div>
-                    <h3 className="font-semibold text-gray-900 mb-1">
-                      {item.title}
-                    </h3>
-                    <p className="text-sm text-gray-500">{item.location}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <div className="eyebrow mb-12">01 — Recent Work</div>
 
-          {/* Placeholder Notice */}
-          <div className="mt-12 text-center">
-            <div className="inline-flex items-center gap-2 bg-gray-100 rounded-lg px-4 py-2 text-gray-600">
-              <Camera className="h-5 w-5" />
-              <span>Add your repair photos to showcase your work</span>
+          {photos.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {photos.map((photo) => (
+                <figure key={photo.src} className="group">
+                  <div className="relative aspect-[4/5] overflow-hidden bg-primary-800">
+                    <Image
+                      src={photo.src}
+                      alt={photo.alt}
+                      fill
+                      sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                      className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                    />
+                  </div>
+                  <figcaption className="mt-5 pt-5 border-t border-primary-500/20">
+                    {photo.location && (
+                      <div className="flex items-center gap-2 mb-3 text-primary-600">
+                        <MapPin className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+                        <span className="font-heading text-[10px] font-semibold uppercase tracking-label">
+                          {photo.location}
+                        </span>
+                      </div>
+                    )}
+                    <p className="font-heading text-sm font-bold uppercase tracking-label text-ink leading-snug">
+                      {photo.caption ?? photo.alt}
+                    </p>
+                  </figcaption>
+                </figure>
+              ))}
             </div>
-          </div>
+          ) : (
+            /* An honest empty state beats a grid of placeholder cards standing
+               in for work we cannot show. */
+            <div className="max-w-xl border border-primary-500/25 p-10">
+              <span className="icon-disc h-12 w-12 mb-6">
+                <Camera className="h-5 w-5" strokeWidth={1.5} />
+              </span>
+              <h2 className="headline text-2xl mb-4">Photos on the way</h2>
+              <p className="text-gray-600 mb-8">
+                We&apos;re putting together before and after photos from recent jobs. In the
+                meantime, call and we&apos;ll talk you through what your repair involves.
+              </p>
+              <a href={`tel:${siteConfig.contact.phoneClean}`}>
+                <Button>{siteConfig.contact.phone}</Button>
+              </a>
+            </div>
+          )}
+
+          {photos.length > 0 && (
+            <p className="mt-14 text-gray-600">
+              Every repair is documented with before and after photos.{' '}
+              <Link
+                href="/services"
+                className="text-ink underline underline-offset-4 hover:text-primary-600"
+              >
+                See what we repair
+              </Link>
+              .
+            </p>
+          )}
         </div>
       </section>
 
       <CTABanner
-        title="Need Your Appliance Repaired?"
-        subtitle="Our expert technicians are ready to help!"
+        title="Need your appliance repaired?"
+        subtitle="Our technicians are ready to help. Same-day service available."
       />
     </>
   );

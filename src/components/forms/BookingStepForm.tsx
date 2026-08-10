@@ -98,18 +98,18 @@ export function BookingStepForm() {
         {/* Progress Indicator */}
         <div className="flex items-center justify-center mb-8">
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold">
+            <div className="w-10 h-10 bg-ink text-cream rounded-full flex items-center justify-center font-heading font-bold">
               1
             </div>
             <div className="w-16 h-1 bg-gray-300 mx-2" />
-            <div className="w-10 h-10 bg-gray-300 text-gray-500 rounded-full flex items-center justify-center font-bold">
+            <div className="w-10 h-10 border border-primary-500/40 text-primary-500 rounded-full flex items-center justify-center font-heading font-bold">
               2
             </div>
           </div>
         </div>
 
         <div className="text-center mb-6">
-          <h2 className="font-heading text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="headline text-2xl mb-3">
             Service Information
           </h2>
           <p className="text-gray-600">
@@ -238,18 +238,18 @@ export function BookingStepForm() {
       {/* Progress Indicator */}
       <div className="flex items-center justify-center mb-8">
         <div className="flex items-center">
-          <div className="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center font-bold">
+          <div className="w-10 h-10 bg-primary-500 text-cream rounded-full flex items-center justify-center font-heading font-bold">
             ✓
           </div>
           <div className="w-16 h-1 bg-primary-600 mx-2" />
-          <div className="w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold">
+          <div className="w-10 h-10 bg-ink text-cream rounded-full flex items-center justify-center font-heading font-bold">
             2
           </div>
         </div>
       </div>
 
       <div className="text-center mb-6">
-        <h2 className="font-heading text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="headline text-2xl mb-3">
           Select Appointment Time
         </h2>
         <p className="text-gray-600">
@@ -265,7 +265,7 @@ export function BookingStepForm() {
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4 text-primary-600" />
                 <span className="font-medium">{formData.name}</span>
-                <span className="text-gray-500">({formData.phone})</span>
+                <span className="text-gray-600">({formData.phone})</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-primary-600" />
@@ -279,7 +279,7 @@ export function BookingStepForm() {
                 <Wrench className="h-4 w-4 text-primary-600" />
                 <span>{getApplianceLabel(formData.appliance)}</span>
                 {formData.problem && (
-                  <span className="text-gray-500">- {formData.problem.slice(0, 50)}...</span>
+                  <span className="text-gray-600">- {formData.problem.slice(0, 50)}...</span>
                 )}
               </div>
             </div>

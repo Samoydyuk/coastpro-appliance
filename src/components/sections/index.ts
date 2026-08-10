@@ -1,5 +1,10 @@
 export { Hero } from './Hero';
+export { HeroSlider } from './HeroSlider';
 export { ServicesGrid } from './ServicesGrid';
 export { TrustSignals } from './TrustSignals';
 export { ServiceAreas } from './ServiceAreas';
 export { CTABanner } from './CTABanner';
+export { PageHeader } from './PageHeader';
+export { StatsBand } from './StatsBand';
+export { ProcessSteps } from './ProcessSteps';
+export { LegalSection } from './LegalSection';

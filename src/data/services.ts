@@ -94,7 +94,7 @@ export const services: Service[] = [
       "90-day warranty",
       "Upfront pricing"
     ],
-    priceRange: { min: 125, max: 350, unit: "repair" },
+    priceRange: { min: 150, max: 350, unit: "repair" },
     estimatedTime: "1-2 hours",
     warranty: "90-day parts & labor warranty",
     brands: ["Samsung", "LG", "Whirlpool", "Maytag", "GE", "Kenmore", "Speed Queen", "Bosch", "Electrolux"],
@@ -146,11 +146,11 @@ export const services: Service[] = [
       "Same-day service",
       "90-day warranty"
     ],
-    priceRange: { min: 125, max: 350, unit: "repair" },
+    priceRange: { min: 150, max: 350, unit: "repair" },
     estimatedTime: "1-2 hours",
     warranty: "90-day parts & labor warranty",
     brands: ["Samsung", "LG", "Whirlpool", "Maytag", "GE", "Kenmore", "Speed Queen", "Bosch", "Electrolux"],
-    relatedServices: ["washer"],
+    relatedServices: ["washer", "dryer-vent-cleaning"],
     seo: {
       title: "Dryer Repair Orange County | Gas & Electric",
       description: "Professional dryer repair in Orange County. Gas and electric dryers. Fix no heat, noise, won't start. Same-day service. Call (949) 749-0006.",
@@ -198,7 +198,7 @@ export const services: Service[] = [
       "90-day warranty",
       "Clean-up included"
     ],
-    priceRange: { min: 125, max: 300, unit: "repair" },
+    priceRange: { min: 150, max: 300, unit: "repair" },
     estimatedTime: "1-1.5 hours",
     warranty: "90-day parts & labor warranty",
     brands: ["Bosch", "KitchenAid", "Whirlpool", "Samsung", "LG", "GE", "Miele", "Frigidaire", "Maytag"],
@@ -302,7 +302,7 @@ export const services: Service[] = [
       "90-day warranty",
       "Over-the-range models"
     ],
-    priceRange: { min: 100, max: 250, unit: "repair" },
+    priceRange: { min: 150, max: 250, unit: "repair" },
     estimatedTime: "45 min - 1 hour",
     warranty: "90-day parts & labor warranty",
     brands: ["Samsung", "LG", "Panasonic", "GE", "Whirlpool", "Sharp", "KitchenAid", "Frigidaire"],
@@ -354,7 +354,7 @@ export const services: Service[] = [
       "90-day warranty",
       "Plumbing connections"
     ],
-    priceRange: { min: 100, max: 250, unit: "repair" },
+    priceRange: { min: 150, max: 250, unit: "repair" },
     estimatedTime: "30 min - 1 hour",
     warranty: "90-day parts & labor warranty",
     brands: ["InSinkErator", "Waste King", "Moen", "GE", "KitchenAid", "Whirlpool"],
@@ -406,7 +406,7 @@ export const services: Service[] = [
       "90-day warranty",
       "Water line service"
     ],
-    priceRange: { min: 125, max: 350, unit: "repair" },
+    priceRange: { min: 150, max: 350, unit: "repair" },
     estimatedTime: "1-1.5 hours",
     warranty: "90-day parts & labor warranty",
     brands: ["Sub-Zero", "Scotsman", "GE", "Whirlpool", "Samsung", "LG", "KitchenAid", "U-Line"],
@@ -415,6 +415,71 @@ export const services: Service[] = [
       title: "Ice Maker Repair Orange County | All Types",
       description: "Professional ice maker repair in Orange County. Built-in, standalone, commercial. Fix production, quality issues. Call (949) 749-0006.",
       keywords: ["ice maker repair orange county", "ice machine repair", "sub-zero ice maker repair", "commercial ice maker repair"]
+    }
+  },
+  {
+    id: "dryer-vent-cleaning",
+    slug: "dryer-vent-cleaning",
+    name: "Dryer Vent Cleaning",
+    shortDescription: "Dryer vent cleaning that restores airflow, cuts drying times, and clears lint buildup.",
+    fullDescription: "A lint-clogged dryer vent makes the dryer work harder, adds a second cycle to every load, and is one of the most common causes of laundry room fires. We clean the full duct run from the dryer to the exterior termination and check airflow before we leave. The $200 minimum order covers the first 6 feet of duct, which is the whole job for most dryers, and we do not perform roof work \u2014 see the pricing below.",
+    icon: "AirVent",
+    image: "/images/appliances/dryer-vent.jpg",
+    commonProblems: [
+      {
+        title: "Clothes Need Two Cycles",
+        description: "Laundry is still damp when the cycle finishes",
+        symptoms: ["Damp clothes after a full cycle", "Drying times getting longer", "Dryer hot to the touch"],
+        solution: "Almost always a restricted duct. Cleaning the full run restores airflow and drying performance."
+      },
+      {
+        title: "Lint Building Up",
+        description: "Lint collecting around the dryer or the outside vent",
+        symptoms: ["Lint around the dryer door", "Lint at the exterior vent", "Debris behind the dryer"],
+        solution: "Lint accumulating along the duct is the main fire risk in a laundry room. We remove buildup along the entire run."
+      },
+      {
+        title: "Burning Smell During a Cycle",
+        description: "Hot laundry room or a burning odor while the dryer runs",
+        symptoms: ["Burning odor", "Laundry room heats up", "Dryer shutting off mid-cycle"],
+        solution: "Overheating caused by restricted exhaust. We clear the duct and check that the termination flap opens freely."
+      },
+      {
+        title: "No Airflow at the Outside Vent",
+        description: "Little or no air coming out of the exterior termination",
+        symptoms: ["Flap not opening", "No air outside while running", "Bird or rodent nesting"],
+        solution: "Blocked termination. We clear it wherever it can be reached safely from the ground or a ladder."
+      }
+    ],
+    features: [
+      "Full duct run cleaned",
+      "Airflow checked on completion",
+      "First 6 feet included",
+      "$200 minimum order",
+      "No roof access work"
+    ],
+    priceRange: { min: 200, max: 200, unit: "job" },
+    pricing: {
+      lines: [
+        { label: "Minimum order — first 6 feet", value: "$200" },
+        { label: "Each additional foot", value: "$50" }
+      ],
+      minimum: 200,
+      includedFeet: 6,
+      summary: "$200 covers the first 6 feet of duct, then $50 for each additional foot",
+      notes: [
+        "Most dryer runs fall inside the first 6 feet, so $200 is the whole job.",
+        "We do not perform work at height. If the vent terminates in a roof cap that cannot be cleaned without going onto the roof, the $200 minimum order applies."
+      ]
+    },
+    estimatedTime: "1-2 hours",
+    warranty: "Airflow verified on completion",
+    brands: [],
+    relatedServices: ["dryer"],
+    seo: {
+      title: "Dryer Vent Cleaning Orange County | CoastPro",
+      description: "Dryer vent cleaning in Orange County. $200 covers the first 6 feet, $50 each additional foot. Restore airflow and cut drying times. Call (949) 749-0006.",
+      keywords: ["dryer vent cleaning orange county", "dryer duct cleaning irvine", "lint removal dryer vent", "dryer vent cleaning near me"]
     }
   }
 ];

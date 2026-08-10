@@ -1,63 +1,65 @@
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { serviceAreas } from '@/data/service-areas';
-import { getInitials } from '@/lib/utils';
 
 interface ServiceAreasProps {
   showAll?: boolean;
 }
 
+/**
+ * Coverage list. Deliberately typographic — a dense wrapped index of city
+ * names rather than another bordered card grid.
+ */
 export function ServiceAreas({ showAll = false }: ServiceAreasProps) {
-  const areas = showAll ? serviceAreas : serviceAreas.slice(0, 8);
+  const areas = showAll ? serviceAreas : serviceAreas.slice(0, 12);
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-20 lg:py-24 bg-cream">
       <div className="container mx-auto px-4">
-        {/* Section Header */}
-        <div className="text-center mb-12">
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Serving All of Orange County
-          </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Fast, reliable appliance repair service throughout Orange County, CA
-          </p>
-        </div>
-
-        {/* Areas Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-12">
-          {areas.map((area) => (
-            <Link
-              key={area.id}
-              href={`/service-areas/${area.slug}`}
-              className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all group"
-            >
-              <div className="w-9 h-9 rounded-full bg-primary-600 text-white flex items-center justify-center text-xs font-bold shrink-0 group-hover:bg-primary-700 transition-colors">
-                {getInitials(area.name)}
-              </div>
-              <span className="font-medium text-gray-900 group-hover:text-primary-600 transition-colors">
-                {area.name}
-              </span>
-            </Link>
-          ))}
-        </div>
-
-        {/* View All & CTA */}
-        <div className="text-center space-y-4">
-          {!showAll && (
+        <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+          <div className="lg:col-span-4">
+            <div className="eyebrow">04 — Coverage</div>
+            <h2 className="headline text-2xl sm:text-3xl md:text-4xl mt-4 mb-6">
+              Serving all of
+              <br />
+              <span className="headline-muted">Orange County.</span>
+            </h2>
+            <div className="rule-short mb-6" />
+            <p className="text-lg text-gray-600 mb-8 max-w-sm">
+              Fast, reliable appliance repair across the county.
+            </p>
             <Link href="/service-areas">
               <Button variant="outline" rightIcon={<ArrowRight className="h-4 w-4" />}>
-                View All Service Areas
+                All Areas
               </Button>
             </Link>
-          )}
-          <p className="text-gray-600">
-            Don&apos;t see your city?{' '}
-            <Link href="/contact" className="text-primary-600 hover:text-primary-700 font-medium">
-              Contact us
-            </Link>{' '}
-            - we likely serve your area!
-          </p>
+          </div>
+
+          <div className="lg:col-span-8">
+            <div className="flex flex-wrap gap-x-8 gap-y-4 border-t border-primary-500/20 pt-8">
+              {areas.map((area) => (
+                <Link
+                  key={area.id}
+                  href={`/service-areas/${area.slug}`}
+                  className="font-heading text-lg sm:text-xl font-bold uppercase tracking-tight text-primary-500 hover:text-ink transition-colors"
+                >
+                  {area.name}
+                </Link>
+              ))}
+            </div>
+
+            <p className="flex items-center gap-2 text-gray-600 mt-10 pt-8 border-t border-primary-500/20">
+              <MapPin className="h-4 w-4 text-primary-500 shrink-0" strokeWidth={1.5} />
+              Don&apos;t see your city?{' '}
+              <Link
+                href="/contact"
+                className="text-ink underline underline-offset-4 hover:text-primary-600"
+              >
+                Contact us
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </section>

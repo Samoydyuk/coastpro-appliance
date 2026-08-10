@@ -16,6 +16,11 @@ export const siteConfig = {
     },
   },
 
+  appointment: {
+    arrivalWindow: "3-hour",
+    noticeMinutes: 30,
+  },
+
   businessHours: {
     weekdays: "9:00 AM - 8:00 PM",
     saturday: "9:00 AM - 8:00 PM",
@@ -34,9 +39,19 @@ export const siteConfig = {
     twitterHandle: "@coastproappliance",
   },
 
-  serviceFee: {
-    diagnostic: 75,
-    note: "Waived with repair",
+  pricing: {
+    // The published range covers most jobs; premium brands and awkward
+    // faults legitimately run past it, so never present it as a ceiling.
+    rangeNote:
+      "Typical range for most jobs. High-end brands and complex faults can run higher — you approve the quote before any work starts.",
+  },
+
+  serviceCall: {
+    minimum: 150,
+    // Short line for banners and footnotes.
+    note: "Quick fixes included",
+    // The kind of work the call itself covers, spelled out.
+    includes: "resets, adjustments, leveling and other work that takes only a few minutes",
   },
 } as const;
 

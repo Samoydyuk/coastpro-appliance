@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { ServicesGrid, CTABanner } from '@/components/sections';
+import { ServicesGrid, CTABanner, PageHeader, StatsBand } from '@/components/sections';
 import { siteConfig } from '@/data/site-config';
 
 export const metadata: Metadata = {
@@ -14,40 +14,41 @@ export const metadata: Metadata = {
 export default function ServicesPage() {
   return (
     <>
-      {/* Page Header */}
-      <section className="bg-gradient-to-br from-primary-900 to-primary-800 text-white py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="font-heading text-4xl md:text-5xl font-bold mb-4">
-            Our Appliance Repair Services
-          </h1>
-          <p className="text-xl text-primary-100 max-w-2xl mx-auto">
-            Expert repair services for all major household appliances.
-            Same-day appointments available throughout Orange County.
-          </p>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="Services"
+        title="Appliance repair"
+        titleMuted="for every room."
+        subtitle="Expert repair services for all major household appliances. Same-day appointments available throughout Orange County."
+      />
+
+      <StatsBand />
 
       {/* Services Grid */}
       <ServicesGrid
         showAll={true}
-        title="All Services"
-        subtitle="Click on any service to learn more about common problems and solutions"
+        eyebrow="01 — Catalog"
+        title="All services"
+        subtitle="Select any service to learn more about common problems and solutions."
       />
 
       {/* Brands Section */}
-      <section className="py-16 bg-white">
+      <section className="py-20 bg-cream-light border-t border-primary-500/20">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="font-heading text-3xl font-bold text-gray-900 mb-4">
-              Brands We Service
+          <div className="max-w-2xl mb-12">
+            <div className="eyebrow">02 — Brands</div>
+            <h2 className="headline text-2xl sm:text-3xl md:text-4xl mt-4 mb-6">
+              Every major
+              <br />
+              <span className="headline-muted">brand serviced.</span>
             </h2>
-            <p className="text-xl text-gray-600">
-              Experienced with all major appliance brands
-            </p>
+            <div className="rule-short" />
           </div>
-          <div className="flex flex-wrap justify-center items-center gap-8 text-gray-400">
+          <div className="flex flex-wrap gap-x-10 gap-y-5">
             {['Samsung', 'LG', 'Whirlpool', 'GE', 'Frigidaire', 'KitchenAid', 'Maytag', 'Bosch', 'Sub-Zero', 'Viking', 'Wolf', 'Miele'].map((brand) => (
-              <span key={brand} className="text-xl font-semibold hover:text-gray-600 transition-colors">
+              <span
+                key={brand}
+                className="font-heading text-sm font-semibold uppercase tracking-label text-primary-500 hover:text-ink transition-colors"
+              >
                 {brand}
               </span>
             ))}

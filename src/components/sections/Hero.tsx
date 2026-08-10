@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { Phone, Clock, Award, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { HeroSlider } from './HeroSlider';
 import { siteConfig } from '@/data/site-config';
+import { getWorkPhotos } from '@/lib/work-photos';
 
 const trustBadges = [
   { icon: Clock, text: 'Same-Day Service' },
@@ -10,38 +12,48 @@ const trustBadges = [
 ];
 
 export function Hero() {
+  const heroSlides = getWorkPhotos();
+  const hasPhotos = heroSlides.length > 0;
+
   return (
-    <section className="relative bg-gradient-to-br from-primary-900 via-primary-800 to-primary-900 text-white overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
+    <section className="relative bg-cream overflow-hidden">
+      {/* Espresso field on the right, cut on a diagonal — the signature of the
+          brand creatives. Decorative only, hidden below lg. */}
+      <div
+        aria-hidden={!hasPhotos}
+        className="hidden lg:block absolute inset-y-0 right-0 w-[38%] bg-primary-800 diagonal-cut"
+      >
+        {hasPhotos && <HeroSlider slides={heroSlides} priority layout="plate" />}
       </div>
 
       <div className="relative container mx-auto px-4 py-20 lg:py-28">
-        <div className="max-w-4xl mx-auto text-center">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 mb-8">
-            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-            <span className="text-sm font-medium">Available Now - Same Day Service</span>
+        <div className="max-w-3xl">
+          {/* Wordmark lockup */}
+          <div className="mb-10">
+            <div className="wordmark text-sm text-ink">CoastPro</div>
+            <div className="eyebrow mt-2">Appliance Repair</div>
+            <div className="rule-short mt-6" />
           </div>
 
-          {/* Headline */}
-          <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-            Appliance Repair You Can Count On —{' '}
-            <span className="text-accent-300">Across Orange County</span>
+          {/* Headline — two-tone, heavy grotesk, tight leading */}
+          <h1 className="headline text-[1.5rem] min-[420px]:text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-8">
+            Appliance repair
+            <br />
+            you can count on.
+            <br />
+            <span className="headline-muted">Across Orange County.</span>
           </h1>
 
-          {/* Subheadline */}
-          <p className="text-xl md:text-2xl text-primary-100 mb-10 max-w-2xl mx-auto">
+          <div className="rule max-w-md mb-8" />
+
+          <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-prose">
             Fast, honest repairs for refrigerators, washers, dryers, dishwashers and ovens.
           </p>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+          {/* CTAs */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-14">
             <Link href="/book-appointment">
-              <Button size="lg" className="w-full sm:w-auto bg-accent-500 hover:bg-accent-600 text-white">
+              <Button size="lg" className="w-full sm:w-auto">
                 Schedule Service
               </Button>
             </Link>
@@ -49,43 +61,47 @@ export function Hero() {
               <Button
                 size="lg"
                 variant="outline"
-                className="w-full sm:w-auto border-white text-white hover:bg-white hover:text-primary-900"
-                leftIcon={<Phone className="h-5 w-5" />}
+                className="w-full sm:w-auto"
+                leftIcon={<Phone className="h-4 w-4" />}
               >
                 {siteConfig.contact.phone}
               </Button>
             </a>
           </div>
 
-          {/* Trust Badges */}
-          <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto">
+          {/* Trust row — hairline dividers, no boxes */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 border-t border-primary-500/25">
             {trustBadges.map((badge) => (
               <div
                 key={badge.text}
-                className="flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3"
+                className="flex items-center gap-3 py-5 sm:px-5 sm:first:pl-0 border-b sm:border-b-0 sm:border-r last:border-r-0 border-primary-500/25"
               >
-                <badge.icon className="h-5 w-5 text-accent-300" />
-                <span className="text-sm font-medium">{badge.text}</span>
+                <span className="icon-disc h-9 w-9 shrink-0">
+                  <badge.icon className="h-4 w-4" strokeWidth={1.5} />
+                </span>
+                <span className="font-heading text-[11px] font-semibold uppercase tracking-label text-ink">
+                  {badge.text}
+                </span>
               </div>
             ))}
           </div>
-        </div>
-      </div>
 
-      {/* Bottom Wave */}
-      <div className="absolute bottom-0 left-0 right-0">
-        <svg
-          viewBox="0 0 1440 120"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-auto"
-          preserveAspectRatio="none"
-        >
-          <path
-            d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z"
-            fill="white"
-          />
-        </svg>
+          {/* Below lg the diagonal panel is hidden, so the photos run
+              full-bleed under the hero copy instead of disappearing. */}
+          {hasPhotos && (
+            <div className="lg:hidden relative -mx-4 mt-12 aspect-[2/3] bg-primary-800">
+              <HeroSlider slides={heroSlides} layout="plate" />
+            </div>
+          )}
+
+          {/* Location marker, as on the creatives */}
+          <div className="flex items-center gap-2 mt-10 text-primary-600">
+            <MapPin className="h-4 w-4" strokeWidth={1.5} />
+            <span className="font-heading text-[11px] font-semibold uppercase tracking-label">
+              {siteConfig.contact.address.full}
+            </span>
+          </div>
+        </div>
       </div>
     </section>
   );

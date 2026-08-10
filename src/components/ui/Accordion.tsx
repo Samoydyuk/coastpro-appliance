@@ -65,7 +65,7 @@ export function Accordion({
 
   return (
     <AccordionContext.Provider value={{ openItems, toggleItem, type }}>
-      <div className={cn('divide-y divide-gray-200', className)}>{children}</div>
+      <div className={cn('divide-y divide-primary-500/20', className)}>{children}</div>
     </AccordionContext.Provider>
   );
 }
@@ -95,9 +95,9 @@ export function AccordionTrigger({ children, className }: AccordionTriggerProps)
     <button
       type="button"
       className={cn(
-        'flex w-full items-center justify-between text-left font-medium text-gray-900',
+        'flex w-full items-center justify-between text-left font-heading font-semibold text-ink',
         'hover:text-primary-600 transition-colors duration-200',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded-lg',
+        'focus:outline-none focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded-card',
         className
       )}
       onClick={() => accordionContext.toggleItem(itemContext.value)}
@@ -106,7 +106,7 @@ export function AccordionTrigger({ children, className }: AccordionTriggerProps)
       {children}
       <ChevronDown
         className={cn(
-          'h-5 w-5 text-gray-500 transition-transform duration-200 shrink-0 ml-4',
+          'h-4 w-4 text-primary-500 transition-transform duration-200 shrink-0 ml-4',
           itemContext.isOpen && 'rotate-180'
         )}
         aria-hidden="true"
