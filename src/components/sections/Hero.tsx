@@ -89,7 +89,7 @@ export function Hero() {
           {/* Below lg the diagonal panel is hidden, so the photos run
               full-bleed under the hero copy instead of disappearing. */}
           {hasPhotos && (
-            <div className="lg:hidden relative -mx-4 mt-12 aspect-[4/3] bg-primary-800">
+            <div className="lg:hidden relative -mx-4 mt-12 aspect-[4/5] bg-primary-800">
               <HeroSlider slides={heroSlides} />
             </div>
           )}
