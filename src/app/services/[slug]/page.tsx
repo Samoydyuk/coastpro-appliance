@@ -259,7 +259,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
                   <p className="text-gray-600 text-sm mb-4">
                     {service.pricing
                       ? `${service.pricing.lines[0].value} for the first 3 feet, then ${service.pricing.lines[1].value} per foot.`
-                      : siteConfig.serviceCall.note}
+                      : `Covers the visit, a full diagnosis and ${siteConfig.serviceCall.includes}.`}
                   </p>
                   <Link href="/book-appointment">
                     <Button className="w-full">

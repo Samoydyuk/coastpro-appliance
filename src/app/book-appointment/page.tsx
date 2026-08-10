@@ -106,7 +106,7 @@ export default function BookAppointmentPage() {
                     ${siteConfig.serviceCall.minimum}
                   </div>
                   <p className="text-gray-600 text-sm">
-                    {siteConfig.serviceCall.note}. Includes the visit, full diagnosis and a repair quote.
+                    Covers the visit, a full diagnosis and {siteConfig.serviceCall.includes}. Bigger jobs are quoted for your approval first.
                   </p>
                 </CardContent>
               </Card>

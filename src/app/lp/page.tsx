@@ -185,7 +185,7 @@ export default function LandingPage() {
             </h2>
             <div className="mx-auto h-px w-16 bg-cream/30 mb-6" />
             <p className="text-lg text-primary-200 mb-10">
-              ${siteConfig.serviceCall.minimum} minimum service call — simple repairs included.
+              ${siteConfig.serviceCall.minimum} minimum service call — {siteConfig.serviceCall.note.toLowerCase()}.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

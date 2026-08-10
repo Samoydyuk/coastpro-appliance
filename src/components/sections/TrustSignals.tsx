@@ -76,7 +76,8 @@ export function TrustSignals() {
                   </span>
                 </div>
                 <p className="text-sm text-gray-600 mt-3 mb-6">
-                  {siteConfig.serviceCall.note}. Includes the visit and a full diagnosis.
+                  Covers the visit and a full diagnosis. Resets, adjustments, leveling and
+                  other quick work are covered by the call itself.
                 </p>
                 <a href={`tel:${siteConfig.contact.phoneClean}`} className="block">
                   <Button className="w-full" leftIcon={<Phone className="h-4 w-4" />}>

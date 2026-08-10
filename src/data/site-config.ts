@@ -36,7 +36,10 @@ export const siteConfig = {
 
   serviceCall: {
     minimum: 150,
-    note: "Simple repairs are included in the service call, not billed separately",
+    // Short line for banners and footnotes.
+    note: "Quick fixes included",
+    // The kind of work the call itself covers, spelled out.
+    includes: "resets, adjustments, leveling and other work that takes only a few minutes",
   },
 } as const;
 

@@ -440,8 +440,8 @@ export const services: Service[] = [
       },
       {
         title: "Burning Smell During a Cycle",
-        description: "Hot laundry room or a burning odour while the dryer runs",
-        symptoms: ["Burning odour", "Laundry room heats up", "Dryer shutting off mid-cycle"],
+        description: "Hot laundry room or a burning odor while the dryer runs",
+        symptoms: ["Burning odor", "Laundry room heats up", "Dryer shutting off mid-cycle"],
         solution: "Overheating caused by restricted exhaust. We clear the duct and check that the termination flap opens freely."
       },
       {
