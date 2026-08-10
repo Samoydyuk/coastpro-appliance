@@ -27,9 +27,19 @@ export interface SlideCaption {
  * sequence.
  */
 export const slideCaptions: Record<string, SlideCaption> = {
-  // 'washer-f22.jpg': {
-  //   alt: 'Front-load washer after a door latch replacement',
-  //   location: 'Newport Coast, CA',
-  //   caption: 'F22 error — door latch assembly replaced',
-  // },
+  '01-subzero-coils.jpg': {
+    alt: 'Sub-Zero condenser coils packed with dust before cleaning',
+    location: 'Irvine, CA',
+    caption: 'Sub-Zero ice production restored after coil cleaning',
+  },
+  '02-washer-door-latch.jpg': {
+    alt: 'Front-load washer showing an End cycle after the door latch was replaced',
+    location: 'Newport Coast, CA',
+    caption: 'F22 error — door latch assembly replaced',
+  },
+  '03-dryer-lint.jpg': {
+    alt: 'Heavy lint buildup inside a dryer before cleaning',
+    location: 'Irvine, CA',
+    caption: 'Lint buildup cleared during routine dryer service',
+  },
 };

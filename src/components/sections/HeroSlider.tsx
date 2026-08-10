@@ -108,6 +108,15 @@ export function HeroSlider({ slides, priority = false }: HeroSliderProps) {
         </div>
       )}
 
+      {/* A bright photo swallows the hairline indicators, so they get their
+          own scrim the same way the caption does. */}
+      {slides.length > 1 && (
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-ink/45 to-transparent"
+        />
+      )}
+
       {/* Progress bars — hairlines rather than dots, to match the page */}
       {slides.length > 1 && (
         <div className="absolute top-6 right-6 lg:top-8 lg:right-8 flex gap-2">
@@ -122,7 +131,7 @@ export function HeroSlider({ slides, priority = false }: HeroSliderProps) {
             >
               <span
                 className={`block h-px w-8 transition-colors ${
-                  i === index ? 'bg-cream' : 'bg-cream/35 group-hover:bg-cream/70'
+                  i === index ? 'bg-cream' : 'bg-cream/50 group-hover:bg-cream/80'
                 }`}
               />
             </button>
