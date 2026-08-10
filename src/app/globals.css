@@ -60,6 +60,20 @@
 }
 
 @layer utilities {
+  /* Timer bar under the hero photo: sweeps left to right over the autoplay
+     interval, restarted by React re-keying the element on each slide. */
+  @keyframes slider-progress {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+  }
+
+  .slider-progress {
+    transform-origin: left center;
+    animation-name: slider-progress;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+  }
+
   .text-balance {
     text-wrap: balance;
   }
