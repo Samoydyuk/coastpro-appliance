@@ -34,6 +34,13 @@ export const siteConfig = {
     twitterHandle: "@coastproappliance",
   },
 
+  pricing: {
+    // The published range covers most jobs; premium brands and awkward
+    // faults legitimately run past it, so never present it as a ceiling.
+    rangeNote:
+      "Typical range for most jobs. High-end brands and complex faults can run higher — you approve the quote before any work starts.",
+  },
+
   serviceCall: {
     minimum: 150,
     // Short line for banners and footnotes.

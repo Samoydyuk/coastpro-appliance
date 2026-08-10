@@ -97,10 +97,16 @@ export default async function ServicePage({ params }: ServicePageProps) {
                 <span>
                   {service.pricing
                     ? `$${service.pricing.minimum} minimum`
-                    : `$${service.priceRange.min} - $${service.priceRange.max}`}
+                    : `$${service.priceRange.min} - $${service.priceRange.max}+`}
                 </span>
               </div>
             </div>
+
+            {!service.pricing && (
+              <p className="text-sm text-gray-500 mb-8 max-w-prose">
+                {siteConfig.pricing.rangeNote}
+              </p>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/book-appointment">
@@ -261,6 +267,12 @@ export default async function ServicePage({ params }: ServicePageProps) {
                       ? `${service.pricing.lines[0].value} for the first 3 feet, then ${service.pricing.lines[1].value} per foot.`
                       : `Covers the visit, a full diagnosis and ${siteConfig.serviceCall.includes}.`}
                   </p>
+                  {!service.pricing && (
+                    <p className="text-gray-500 text-sm mb-4">
+                      Most {service.name.replace(' Repair', '').toLowerCase()} jobs land between $
+                      {service.priceRange.min} and ${service.priceRange.max}, parts included.
+                    </p>
+                  )}
                   <Link href="/book-appointment">
                     <Button className="w-full">
                       Book Appointment

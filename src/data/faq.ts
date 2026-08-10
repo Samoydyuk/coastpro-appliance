@@ -35,7 +35,7 @@ export const faqItems: FAQItem[] = [
   {
     id: "repair-cost",
     question: "How much will my repair cost?",
-    answer: "Repair costs vary depending on the appliance type, the specific problem, and parts needed. After diagnosing the issue, our technician will provide a detailed, upfront quote before any work begins. There are no hidden fees or surprises.",
+    answer: "Most repairs land between $150 and $450 including parts, and nothing is billed below the $150 minimum service call. The exact figure depends on the appliance, the fault and the parts needed — high-end brands such as Sub-Zero, Viking, Wolf and Miele, and jobs that are awkward to access, can run above that range. Either way our technician gives you a detailed, upfront quote after diagnosing the issue, and no work starts until you approve it. There are no hidden fees or surprises.",
     category: "pricing",
     order: 2
   },

@@ -94,7 +94,7 @@ export const services: Service[] = [
       "90-day warranty",
       "Upfront pricing"
     ],
-    priceRange: { min: 125, max: 350, unit: "repair" },
+    priceRange: { min: 150, max: 350, unit: "repair" },
     estimatedTime: "1-2 hours",
     warranty: "90-day parts & labor warranty",
     brands: ["Samsung", "LG", "Whirlpool", "Maytag", "GE", "Kenmore", "Speed Queen", "Bosch", "Electrolux"],
@@ -146,7 +146,7 @@ export const services: Service[] = [
       "Same-day service",
       "90-day warranty"
     ],
-    priceRange: { min: 125, max: 350, unit: "repair" },
+    priceRange: { min: 150, max: 350, unit: "repair" },
     estimatedTime: "1-2 hours",
     warranty: "90-day parts & labor warranty",
     brands: ["Samsung", "LG", "Whirlpool", "Maytag", "GE", "Kenmore", "Speed Queen", "Bosch", "Electrolux"],
@@ -198,7 +198,7 @@ export const services: Service[] = [
       "90-day warranty",
       "Clean-up included"
     ],
-    priceRange: { min: 125, max: 300, unit: "repair" },
+    priceRange: { min: 150, max: 300, unit: "repair" },
     estimatedTime: "1-1.5 hours",
     warranty: "90-day parts & labor warranty",
     brands: ["Bosch", "KitchenAid", "Whirlpool", "Samsung", "LG", "GE", "Miele", "Frigidaire", "Maytag"],
@@ -302,7 +302,7 @@ export const services: Service[] = [
       "90-day warranty",
       "Over-the-range models"
     ],
-    priceRange: { min: 100, max: 250, unit: "repair" },
+    priceRange: { min: 150, max: 250, unit: "repair" },
     estimatedTime: "45 min - 1 hour",
     warranty: "90-day parts & labor warranty",
     brands: ["Samsung", "LG", "Panasonic", "GE", "Whirlpool", "Sharp", "KitchenAid", "Frigidaire"],
@@ -354,7 +354,7 @@ export const services: Service[] = [
       "90-day warranty",
       "Plumbing connections"
     ],
-    priceRange: { min: 100, max: 250, unit: "repair" },
+    priceRange: { min: 150, max: 250, unit: "repair" },
     estimatedTime: "30 min - 1 hour",
     warranty: "90-day parts & labor warranty",
     brands: ["InSinkErator", "Waste King", "Moen", "GE", "KitchenAid", "Whirlpool"],
@@ -406,7 +406,7 @@ export const services: Service[] = [
       "90-day warranty",
       "Water line service"
     ],
-    priceRange: { min: 125, max: 350, unit: "repair" },
+    priceRange: { min: 150, max: 350, unit: "repair" },
     estimatedTime: "1-1.5 hours",
     warranty: "90-day parts & labor warranty",
     brands: ["Sub-Zero", "Scotsman", "GE", "Whirlpool", "Samsung", "LG", "KitchenAid", "U-Line"],
