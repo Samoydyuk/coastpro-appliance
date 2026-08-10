@@ -17,6 +17,7 @@ const navigation = [
       { name: 'Refrigerator Repair', href: '/services/refrigerator' },
       { name: 'Washer Repair', href: '/services/washer' },
       { name: 'Dryer Repair', href: '/services/dryer' },
+      { name: 'Dryer Vent Cleaning', href: '/services/dryer-vent-cleaning' },
       { name: 'Dishwasher Repair', href: '/services/dishwasher' },
       { name: 'Oven & Range Repair', href: '/services/oven-range' },
       { name: 'Microwave Repair', href: '/services/microwave' },

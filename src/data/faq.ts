@@ -28,7 +28,7 @@ export const faqItems: FAQItem[] = [
   {
     id: "service-call-cost",
     question: "How much does a service call cost?",
-    answer: "Our diagnostic service call is $75, waived with repair. It covers the technician visit and complete diagnosis of the problem — if you proceed with the repair, the fee is waived and you only pay for the actual repair cost.",
+    answer: "Our minimum service call is $150. It covers the technician visit and a complete diagnosis of the problem. Simple repairs are included in that service call rather than billed on top — if the job needs parts or more extensive work, we quote it for your approval before we start.",
     category: "pricing",
     order: 1
   },
@@ -125,7 +125,7 @@ export const faqItems: FAQItem[] = [
   {
     id: "second-opinions",
     question: "Can I get a second opinion on a repair quote?",
-    answer: "Absolutely! We're confident in our fair pricing, but we understand you may want to compare. Our diagnostic fee still applies, but we'll provide a detailed written quote you can compare with others.",
+    answer: "Absolutely. We're confident in our fair pricing, but we understand you may want to compare. The $150 minimum service call still applies for the visit, and we'll provide a detailed written quote you can compare with others.",
     category: "services",
     order: 4
   },

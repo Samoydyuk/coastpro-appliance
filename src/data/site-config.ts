@@ -34,9 +34,9 @@ export const siteConfig = {
     twitterHandle: "@coastproappliance",
   },
 
-  serviceFee: {
-    diagnostic: 75,
-    note: "Waived with repair",
+  serviceCall: {
+    minimum: 150,
+    note: "Simple repairs are included in the service call, not billed separately",
   },
 } as const;
 

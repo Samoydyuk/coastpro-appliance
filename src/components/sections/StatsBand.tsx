@@ -15,8 +15,8 @@ const stats = [
   },
   {
     value: String(services.length),
-    unit: 'types',
-    label: 'Appliances we repair',
+    unit: 'services',
+    label: 'Repair & maintenance jobs',
   },
   {
     value: 'Same',

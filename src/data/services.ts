@@ -150,7 +150,7 @@ export const services: Service[] = [
     estimatedTime: "1-2 hours",
     warranty: "90-day parts & labor warranty",
     brands: ["Samsung", "LG", "Whirlpool", "Maytag", "GE", "Kenmore", "Speed Queen", "Bosch", "Electrolux"],
-    relatedServices: ["washer"],
+    relatedServices: ["washer", "dryer-vent-cleaning"],
     seo: {
       title: "Dryer Repair Orange County | Gas & Electric",
       description: "Professional dryer repair in Orange County. Gas and electric dryers. Fix no heat, noise, won't start. Same-day service. Call (949) 749-0006.",
@@ -415,6 +415,69 @@ export const services: Service[] = [
       title: "Ice Maker Repair Orange County | All Types",
       description: "Professional ice maker repair in Orange County. Built-in, standalone, commercial. Fix production, quality issues. Call (949) 749-0006.",
       keywords: ["ice maker repair orange county", "ice machine repair", "sub-zero ice maker repair", "commercial ice maker repair"]
+    }
+  },
+  {
+    id: "dryer-vent-cleaning",
+    slug: "dryer-vent-cleaning",
+    name: "Dryer Vent Cleaning",
+    shortDescription: "Dryer vent cleaning that restores airflow, cuts drying times, and clears lint buildup.",
+    fullDescription: "A lint-clogged dryer vent makes the dryer work harder, adds a second cycle to every load, and is one of the most common causes of laundry room fires. We clean the full duct run from the dryer to the exterior termination and check airflow before we leave. This service is priced by duct length against a minimum order, and we do not perform roof work \u2014 see the pricing below.",
+    icon: "AirVent",
+    image: "/images/appliances/dryer-vent.jpg",
+    commonProblems: [
+      {
+        title: "Clothes Need Two Cycles",
+        description: "Laundry is still damp when the cycle finishes",
+        symptoms: ["Damp clothes after a full cycle", "Drying times getting longer", "Dryer hot to the touch"],
+        solution: "Almost always a restricted duct. Cleaning the full run restores airflow and drying performance."
+      },
+      {
+        title: "Lint Building Up",
+        description: "Lint collecting around the dryer or the outside vent",
+        symptoms: ["Lint around the dryer door", "Lint at the exterior vent", "Debris behind the dryer"],
+        solution: "Lint accumulating along the duct is the main fire risk in a laundry room. We remove buildup along the entire run."
+      },
+      {
+        title: "Burning Smell During a Cycle",
+        description: "Hot laundry room or a burning odour while the dryer runs",
+        symptoms: ["Burning odour", "Laundry room heats up", "Dryer shutting off mid-cycle"],
+        solution: "Overheating caused by restricted exhaust. We clear the duct and check that the termination flap opens freely."
+      },
+      {
+        title: "No Airflow at the Outside Vent",
+        description: "Little or no air coming out of the exterior termination",
+        symptoms: ["Flap not opening", "No air outside while running", "Bird or rodent nesting"],
+        solution: "Blocked termination. We clear it wherever it can be reached safely from the ground or a ladder."
+      }
+    ],
+    features: [
+      "Full duct run cleaned",
+      "Airflow checked on completion",
+      "Priced by duct length",
+      "$200 minimum order",
+      "No roof access work"
+    ],
+    priceRange: { min: 200, max: 200, unit: "job" },
+    pricing: {
+      lines: [
+        { label: "First 3 feet", value: "$65" },
+        { label: "Each additional foot", value: "$50" }
+      ],
+      minimum: 200,
+      notes: [
+        "A $200 minimum order applies to every dryer vent cleaning job.",
+        "We do not perform work at height. If the vent terminates in a roof cap that cannot be cleaned without going onto the roof, the $200 minimum order applies."
+      ]
+    },
+    estimatedTime: "1-2 hours",
+    warranty: "Airflow verified on completion",
+    brands: [],
+    relatedServices: ["dryer"],
+    seo: {
+      title: "Dryer Vent Cleaning Orange County | CoastPro",
+      description: "Dryer vent cleaning in Orange County. $65 for the first 3 feet, $50 each additional foot, $200 minimum order. Restore airflow and cut drying times. Call (949) 749-0006.",
+      keywords: ["dryer vent cleaning orange county", "dryer duct cleaning irvine", "lint removal dryer vent", "dryer vent cleaning near me"]
     }
   }
 ];

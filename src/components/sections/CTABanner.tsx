@@ -6,12 +6,16 @@ import { siteConfig } from '@/data/site-config';
 interface CTABannerProps {
   title?: string;
   subtitle?: string;
+  /** Overrides the standard service-call footnote, e.g. on a service that
+   *  carries its own minimum order. */
+  note?: string;
   variant?: 'primary' | 'accent';
 }
 
 export function CTABanner({
   title = "Ready to get your appliance fixed?",
   subtitle = "Our technicians are standing by. Same-day service available.",
+  note,
   variant = 'primary'
 }: CTABannerProps) {
   const isDark = variant === 'primary';
@@ -65,7 +69,7 @@ export function CTABanner({
           </div>
 
           <p className={`mt-8 text-sm ${isDark ? 'text-primary-300' : 'text-gray-500'}`}>
-            ${siteConfig.serviceFee.diagnostic} diagnostic fee — waived with repair
+            {note ?? `$${siteConfig.serviceCall.minimum} minimum service call — simple repairs included`}
           </p>
         </div>
       </div>

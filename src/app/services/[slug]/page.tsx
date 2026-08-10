@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Check, Clock, Shield, ArrowRight, Phone, Wrench } from 'lucide-react';
+import { Check, Clock, Shield, ArrowRight, Phone, Wrench, Info } from 'lucide-react';
 import { Button, Card, CardContent, Badge } from '@/components/ui';
 import { CTABanner, StatsBand } from '@/components/sections';
 import { services, getServiceBySlug, getRelatedServices } from '@/data/services';
@@ -48,6 +48,16 @@ export default async function ServicePage({ params }: ServicePageProps) {
 
   const relatedServices = getRelatedServices(slug);
 
+  // Section numbering shifts when a service carries a pricing table.
+  const sections = [
+    'Overview',
+    ...(service.pricing ? ['Pricing'] : []),
+    'Diagnosis',
+    ...(service.brands.length > 0 ? ['Brands'] : []),
+  ];
+  const step = (label: string) =>
+    `${String(sections.indexOf(label) + 1).padStart(2, '0')} — ${label}`;
+
   return (
     <>
       {/* Hero Section */}
@@ -84,7 +94,11 @@ export default async function ServicePage({ params }: ServicePageProps) {
               </div>
               <div className="flex items-center gap-2 border border-primary-500/30 px-4 py-2">
                 <Wrench className="h-4 w-4 text-primary-500" strokeWidth={1.5} />
-                <span>${service.priceRange.min} - ${service.priceRange.max}</span>
+                <span>
+                  {service.pricing
+                    ? `$${service.pricing.minimum} minimum`
+                    : `$${service.priceRange.min} - $${service.priceRange.max}`}
+                </span>
               </div>
             </div>
 
@@ -117,7 +131,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
             <div className="lg:col-span-2 space-y-12">
               {/* Description */}
               <div>
-                <div className="eyebrow mb-4">01 — Overview</div>
+                <div className="eyebrow mb-4">{step('Overview')}</div>
                 <h2 className="headline text-2xl mb-6">
                   Expert {service.name.toLowerCase()} services
                 </h2>
@@ -126,9 +140,50 @@ export default async function ServicePage({ params }: ServicePageProps) {
                 </p>
               </div>
 
+              {/* Pricing — only for services billed by measure */}
+              {service.pricing && (
+                <div>
+                  <div className="eyebrow mb-4">{step('Pricing')}</div>
+                  <h2 className="headline text-2xl mb-6">What it costs</h2>
+
+                  <div className="border-t border-primary-500/20">
+                    {service.pricing.lines.map((line) => (
+                      <div
+                        key={line.label}
+                        className="flex items-baseline justify-between gap-6 py-5 border-b border-primary-500/20"
+                      >
+                        <span className="font-heading text-sm font-bold uppercase tracking-label text-ink">
+                          {line.label}
+                        </span>
+                        <span className="font-heading text-2xl font-extrabold text-ink leading-none">
+                          {line.value}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="flex items-baseline justify-between gap-6 py-5 border-b border-primary-500/20 bg-cream-dark/50 px-4 -mx-4">
+                      <span className="font-heading text-sm font-bold uppercase tracking-label text-ink">
+                        Minimum order
+                      </span>
+                      <span className="font-heading text-2xl font-extrabold text-ink leading-none">
+                        ${service.pricing.minimum}
+                      </span>
+                    </div>
+                  </div>
+
+                  <ul className="mt-8 space-y-4">
+                    {service.pricing.notes.map((note) => (
+                      <li key={note} className="flex gap-3 text-gray-600 leading-relaxed">
+                        <Info className="h-4 w-4 text-primary-500 shrink-0 mt-1" strokeWidth={1.5} />
+                        <span>{note}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {/* Common Problems */}
               <div>
-                <div className="eyebrow mb-4">02 — Diagnosis</div>
+                <div className="eyebrow mb-4">{step('Diagnosis')}</div>
                 <h2 className="headline text-2xl mb-6">Common problems we fix</h2>
                 <div className="space-y-4">
                   {service.commonProblems.map((problem, index) => (
@@ -158,8 +213,9 @@ export default async function ServicePage({ params }: ServicePageProps) {
               </div>
 
               {/* Brands */}
+              {service.brands.length > 0 && (
               <div>
-                <div className="eyebrow mb-4">03 — Brands</div>
+                <div className="eyebrow mb-4">{step('Brands')}</div>
                 <h2 className="headline text-2xl mb-6">Brands we service</h2>
                 <div className="flex flex-wrap gap-3">
                   {service.brands.map((brand) => (
@@ -169,6 +225,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
                   ))}
                 </div>
               </div>
+              )}
             </div>
 
             {/* Sidebar */}
@@ -194,13 +251,15 @@ export default async function ServicePage({ params }: ServicePageProps) {
               <Card className="bg-cream-dark">
                 <CardContent className="p-6">
                   <h3 className="font-heading text-sm font-bold uppercase tracking-label text-ink mb-3">
-                    Service Call Fee
+                    {service.pricing ? 'Minimum Order' : 'Minimum Service Call'}
                   </h3>
                   <div className="font-heading text-4xl font-extrabold text-ink mb-3">
-                    ${siteConfig.serviceFee.diagnostic}
+                    ${service.pricing ? service.pricing.minimum : siteConfig.serviceCall.minimum}
                   </div>
                   <p className="text-gray-600 text-sm mb-4">
-                    {siteConfig.serviceFee.note}
+                    {service.pricing
+                      ? `${service.pricing.lines[0].value} for the first 3 feet, then ${service.pricing.lines[1].value} per foot.`
+                      : siteConfig.serviceCall.note}
                   </p>
                   <Link href="/book-appointment">
                     <Button className="w-full">
@@ -239,8 +298,17 @@ export default async function ServicePage({ params }: ServicePageProps) {
       </section>
 
       <CTABanner
-        title={`Ready to Fix Your ${service.name.replace(' Repair', '')}?`}
-        subtitle="Our expert technicians are standing by. Same-day service available!"
+        title={
+          service.name.endsWith(' Repair')
+            ? `Ready to fix your ${service.name.replace(' Repair', '').toLowerCase()}?`
+            : `Ready to book ${service.name.toLowerCase()}?`
+        }
+        subtitle="Our technicians are standing by. Same-day service available."
+        note={
+          service.pricing
+            ? `$${service.pricing.minimum} minimum order — ${service.pricing.lines[0].value} for the first 3 feet, then ${service.pricing.lines[1].value} per foot`
+            : undefined
+        }
       />
     </>
   );

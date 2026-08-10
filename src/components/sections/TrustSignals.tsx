@@ -69,14 +69,14 @@ export function TrustSignals() {
               <div className="border border-primary-500/25 p-6 max-w-sm">
                 <div className="flex items-baseline gap-2">
                   <span className="font-heading text-3xl font-extrabold text-ink leading-none">
-                    ${siteConfig.serviceFee.diagnostic}
+                    ${siteConfig.serviceCall.minimum}
                   </span>
                   <span className="font-heading text-[11px] font-semibold uppercase tracking-label text-primary-500">
-                    Diagnostic
+                    Minimum call
                   </span>
                 </div>
                 <p className="text-sm text-gray-600 mt-3 mb-6">
-                  {siteConfig.serviceFee.note}. Includes full diagnosis and a repair quote.
+                  {siteConfig.serviceCall.note}. Includes the visit and a full diagnosis.
                 </p>
                 <a href={`tel:${siteConfig.contact.phoneClean}`} className="block">
                   <Button className="w-full" leftIcon={<Phone className="h-4 w-4" />}>

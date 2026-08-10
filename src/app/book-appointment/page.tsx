@@ -100,13 +100,13 @@ export default function BookAppointmentPage() {
               <Card>
                 <CardContent className="p-6">
                   <h3 className="font-heading text-sm font-bold uppercase tracking-label text-ink mb-3">
-                    Service Call Fee
+                    Minimum Service Call
                   </h3>
                   <div className="font-heading text-4xl font-extrabold text-ink mb-3">
-                    ${siteConfig.serviceFee.diagnostic}
+                    ${siteConfig.serviceCall.minimum}
                   </div>
                   <p className="text-gray-600 text-sm">
-                    {siteConfig.serviceFee.note}. Includes full diagnosis and repair quote.
+                    {siteConfig.serviceCall.note}. Includes the visit, full diagnosis and a repair quote.
                   </p>
                 </CardContent>
               </Card>

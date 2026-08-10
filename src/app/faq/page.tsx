@@ -114,9 +114,9 @@ export default function FAQPage() {
                   </h3>
                   <dl className="space-y-3 text-sm">
                     <div>
-                      <dt className="text-xs uppercase tracking-label text-primary-500 mb-1">Service Call Fee</dt>
+                      <dt className="text-xs uppercase tracking-label text-primary-500 mb-1">Minimum Service Call</dt>
                       <dd className="font-heading font-semibold text-ink">
-                        ${siteConfig.serviceFee.diagnostic} ({siteConfig.serviceFee.note})
+                        ${siteConfig.serviceCall.minimum}
                       </dd>
                     </div>
                     <div>
