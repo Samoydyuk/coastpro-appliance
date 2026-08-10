@@ -8,11 +8,15 @@
   }
 
   body {
-    @apply antialiased text-gray-900;
+    @apply antialiased bg-cream text-ink;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading;
+    @apply font-heading tracking-tight;
+  }
+
+  ::selection {
+    @apply bg-primary-500 text-cream;
   }
 }
 
@@ -20,10 +24,47 @@
   .container {
     @apply max-w-7xl mx-auto;
   }
+
+  /* Letterspaced uppercase wordmark, as on the brand creatives. */
+  .wordmark {
+    @apply font-heading font-bold uppercase tracking-brand;
+  }
+
+  /* Small uppercase label sitting above a heading. */
+  .eyebrow {
+    @apply font-heading text-xs font-semibold uppercase tracking-label text-primary-500;
+  }
+
+  /* Hairline divider — the thin rule used throughout the creatives. */
+  .rule {
+    @apply h-px w-full bg-primary-500/25;
+  }
+
+  .rule-short {
+    @apply h-px w-16 bg-primary-500/40;
+  }
+
+  /* Section headline: heavy grotesk, tight, two-tone. */
+  .headline {
+    @apply font-heading font-extrabold uppercase leading-[0.95] tracking-tight text-ink;
+  }
+
+  .headline-muted {
+    @apply text-primary-500;
+  }
+
+  /* Outline icon disc from the creatives. */
+  .icon-disc {
+    @apply inline-flex items-center justify-center rounded-full border border-primary-500/40 text-primary-600;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .diagonal-cut {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 8% 100%);
   }
 }

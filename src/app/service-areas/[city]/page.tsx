@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { MapPin, Phone, CheckCircle, ArrowRight } from 'lucide-react';
+import { MapPin, Phone, Check, ArrowRight } from 'lucide-react';
 import { Button, Badge } from '@/components/ui';
 import { CTABanner, ServicesGrid } from '@/components/sections';
 import { serviceAreas, getServiceAreaBySlug, getNeighboringAreas } from '@/data/service-areas';
@@ -79,15 +79,15 @@ export default async function CityPage({ params }: CityPageProps) {
       />
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary-900 to-primary-800 text-white py-16">
+      <section className="bg-cream border-b border-primary-500/20 py-16 lg:py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl">
             <nav className="flex items-center gap-2 text-sm text-primary-200 mb-6">
-              <Link href="/" className="hover:text-white transition-colors">Home</Link>
+              <Link href="/" className="hover:text-ink transition-colors">Home</Link>
               <span>/</span>
-              <Link href="/service-areas" className="hover:text-white transition-colors">Service Areas</Link>
+              <Link href="/service-areas" className="hover:text-ink transition-colors">Service Areas</Link>
               <span>/</span>
-              <span className="text-white">{area.name}</span>
+              <span className="text-ink">{area.name}</span>
             </nav>
 
             <div className="flex items-center gap-3 mb-4">
@@ -104,12 +104,12 @@ export default async function CityPage({ params }: CityPageProps) {
 
             <div className="flex flex-wrap gap-3 mb-8">
               {area.zipCodes.slice(0, 5).map((zip) => (
-                <Badge key={zip} className="bg-white/10 text-white">
+                <Badge key={zip}>
                   {zip}
                 </Badge>
               ))}
               {area.zipCodes.length > 5 && (
-                <Badge className="bg-white/10 text-white">
+                <Badge>
                   +{area.zipCodes.length - 5} more
                 </Badge>
               )}
@@ -125,7 +125,7 @@ export default async function CityPage({ params }: CityPageProps) {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-white text-white hover:bg-white/10"
+                  className="border-ink text-ink hover:bg-ink hover:text-cream"
                   leftIcon={<Phone className="h-5 w-5" />}
                 >
                   {siteConfig.contact.phone}
@@ -140,7 +140,7 @@ export default async function CityPage({ params }: CityPageProps) {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <h2 className="font-heading text-3xl font-bold text-gray-900 mb-6">
+            <h2 className="headline text-3xl mb-6">
               Appliance Repair Services in {area.name}
             </h2>
             <div className="prose prose-lg max-w-none text-gray-600">
@@ -154,7 +154,7 @@ export default async function CityPage({ params }: CityPageProps) {
 
             {/* Why Choose Us */}
             <div className="mt-12">
-              <h3 className="font-heading text-2xl font-bold text-gray-900 mb-6">
+              <h3 className="headline text-2xl mb-6">
                 Why {area.name} Residents Choose Us
               </h3>
               <div className="grid md:grid-cols-2 gap-4">
@@ -167,7 +167,7 @@ export default async function CityPage({ params }: CityPageProps) {
                   'Local, family-owned business',
                 ].map((item) => (
                   <div key={item} className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                    <Check className="h-4 w-4 text-primary-500 shrink-0 mt-1" strokeWidth={2} />
                     <span className="text-gray-700">{item}</span>
                   </div>
                 ))}
@@ -177,7 +177,7 @@ export default async function CityPage({ params }: CityPageProps) {
             {/* Landmarks */}
             {area.landmarks && area.landmarks.length > 0 && (
               <div className="mt-12">
-                <h3 className="font-heading text-xl font-bold text-gray-900 mb-4">
+                <h3 className="headline text-xl mb-4">
                   Areas We Serve in {area.name}
                 </h3>
                 <p className="text-gray-600 mb-4">
@@ -204,9 +204,9 @@ export default async function CityPage({ params }: CityPageProps) {
 
       {/* Neighboring Areas */}
       {neighboringAreas.length > 0 && (
-        <section className="py-16 bg-gray-50">
+        <section className="py-20 bg-cream-light border-t border-primary-500/20">
           <div className="container mx-auto px-4">
-            <h2 className="font-heading text-2xl font-bold text-gray-900 mb-6 text-center">
+            <h2 className="headline text-2xl mb-8">
               Also Serving Nearby Cities
             </h2>
             <div className="flex flex-wrap justify-center gap-4">
@@ -214,7 +214,7 @@ export default async function CityPage({ params }: CityPageProps) {
                 <Link
                   key={neighbor.id}
                   href={`/service-areas/${neighbor.slug}`}
-                  className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all"
+                  className="flex items-center gap-2 px-4 py-2 border border-primary-500/25 hover:border-ink hover:bg-cream-dark/50 transition-colors"
                 >
                   <MapPin className="h-4 w-4 text-primary-600" />
                   <span className="font-medium text-gray-700">{neighbor.name}</span>

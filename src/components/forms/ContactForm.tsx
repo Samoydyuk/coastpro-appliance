@@ -72,10 +72,10 @@ export function ContactForm() {
   if (isSubmitted) {
     return (
       <div className="text-center py-12">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <CheckCircle className="h-8 w-8 text-green-600" />
+        <div className="icon-disc w-16 h-16 mx-auto mb-6 border-ink text-ink">
+          <CheckCircle className="h-7 w-7" strokeWidth={1.25} />
         </div>
-        <h3 className="text-2xl font-semibold text-gray-900 mb-2">Message Sent!</h3>
+        <h3 className="headline text-2xl mb-3">Message sent.</h3>
         <p className="text-gray-600 mb-6">
           Thank you for contacting us. We&apos;ll get back to you within 1-2 hours during business hours.
         </p>
@@ -89,7 +89,7 @@ export function ContactForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {errors.form && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+        <div className="p-4 border border-red-800/40 rounded-card text-red-800">
           {errors.form}
         </div>
       )}

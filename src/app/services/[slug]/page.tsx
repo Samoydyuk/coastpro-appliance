@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { CheckCircle, Clock, Shield, ArrowRight, Phone, Wrench } from 'lucide-react';
+import { Check, Clock, Shield, ArrowRight, Phone, Wrench } from 'lucide-react';
 import { Button, Card, CardContent, Badge } from '@/components/ui';
 import { CTABanner } from '@/components/sections';
 import { services, getServiceBySlug, getRelatedServices } from '@/data/services';
@@ -51,15 +51,15 @@ export default async function ServicePage({ params }: ServicePageProps) {
   return (
     <>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary-900 to-primary-800 text-white py-16">
+      <section className="bg-cream border-b border-primary-500/20 py-16 lg:py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl">
             <nav className="flex items-center gap-2 text-sm text-primary-200 mb-6">
-              <Link href="/" className="hover:text-white transition-colors">Home</Link>
+              <Link href="/" className="hover:text-ink transition-colors">Home</Link>
               <span>/</span>
-              <Link href="/services" className="hover:text-white transition-colors">Services</Link>
+              <Link href="/services" className="hover:text-ink transition-colors">Services</Link>
               <span>/</span>
-              <span className="text-white">{service.name}</span>
+              <span className="text-ink">{service.name}</span>
             </nav>
 
             <h1 className="font-heading text-4xl md:text-5xl font-bold mb-4">
@@ -70,15 +70,15 @@ export default async function ServicePage({ params }: ServicePageProps) {
             </p>
 
             <div className="flex flex-wrap gap-4 mb-8">
-              <div className="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2">
+              <div className="flex items-center gap-2 border border-primary-500/30 px-4 py-2">
                 <Clock className="h-5 w-5 text-accent-300" />
                 <span>{service.estimatedTime}</span>
               </div>
-              <div className="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2">
+              <div className="flex items-center gap-2 border border-primary-500/30 px-4 py-2">
                 <Shield className="h-5 w-5 text-accent-300" />
                 <span>{service.warranty}</span>
               </div>
-              <div className="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2">
+              <div className="flex items-center gap-2 border border-primary-500/30 px-4 py-2">
                 <Wrench className="h-5 w-5 text-accent-300" />
                 <span>${service.priceRange.min} - ${service.priceRange.max}</span>
               </div>
@@ -94,7 +94,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-white text-white hover:bg-white/10"
+                  className="border-ink text-ink hover:bg-ink hover:text-cream"
                   leftIcon={<Phone className="h-5 w-5" />}
                 >
                   {siteConfig.contact.phone}
@@ -113,7 +113,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
             <div className="lg:col-span-2 space-y-12">
               {/* Description */}
               <div>
-                <h2 className="font-heading text-2xl font-bold text-gray-900 mb-4">
+                <h2 className="headline text-2xl mb-4">
                   Expert {service.name} Services
                 </h2>
                 <p className="text-gray-600 text-lg leading-relaxed">
@@ -123,14 +123,14 @@ export default async function ServicePage({ params }: ServicePageProps) {
 
               {/* Common Problems */}
               <div>
-                <h2 className="font-heading text-2xl font-bold text-gray-900 mb-6">
+                <h2 className="headline text-2xl mb-6">
                   Common Problems We Fix
                 </h2>
                 <div className="space-y-4">
                   {service.commonProblems.map((problem, index) => (
                     <Card key={index}>
                       <CardContent className="p-6">
-                        <h3 className="font-semibold text-lg text-gray-900 mb-2">
+                        <h3 className="font-heading text-sm font-bold uppercase tracking-label text-ink mb-3">
                           {problem.title}
                         </h3>
                         <p className="text-gray-600 mb-3">{problem.description}</p>
@@ -155,7 +155,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
 
               {/* Brands */}
               <div>
-                <h2 className="font-heading text-2xl font-bold text-gray-900 mb-4">
+                <h2 className="headline text-2xl mb-4">
                   Brands We Service
                 </h2>
                 <div className="flex flex-wrap gap-3">
@@ -173,13 +173,13 @@ export default async function ServicePage({ params }: ServicePageProps) {
               {/* Features Card */}
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-lg text-gray-900 mb-4">
+                  <h3 className="font-heading text-sm font-bold uppercase tracking-label text-ink mb-5">
                     Why Choose Us
                   </h3>
                   <ul className="space-y-3">
                     {service.features.map((feature, index) => (
                       <li key={index} className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                        <Check className="h-4 w-4 text-primary-500 shrink-0 mt-1" strokeWidth={2} />
                         <span className="text-gray-600">{feature}</span>
                       </li>
                     ))}
@@ -190,7 +190,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
               {/* Quick Quote Card */}
               <Card className="bg-primary-50 border-primary-200">
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-lg text-gray-900 mb-2">
+                  <h3 className="font-heading text-sm font-bold uppercase tracking-label text-ink mb-3">
                     Service Call Fee
                   </h3>
                   <div className="text-3xl font-bold text-primary-600 mb-2">
@@ -211,7 +211,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
               {relatedServices.length > 0 && (
                 <Card>
                   <CardContent className="p-6">
-                    <h3 className="font-semibold text-lg text-gray-900 mb-4">
+                    <h3 className="font-heading text-sm font-bold uppercase tracking-label text-ink mb-5">
                       Related Services
                     </h3>
                     <ul className="space-y-3">

@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { Phone, Mail, MapPin, Clock } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui';
+import { PageHeader } from '@/components/sections';
 import { ContactForm } from '@/components/forms';
 import { siteConfig } from '@/data/site-config';
 
@@ -45,27 +46,23 @@ const contactInfo = [
 export default function ContactPage() {
   return (
     <>
-      {/* Page Header */}
-      <section className="bg-gradient-to-br from-primary-900 to-primary-800 text-white py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="font-heading text-4xl md:text-5xl font-bold mb-4">
-            Contact Us
-          </h1>
-          <p className="text-xl text-primary-100 max-w-2xl mx-auto">
-            Ready to get your appliance fixed? Contact us today for fast, reliable service.
-          </p>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="Contact"
+        title="Let's get it"
+        titleMuted="working again."
+        subtitle="Ready to get your appliance fixed? Contact us today for fast, reliable service."
+        location="Irvine, CA"
+      />
 
       {/* Contact Section */}
-      <section className="py-16">
+      <section className="py-20 bg-cream">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-3 gap-12">
             {/* Contact Form */}
             <div className="lg:col-span-2">
               <Card>
                 <CardContent className="p-8">
-                  <h2 className="font-heading text-2xl font-bold text-gray-900 mb-2">
+                  <h2 className="font-heading text-sm font-bold uppercase tracking-label text-ink mb-3">
                     Send Us a Message
                   </h2>
                   <p className="text-gray-600 mb-8">
@@ -82,20 +79,20 @@ export default function ContactPage() {
                 <Card key={info.title}>
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center shrink-0">
-                        <info.icon className="h-6 w-6 text-primary-600" />
-                      </div>
+                      <span className="icon-disc h-12 w-12 shrink-0">
+                        <info.icon className="h-5 w-5" strokeWidth={1.5} />
+                      </span>
                       <div>
-                        <h3 className="font-semibold text-gray-900 mb-1">{info.title}</h3>
+                        <h3 className="font-heading text-[11px] font-semibold uppercase tracking-label text-primary-500 mb-2">{info.title}</h3>
                         {info.href ? (
                           <a
                             href={info.href}
-                            className="text-primary-600 hover:text-primary-700 font-medium"
+                            className="font-heading font-semibold text-ink hover:text-primary-600 transition-colors"
                           >
                             {info.content}
                           </a>
                         ) : (
-                          <div className="font-medium text-gray-900">{info.content}</div>
+                          <div className="font-heading font-semibold text-ink">{info.content}</div>
                         )}
                         <p className="text-sm text-gray-500 mt-1">{info.description}</p>
                       </div>
@@ -105,17 +102,17 @@ export default function ContactPage() {
               ))}
 
               {/* Emergency Notice */}
-              <Card className="bg-accent-50 border-accent-200">
+              <Card className="bg-primary-800 border-primary-800">
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-gray-900 mb-2">
+                  <h3 className="font-heading text-sm font-bold uppercase tracking-label text-cream mb-3">
                     Emergency Service
                   </h3>
-                  <p className="text-gray-600 text-sm mb-4">
+                  <p className="text-primary-200 text-sm mb-5">
                     {siteConfig.businessHours.emergency}
                   </p>
                   <a
                     href={`tel:${siteConfig.contact.phoneClean}`}
-                    className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium"
+                    className="inline-flex items-center gap-2 font-heading text-[11px] font-semibold uppercase tracking-label text-cream hover:text-primary-300 transition-colors"
                   >
                     <Phone className="h-4 w-4" />
                     Call Now
@@ -128,17 +125,21 @@ export default function ContactPage() {
       </section>
 
       {/* Map Section (Placeholder) */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-20 bg-cream-light border-t border-primary-500/20">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-8">
-            <h2 className="font-heading text-3xl font-bold text-gray-900 mb-4">
-              Our Service Area
+          <div className="max-w-2xl mb-10">
+            <div className="eyebrow">Coverage</div>
+            <h2 className="headline text-2xl sm:text-3xl md:text-4xl mt-4 mb-6">
+              Our service
+              <br />
+              <span className="headline-muted">area.</span>
             </h2>
-            <p className="text-gray-600">
-              We proudly serve all of Orange County, California
+            <div className="rule-short mb-6" />
+            <p className="text-lg text-gray-600">
+              We proudly serve all of Orange County, California.
             </p>
           </div>
-          <div className="rounded-xl h-96 overflow-hidden">
+          <div className="h-96 overflow-hidden border border-primary-500/25">
             <iframe
               src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=Orange+County,CA&zoom=10"
               width="100%"

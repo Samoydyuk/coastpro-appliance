@@ -40,32 +40,34 @@ const signals = [
 
 export function TrustSignals() {
   return (
-    <section className="py-16 bg-white">
+    <section className="py-20 bg-cream-light">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Why Choose CoastPro Appliance Repair?
+        <div className="max-w-2xl mb-14">
+          <div className="eyebrow">Why CoastPro</div>
+          <h2 className="headline text-2xl sm:text-3xl md:text-4xl mt-4 mb-6">
+            Built on doing it
+            <br />
+            <span className="headline-muted">the right way.</span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            We&apos;re committed to providing the best appliance repair experience in Orange County
+          <div className="rule-short mb-6" />
+          <p className="text-lg text-gray-600">
+            We&apos;re committed to providing the best appliance repair experience in Orange County.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border-t border-l border-primary-500/20">
           {signals.map((signal) => (
             <div
               key={signal.title}
-              className="flex items-start gap-4 p-6 rounded-xl hover:bg-gray-50 transition-colors"
+              className="p-8 border-b border-r border-primary-500/20 transition-colors hover:bg-cream-dark/40"
             >
-              <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center shrink-0">
-                <signal.icon className="h-6 w-6 text-primary-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                  {signal.title}
-                </h3>
-                <p className="text-gray-600">{signal.description}</p>
-              </div>
+              <span className="icon-disc h-12 w-12 mb-6">
+                <signal.icon className="h-5 w-5" strokeWidth={1.5} />
+              </span>
+              <h3 className="font-heading text-sm font-bold uppercase tracking-label text-ink mb-3">
+                {signal.title}
+              </h3>
+              <p className="text-gray-600 leading-relaxed">{signal.description}</p>
             </div>
           ))}
         </div>

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
-import { Inter, Montserrat } from 'next/font/google';
+import { Inter, Archivo, Playfair_Display } from 'next/font/google';
 import { Header, Footer } from '@/components/layout';
 import { siteConfig } from '@/data/site-config';
 import './globals.css';
@@ -11,11 +11,18 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
-const montserrat = Montserrat({
+const archivo = Archivo({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-montserrat',
+  variable: '--font-archivo',
   weight: ['500', '600', '700', '800'],
+});
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-playfair',
+  weight: ['400', '500'],
 });
 
 export const metadata: Metadata = {
@@ -128,7 +135,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${montserrat.variable}`}>
+    <html lang="en" className={`${inter.variable} ${archivo.variable} ${playfair.variable}`}>
       <head>
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-W9Q0EMD7Q5"
@@ -155,7 +162,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="font-sans min-h-screen flex flex-col">
+      <body className="font-sans min-h-screen flex flex-col bg-cream text-ink">
         <Header />
         <main id="main-content" className="flex-grow">
           {children}

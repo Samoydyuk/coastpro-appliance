@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { Camera } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui';
-import { CTABanner } from '@/components/sections';
+import { CTABanner, PageHeader } from '@/components/sections';
 
 export const metadata: Metadata = {
   title: 'Our Work Gallery',
@@ -28,34 +28,27 @@ const galleryItems = [
 export default function GalleryPage() {
   return (
     <>
-      {/* Page Header */}
-      <section className="bg-gradient-to-br from-primary-900 to-primary-800 text-white py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="font-heading text-4xl md:text-5xl font-bold mb-4">
-            Our Work Gallery
-          </h1>
-          <p className="text-xl text-primary-100 max-w-2xl mx-auto">
-            See examples of appliance repairs we&apos;ve completed throughout Orange County
-          </p>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="Our Work"
+        title="Problem solved."
+        titleMuted="Back to normal."
+        subtitle="Examples of appliance repairs we've completed throughout Orange County."
+      />
 
       {/* Gallery Grid */}
-      <section className="py-16">
+      <section className="py-20 bg-cream">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {galleryItems.map((item) => (
               <Card key={item.id} hover className="cursor-pointer group">
                 <CardContent className="p-0">
                   {/* Image Placeholder */}
-                  <div className="aspect-[4/3] bg-gray-200 flex items-center justify-center group-hover:bg-gray-300 transition-colors">
-                    <Camera className="h-12 w-12 text-gray-400" />
+                  <div className="aspect-[4/3] bg-cream-dark flex items-center justify-center transition-colors group-hover:bg-primary-200">
+                    <Camera className="h-10 w-10 text-primary-400" strokeWidth={1.25} />
                   </div>
-                  <div className="p-4">
-                    <div className="text-xs text-primary-600 font-medium mb-1">
-                      {item.category}
-                    </div>
-                    <h3 className="font-semibold text-gray-900 mb-1">
+                  <div className="p-6 border-t border-primary-500/20">
+                    <div className="eyebrow mb-3">{item.category}</div>
+                    <h3 className="font-heading text-sm font-bold uppercase tracking-label text-ink mb-2">
                       {item.title}
                     </h3>
                     <p className="text-sm text-gray-500">{item.location}</p>
@@ -66,10 +59,10 @@ export default function GalleryPage() {
           </div>
 
           {/* Placeholder Notice */}
-          <div className="mt-12 text-center">
-            <div className="inline-flex items-center gap-2 bg-gray-100 rounded-lg px-4 py-2 text-gray-600">
-              <Camera className="h-5 w-5" />
-              <span>Add your repair photos to showcase your work</span>
+          <div className="mt-12">
+            <div className="inline-flex items-center gap-3 border border-primary-500/30 px-5 py-3 text-gray-600">
+              <Camera className="h-4 w-4 text-primary-500" strokeWidth={1.5} />
+              <span className="text-sm">Add your repair photos to showcase your work</span>
             </div>
           </div>
         </div>

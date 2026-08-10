@@ -5,18 +5,17 @@ import { siteConfig } from '@/data/site-config';
 
 export default function NotFound() {
   return (
-    <div className="min-h-[60vh] flex items-center justify-center py-20">
-      <div className="container mx-auto px-4 text-center">
-        <h1 className="text-8xl font-bold text-primary-600 mb-4">404</h1>
-        <h2 className="font-heading text-3xl font-bold text-gray-900 mb-4">
-          Page Not Found
-        </h2>
-        <p className="text-xl text-gray-600 mb-8 max-w-md mx-auto">
+    <div className="min-h-[60vh] flex items-center py-24 bg-cream">
+      <div className="container mx-auto px-4">
+        <div className="eyebrow mb-4">Error 404</div>
+        <h1 className="headline text-4xl sm:text-5xl md:text-6xl mb-2">Page not found.</h1>
+        <div className="rule-short my-8" />
+        <p className="text-lg text-gray-600 mb-10 max-w-prose">
           Sorry, we couldn&apos;t find the page you&apos;re looking for.
           It might have been moved or doesn&apos;t exist.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+        <div className="flex flex-col sm:flex-row gap-4 mb-10">
           <Link href="/">
             <Button leftIcon={<Home className="h-4 w-4" />}>
               Go Home
@@ -29,11 +28,11 @@ export default function NotFound() {
           </Link>
         </div>
 
-        <p className="text-gray-500">
+        <p className="text-gray-600">
           Need help? Call us at{' '}
           <a
             href={`tel:${siteConfig.contact.phoneClean}`}
-            className="text-primary-600 hover:text-primary-700 font-medium inline-flex items-center gap-1"
+            className="font-heading font-semibold text-ink hover:text-primary-600 inline-flex items-center gap-1.5 transition-colors"
           >
             <Phone className="h-4 w-4" />
             {siteConfig.contact.phone}

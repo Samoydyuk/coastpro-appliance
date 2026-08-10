@@ -10,7 +10,7 @@ import {
   Snowflake,
   ArrowRight,
 } from 'lucide-react';
-import { Card, CardContent, Button } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { services } from '@/data/services';
 
 const iconMap: Record<string, React.ElementType> = {
@@ -26,68 +26,61 @@ const iconMap: Record<string, React.ElementType> = {
 
 interface ServicesGridProps {
   showAll?: boolean;
+  eyebrow?: string;
   title?: string;
   subtitle?: string;
 }
 
 export function ServicesGrid({
   showAll = false,
-  title = "Our Appliance Repair Services",
-  subtitle = "We repair all major household appliances with same-day service available"
+  eyebrow = "Services",
+  title = "What we repair",
+  subtitle = "We repair all major household appliances, with same-day service available."
 }: ServicesGridProps) {
   const displayedServices = showAll ? services : services.slice(0, 6);
 
   return (
-    <section className="py-20 bg-gray-50">
+    <section className="py-20 bg-cream">
       <div className="container mx-auto px-4">
-        {/* Section Header */}
-        <div className="text-center mb-12">
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            {title}
-          </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            {subtitle}
-          </p>
+        <div className="max-w-2xl mb-14">
+          <div className="eyebrow">{eyebrow}</div>
+          <h2 className="headline text-2xl sm:text-3xl md:text-4xl mt-4 mb-6">{title}</h2>
+          <div className="rule-short mb-6" />
+          <p className="text-lg text-gray-600">{subtitle}</p>
         </div>
 
-        {/* Services Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border-t border-l border-primary-500/20 mb-14">
           {displayedServices.map((service) => {
             const IconComponent = iconMap[service.icon] || Cog;
 
             return (
-              <Link key={service.id} href={`/services/${service.slug}`}>
-                <Card hover className="h-full group cursor-pointer">
-                  <CardContent className="p-6">
-                    <div className="w-14 h-14 bg-primary-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-primary-600 transition-colors">
-                      <IconComponent className="h-7 w-7 text-primary-600 group-hover:text-white transition-colors" />
-                    </div>
-                    <h3 className="font-semibold text-xl text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">
-                      {service.name}
-                    </h3>
-                    <p className="text-gray-600 mb-4">
-                      {service.shortDescription}
-                    </p>
-                    <div className="flex items-center text-primary-600 font-medium">
-                      <span>Learn More</span>
-                      <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </CardContent>
-                </Card>
+              <Link
+                key={service.id}
+                href={`/services/${service.slug}`}
+                className="group p-8 border-b border-r border-primary-500/20 transition-colors hover:bg-cream-dark/50"
+              >
+                <span className="icon-disc h-12 w-12 mb-6 transition-colors group-hover:border-ink group-hover:bg-ink group-hover:text-cream">
+                  <IconComponent className="h-5 w-5" strokeWidth={1.5} />
+                </span>
+                <h3 className="font-heading text-sm font-bold uppercase tracking-label text-ink mb-3">
+                  {service.name}
+                </h3>
+                <p className="text-gray-600 leading-relaxed mb-6">{service.shortDescription}</p>
+                <span className="inline-flex items-center font-heading text-[11px] font-semibold uppercase tracking-label text-primary-600 group-hover:text-ink transition-colors">
+                  Learn More
+                  <ArrowRight className="h-3.5 w-3.5 ml-2 transition-transform group-hover:translate-x-1" />
+                </span>
               </Link>
             );
           })}
         </div>
 
-        {/* View All Button */}
         {!showAll && (
-          <div className="text-center">
-            <Link href="/services">
-              <Button variant="outline" size="lg">
-                View All Services
-              </Button>
-            </Link>
-          </div>
+          <Link href="/services">
+            <Button variant="outline" size="lg">
+              View All Services
+            </Button>
+          </Link>
         )}
       </div>
     </section>

@@ -9,8 +9,8 @@ export function Card({ className, children, hover = false, ...props }: CardProps
   return (
     <div
       className={cn(
-        'rounded-xl bg-white shadow-md overflow-hidden',
-        hover && 'transition-shadow duration-300 hover:shadow-lg',
+        'rounded-card bg-cream-light border border-primary-500/20 overflow-hidden',
+        hover && 'transition-colors duration-300 hover:border-primary-500/60 hover:bg-cream-dark/40',
         className
       )}
       {...props}
@@ -63,7 +63,7 @@ interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
 
 export function CardTitle({ className, children, as: Tag = 'h3', ...props }: CardTitleProps) {
   return (
-    <Tag className={cn('text-xl font-semibold text-gray-900', className)} {...props}>
+    <Tag className={cn('font-heading text-xl font-bold text-ink', className)} {...props}>
       {children}
     </Tag>
   );

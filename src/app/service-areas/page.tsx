@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Phone } from 'lucide-react';
-import { Card, CardContent, Button } from '@/components/ui';
-import { CTABanner } from '@/components/sections';
+import { Button } from '@/components/ui';
+import { CTABanner, PageHeader } from '@/components/sections';
 import { serviceAreas } from '@/data/service-areas';
 import { siteConfig } from '@/data/site-config';
 import { getInitials } from '@/lib/utils';
@@ -19,59 +19,51 @@ export const metadata: Metadata = {
 export default function ServiceAreasPage() {
   return (
     <>
-      {/* Page Header */}
-      <section className="bg-gradient-to-br from-primary-900 to-primary-800 text-white py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="font-heading text-4xl md:text-5xl font-bold mb-4">
-            Service Areas
-          </h1>
-          <p className="text-xl text-primary-100 max-w-2xl mx-auto">
-            Proudly serving all of Orange County with fast, reliable appliance repair
-          </p>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="Service Areas"
+        title="Serving all of"
+        titleMuted="Orange County."
+        subtitle="Proudly serving Orange County with fast, reliable appliance repair."
+      />
 
       {/* Areas Grid */}
-      <section className="py-16">
+      <section className="py-20 bg-cream">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="font-heading text-3xl font-bold text-gray-900 mb-4">
-              Cities We Serve
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Click on any city to learn more about our services in your area
+          <div className="max-w-2xl mb-12">
+            <div className="eyebrow">Cities We Serve</div>
+            <div className="rule-short my-6" />
+            <p className="text-lg text-gray-600">
+              Select a city to learn more about our services in your area.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 border-t border-l border-primary-500/20">
             {serviceAreas.map((area) => (
-              <Link key={area.id} href={`/service-areas/${area.slug}`}>
-                <Card hover className="h-full cursor-pointer group">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-full bg-primary-600 flex items-center justify-center shrink-0 group-hover:bg-primary-700 transition-colors">
-                        <span className="text-white font-bold text-sm">
-                          {getInitials(area.name)}
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg text-gray-900 group-hover:text-primary-600 transition-colors mb-1">
-                          {area.name}
-                        </h3>
-                        <p className="text-sm text-gray-500 mb-2">
-                          {area.county}, {area.state}
-                        </p>
-                        <p className="text-sm text-gray-600 line-clamp-2">
-                          {area.description.slice(0, 100)}...
-                        </p>
-                        <div className="flex items-center text-primary-600 text-sm font-medium mt-3">
-                          <span>View Details</span>
-                          <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+              <Link
+                key={area.id}
+                href={`/service-areas/${area.slug}`}
+                className="group p-8 border-b border-r border-primary-500/20 transition-colors hover:bg-cream-dark/50"
+              >
+                <div className="flex items-start gap-4">
+                  <span className="icon-disc h-12 w-12 shrink-0 font-heading text-xs font-bold tracking-wider transition-colors group-hover:border-ink group-hover:bg-ink group-hover:text-cream">
+                    {getInitials(area.name)}
+                  </span>
+                  <div className="flex-1">
+                    <h3 className="font-heading text-sm font-bold uppercase tracking-label text-ink mb-2">
+                      {area.name}
+                    </h3>
+                    <p className="text-xs text-primary-500 mb-3">
+                      {area.county}, {area.state}
+                    </p>
+                    <p className="text-sm text-gray-600 line-clamp-2 mb-4">
+                      {area.description.slice(0, 100)}...
+                    </p>
+                    <span className="inline-flex items-center font-heading text-[11px] font-semibold uppercase tracking-label text-primary-600 group-hover:text-ink transition-colors">
+                      View Details
+                      <ArrowRight className="h-3.5 w-3.5 ml-2 transition-transform group-hover:translate-x-1" />
+                    </span>
+                  </div>
+                </div>
               </Link>
             ))}
           </div>
@@ -79,19 +71,26 @@ export default function ServiceAreasPage() {
       </section>
 
       {/* Don't See Your City */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="font-heading text-3xl font-bold text-gray-900 mb-4">
-            Don&apos;t See Your City?
-          </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
-            We serve many more areas throughout Orange County. Give us a call to confirm service in your location.
-          </p>
-          <a href={`tel:${siteConfig.contact.phoneClean}`}>
-            <Button size="lg" leftIcon={<Phone className="h-5 w-5" />}>
-              Call {siteConfig.contact.phone}
-            </Button>
-          </a>
+      <section className="py-20 bg-cream-light border-t border-primary-500/20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl">
+            <div className="eyebrow">Not Listed?</div>
+            <h2 className="headline text-2xl sm:text-3xl md:text-4xl mt-4 mb-6">
+              Don&apos;t see
+              <br />
+              <span className="headline-muted">your city?</span>
+            </h2>
+            <div className="rule-short mb-6" />
+            <p className="text-lg text-gray-600 mb-10">
+              We serve many more areas throughout Orange County. Give us a call to confirm service
+              in your location.
+            </p>
+            <a href={`tel:${siteConfig.contact.phoneClean}`}>
+              <Button size="lg" leftIcon={<Phone className="h-4 w-4" />}>
+                Call {siteConfig.contact.phone}
+              </Button>
+            </a>
+          </div>
         </div>
       </section>
 
