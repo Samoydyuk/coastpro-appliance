@@ -159,7 +159,7 @@ export function ContactForm() {
         Send Message
       </Button>
 
-      <p className="text-sm text-gray-500 text-center">
+      <p className="text-sm text-gray-600 text-center">
         We typically respond within 1-2 hours during business hours.
       </p>
     </form>

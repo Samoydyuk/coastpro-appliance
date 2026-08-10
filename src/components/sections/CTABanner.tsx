@@ -68,7 +68,7 @@ export function CTABanner({
             </a>
           </div>
 
-          <p className={`mt-8 text-sm ${isDark ? 'text-primary-300' : 'text-gray-500'}`}>
+          <p className={`mt-8 text-sm ${isDark ? 'text-primary-300' : 'text-gray-600'}`}>
             {note ?? `$${siteConfig.serviceCall.minimum} minimum service call — ${siteConfig.serviceCall.note.toLowerCase()}`}
           </p>
         </div>

@@ -103,7 +103,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
             </div>
 
             {!service.pricing && (
-              <p className="text-sm text-gray-500 mb-8 max-w-prose">
+              <p className="text-sm text-gray-600 mb-8 max-w-prose">
                 {siteConfig.pricing.rangeNote}
               </p>
             )}
@@ -278,7 +278,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
                       : `Covers the visit, a full diagnosis and ${siteConfig.serviceCall.includes}.`}
                   </p>
                   {!service.pricing && (
-                    <p className="text-gray-500 text-sm mb-4">
+                    <p className="text-gray-600 text-sm mb-4">
                       Most {service.name.replace(' Repair', '').toLowerCase()} jobs land between $
                       {service.priceRange.min} and ${service.priceRange.max}, parts included.
                     </p>

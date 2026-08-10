@@ -46,7 +46,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           </p>
         )}
         {helperText && !error && (
-          <p id={`${inputId}-helper`} className="mt-1.5 text-sm text-gray-500">
+          <p id={`${inputId}-helper`} className="mt-1.5 text-sm text-gray-600">
             {helperText}
           </p>
         )}
@@ -101,7 +101,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           </p>
         )}
         {helperText && !error && (
-          <p id={`${textareaId}-helper`} className="mt-1.5 text-sm text-gray-500">
+          <p id={`${textareaId}-helper`} className="mt-1.5 text-sm text-gray-600">
             {helperText}
           </p>
         )}
@@ -170,7 +170,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           </p>
         )}
         {helperText && !error && (
-          <p id={`${selectId}-helper`} className="mt-1.5 text-sm text-gray-500">
+          <p id={`${selectId}-helper`} className="mt-1.5 text-sm text-gray-600">
             {helperText}
           </p>
         )}

@@ -3,7 +3,7 @@ import { Phone, Clock, Award, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { HeroSlider } from './HeroSlider';
 import { siteConfig } from '@/data/site-config';
-import { getHeroSlides } from '@/lib/hero-photos';
+import { getWorkPhotos } from '@/lib/work-photos';
 
 const trustBadges = [
   { icon: Clock, text: 'Same-Day Service' },
@@ -12,7 +12,7 @@ const trustBadges = [
 ];
 
 export function Hero() {
-  const heroSlides = getHeroSlides();
+  const heroSlides = getWorkPhotos();
   const hasPhotos = heroSlides.length > 0;
 
   return (

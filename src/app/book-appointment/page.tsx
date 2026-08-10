@@ -73,7 +73,7 @@ export default function BookAppointmentPage() {
                       {siteConfig.contact.phone}
                     </Button>
                   </a>
-                  <p className="text-xs text-gray-500 mt-3 text-center">
+                  <p className="text-xs text-gray-600 mt-3 text-center">
                     Available {siteConfig.businessHours.weekdays}
                   </p>
                 </CardContent>

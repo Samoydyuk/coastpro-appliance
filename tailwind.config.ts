@@ -64,7 +64,6 @@ const config: Config = {
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
         heading: ['var(--font-archivo)', 'Helvetica Neue', 'system-ui', 'sans-serif'],
-        display: ['var(--font-playfair)', 'Georgia', 'serif'],
       },
       letterSpacing: {
         brand: '0.22em',

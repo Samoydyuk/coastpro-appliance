@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
-import { Inter, Archivo, Playfair_Display } from 'next/font/google';
+import { Inter, Archivo } from 'next/font/google';
 import { Header, Footer } from '@/components/layout';
 import { siteConfig } from '@/data/site-config';
 import './globals.css';
@@ -16,13 +16,6 @@ const archivo = Archivo({
   display: 'swap',
   variable: '--font-archivo',
   weight: ['500', '600', '700', '800'],
-});
-
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-playfair',
-  weight: ['400', '500'],
 });
 
 export const metadata: Metadata = {
@@ -135,7 +128,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${archivo.variable} ${playfair.variable}`}>
+    <html lang="en" className={`${inter.variable} ${archivo.variable}`}>
       <head>
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-W9Q0EMD7Q5"
@@ -163,6 +156,12 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans min-h-screen flex flex-col bg-cream text-ink">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-[60] focus:top-4 focus:left-4 focus:bg-ink focus:text-cream focus:px-5 focus:py-3 focus:font-heading focus:text-xs focus:font-semibold focus:uppercase focus:tracking-label"
+        >
+          Skip to content
+        </a>
         <Header />
         <main id="main-content" className="flex-grow">
           {children}

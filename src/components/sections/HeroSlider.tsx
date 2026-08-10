@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { MapPin } from 'lucide-react';
-import type { HeroSlide } from '@/data/hero-slides';
+import type { WorkPhoto } from '@/data/work-photos';
 
 const INTERVAL_MS = 6000;
 
 interface HeroSliderProps {
-  slides: HeroSlide[];
+  slides: WorkPhoto[];
   /** Marks the copy of the slider that is decorative on this breakpoint. */
   priority?: boolean;
   /**

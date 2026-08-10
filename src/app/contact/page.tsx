@@ -95,7 +95,7 @@ export default function ContactPage() {
                         ) : (
                           <div className="font-heading font-semibold text-ink">{info.content}</div>
                         )}
-                        <p className="text-sm text-gray-500 mt-1">{info.description}</p>
+                        <p className="text-sm text-gray-600 mt-1">{info.description}</p>
                       </div>
                     </div>
                   </CardContent>

@@ -1,5 +1,5 @@
-export interface HeroSlide {
-  /** Path under /public, e.g. "/images/hero/washer-f22.jpg" */
+export interface WorkPhoto {
+  /** Path under /public, e.g. "/images/work/washer-f22.jpg" */
   src: string;
   /** Describes the photo for screen readers and if the image fails to load. */
   alt: string;
@@ -9,16 +9,17 @@ export interface HeroSlide {
   caption?: string;
 }
 
-export interface SlideCaption {
+export interface PhotoCaption {
   alt: string;
   location?: string;
   caption?: string;
 }
 
 /**
- * Optional captions for the hero photos, keyed by file name.
+ * Optional captions for the job photos, keyed by file name. The same folder
+ * feeds the hero slider and the gallery page.
  *
- * Photos are picked up automatically from `public/images/hero/` — dropping a
+ * Photos are picked up automatically from `public/images/work/` — dropping a
  * file in that folder is enough to put it in the slider. Add an entry here
  * only when you want the location and job line shown over it; without one the
  * photo still runs, captionless, with a generic alt.
@@ -26,7 +27,7 @@ export interface SlideCaption {
  * Slides play in file-name order, so a `01-`, `02-` prefix controls the
  * sequence.
  */
-export const slideCaptions: Record<string, SlideCaption> = {
+export const photoCaptions: Record<string, PhotoCaption> = {
   '01-subzero-coils.jpg': {
     alt: 'Sub-Zero condenser coils packed with dust before cleaning',
     location: 'Irvine, CA',

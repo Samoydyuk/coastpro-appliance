@@ -265,7 +265,7 @@ export function BookingStepForm() {
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4 text-primary-600" />
                 <span className="font-medium">{formData.name}</span>
-                <span className="text-gray-500">({formData.phone})</span>
+                <span className="text-gray-600">({formData.phone})</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-primary-600" />
@@ -279,7 +279,7 @@ export function BookingStepForm() {
                 <Wrench className="h-4 w-4 text-primary-600" />
                 <span>{getApplianceLabel(formData.appliance)}</span>
                 {formData.problem && (
-                  <span className="text-gray-500">- {formData.problem.slice(0, 50)}...</span>
+                  <span className="text-gray-600">- {formData.problem.slice(0, 50)}...</span>
                 )}
               </div>
             </div>
