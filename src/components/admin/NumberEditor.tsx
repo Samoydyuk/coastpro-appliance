@@ -1,0 +1,123 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { CHANNEL_LABELS, PAID_CHANNELS } from '@/lib/attribution';
+
+/** Adding and retiring tracking numbers. */
+export function NumberEditor() {
+  const router = useRouter();
+  const [number, setNumber] = useState('');
+  const [channel, setChannel] = useState('google_ads');
+  const [label, setLabel] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/admin/numbers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ number, channel, label }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        setError(body?.error ?? 'Could not save.');
+        return;
+      }
+      setNumber('');
+      setLabel('');
+      router.refresh();
+    } catch {
+      setError('Could not reach the server.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
+      <label className="flex flex-col gap-1">
+        <span className="font-heading text-[10px] uppercase tracking-label text-gray-500">
+          Number
+        </span>
+        <input
+          type="tel"
+          value={number}
+          onChange={(event) => setNumber(event.target.value)}
+          placeholder="(949) 555-0142"
+          required
+          className="h-9 w-44 rounded-card border border-primary-500/30 bg-[#fcfcfb] px-3 text-sm"
+        />
+      </label>
+
+      <label className="flex flex-col gap-1">
+        <span className="font-heading text-[10px] uppercase tracking-label text-gray-500">
+          Shown to
+        </span>
+        <select
+          value={channel}
+          onChange={(event) => setChannel(event.target.value)}
+          className="h-9 rounded-card border border-primary-500/30 bg-[#fcfcfb] px-3 text-sm"
+        >
+          {PAID_CHANNELS.map((entry) => (
+            <option key={entry} value={entry}>
+              {CHANNEL_LABELS[entry]}
+            </option>
+          ))}
+          <option value="google_organic">Google organic</option>
+          <option value="direct">Direct</option>
+          <option value="referral">Referral</option>
+          <option value="default">Everyone else (fallback)</option>
+        </select>
+      </label>
+
+      <label className="flex flex-col gap-1">
+        <span className="font-heading text-[10px] uppercase tracking-label text-gray-500">
+          Label
+        </span>
+        <input
+          type="text"
+          value={label}
+          onChange={(event) => setLabel(event.target.value)}
+          placeholder="Optional note"
+          className="h-9 w-48 rounded-card border border-primary-500/30 bg-[#fcfcfb] px-3 text-sm"
+        />
+      </label>
+
+      <button
+        type="submit"
+        disabled={busy}
+        className="h-9 rounded-card bg-ink px-4 font-heading text-[10px] font-semibold uppercase tracking-label text-cream disabled:opacity-50"
+      >
+        Add
+      </button>
+
+      {error && <span className="h-9 self-end text-xs leading-9 text-[#8f2323]">{error}</span>}
+    </form>
+  );
+}
+
+export function RetireNumberButton({ id }: { id: string }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={async () => {
+        setBusy(true);
+        await fetch(`/api/admin/numbers?id=${id}`, { method: 'DELETE' }).catch(() => null);
+        setBusy(false);
+        router.refresh();
+      }}
+      className="font-heading text-[10px] uppercase tracking-label text-gray-500 hover:text-[#8f2323]"
+    >
+      Retire
+    </button>
+  );
+}

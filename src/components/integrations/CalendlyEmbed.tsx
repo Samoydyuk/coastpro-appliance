@@ -1,6 +1,7 @@
 'use client';
 
-import { InlineWidget } from 'react-calendly';
+import { InlineWidget, useCalendlyEventListener } from 'react-calendly';
+import { trackCalendlyBooking } from '@/lib/gtag';
 
 interface PrefillData {
   name?: string;
@@ -27,6 +28,24 @@ export function CalendlyEmbed({
   prefill,
   utm,
 }: CalendlyEmbedProps) {
+  // Calendly posts a message into the page when a time is confirmed. The
+  // webhook is the authoritative record, but this fires immediately and works
+  // even before the webhook is connected, so the booking is never invisible.
+  useCalendlyEventListener({
+    onEventScheduled: () => {
+      trackCalendlyBooking();
+      fetch('/api/calendly/scheduled', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: prefill?.email, name: prefill?.name }),
+        credentials: 'same-origin',
+        keepalive: true,
+      }).catch(() => {
+        /* the webhook will catch it */
+      });
+    },
+  });
+
   return (
     <div className="calendly-container">
       <InlineWidget

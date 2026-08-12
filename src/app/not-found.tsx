@@ -1,11 +1,19 @@
 import Link from 'next/link';
 import { Home, ArrowLeft, Phone } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { Header, Footer } from '@/components/layout';
 import { siteConfig } from '@/data/site-config';
 
+/**
+ * The root 404. It renders its own header and footer because the root layout no
+ * longer carries them — a URL that matches no route never enters the `(site)`
+ * group, so it would otherwise arrive as a bare page.
+ */
 export default function NotFound() {
   return (
-    <div className="min-h-[60vh] flex items-center py-24 bg-cream">
+    <>
+      <Header />
+      <div className="min-h-[60vh] flex items-center py-24 bg-cream">
       <div className="container mx-auto px-4">
         <div className="eyebrow mb-4">Error 404</div>
         <h1 className="headline text-4xl sm:text-5xl md:text-6xl mb-2">Page not found.</h1>
@@ -38,7 +46,9 @@ export default function NotFound() {
             {siteConfig.contact.phone}
           </a>
         </p>
+        </div>
       </div>
-    </div>
+      <Footer />
+    </>
   );
 }

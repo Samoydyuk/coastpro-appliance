@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button, Input, Textarea, Select } from '@/components/ui';
 import { services } from '@/data/services';
 import { siteConfig } from '@/data/site-config';
 import { Send, CheckCircle } from 'lucide-react';
-import { trackFormSubmit } from '@/lib/gtag';
+import { trackFormSubmit, trackFormStart, trackFormError, trackFormField } from '@/lib/gtag';
 
 const serviceOptions = [
   { value: '', label: 'Select a service' },
@@ -20,6 +20,20 @@ export function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const started = useRef(false);
+
+  // Which field somebody was on when they gave up is the most useful thing this
+  // form can tell us, so each field reports the first time it is touched.
+  const handleFieldFocus = (event: React.FocusEvent<HTMLFormElement>) => {
+    const field = event.target as unknown as { name?: string };
+    const name = field.name;
+    if (!name) return;
+    if (!started.current) {
+      started.current = true;
+      trackFormStart('contact');
+    }
+    trackFormField('contact', name);
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -46,6 +60,7 @@ export function ContactForm() {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      trackFormError('contact', Object.keys(newErrors));
       setIsSubmitting(false);
       return;
     }
@@ -96,7 +111,7 @@ export function ContactForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} onFocus={handleFieldFocus} className="space-y-6">
       {errors.form && (
         <div className="p-4 border border-red-800/40 rounded-card text-red-800">
           {errors.form}

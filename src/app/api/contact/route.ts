@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { siteConfig } from '@/data/site-config';
+import { recordLead } from '@/lib/leads';
+import { db, quietly } from '@/lib/db';
 
 /**
  * Address the notification is sent from. Resend only accepts a domain you have
@@ -17,6 +19,20 @@ function escapeHtml(value: string): string {
     .replace(/"/g, '&quot;');
 }
 
+/**
+ * Whether the notification email actually left the building. Worth storing:
+ * when a lead is never called back, this is the difference between "nobody saw
+ * it" and "somebody saw it and dropped it".
+ */
+async function markDelivered(leadId: string | null, delivered: boolean) {
+  if (!leadId) return;
+  const sql = db();
+  if (!sql) return;
+  await quietly(
+    () => sql`update leads set email_delivered = ${delivered}, updated_at = now() where id = ${leadId}`
+  );
+}
+
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
@@ -31,6 +47,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
     }
 
+    // Recorded before the email is attempted. The database copy is the one that
+    // survives a full inbox, a spam filter or a Resend outage, and it is the
+    // only copy carrying the attribution.
+    const leadId = await recordLead(request, {
+      sourceForm: 'contact',
+      name,
+      email,
+      phone,
+      appliance: service,
+      message,
+    });
+
     const apiKey = process.env.RESEND_API_KEY;
 
     // Without a key nothing can be delivered. Fail loudly: telling the visitor
@@ -40,6 +68,7 @@ export async function POST(request: NextRequest) {
         'Contact form: RESEND_API_KEY is not set — submission could not be delivered.',
         { name, email, phone, service, at: new Date().toISOString() }
       );
+      await markDelivered(leadId, false);
       return NextResponse.json(
         {
           error: `Our contact form is temporarily unavailable. Please call us at ${siteConfig.contact.phone}.`,
@@ -67,6 +96,8 @@ export async function POST(request: NextRequest) {
         <p style="color:#666;font-size:12px">Sent from ${siteConfig.seo.siteUrl} at ${new Date().toISOString()}</p>
       `,
     });
+
+    await markDelivered(leadId, !error);
 
     if (error) {
       console.error('Contact form: Resend rejected the message', error);

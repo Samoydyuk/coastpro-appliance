@@ -1,11 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, MapPin, User, Phone, Mail, Wrench } from 'lucide-react';
 import { Button, Input, Textarea, Select, Card, CardContent } from '@/components/ui';
 import { CalendlyEmbed } from '@/components/integrations';
 import { services } from '@/data/services';
-import { trackFormSubmit, trackBookNowClick } from '@/lib/gtag';
+import {
+  trackFormSubmit,
+  trackBookNowClick,
+  trackFormStart,
+  trackFormError,
+  trackCalendlyView,
+} from '@/lib/gtag';
 
 interface FormData {
   name: string;
@@ -42,6 +48,11 @@ export function BookingStepForm() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Partial<FormData>>({});
+  const started = useRef(false);
+
+  useEffect(() => {
+    if (step === 2) trackCalendlyView();
+  }, [step]);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<FormData> = {};
@@ -66,6 +77,12 @@ export function BookingStepForm() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
+    // The first keystroke is what separates "looked at the form" from "started
+    // filling it in" — the biggest drop-off in the funnel sits between those.
+    if (!started.current) {
+      started.current = true;
+      trackFormStart('booking');
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
     // Clear error when user types
     if (errors[name as keyof FormData]) {
@@ -75,11 +92,27 @@ export function BookingStepForm() {
 
   const handleContinue = (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      trackFormSubmit('booking_step1');
-      trackBookNowClick('booking_form');
-      setStep(2);
+    if (!validateForm()) {
+      trackFormError('booking', Object.keys(errors));
+      return;
     }
+
+    trackFormSubmit('booking_step1');
+    trackBookNowClick('booking_form');
+
+    // Sent before the scheduler is shown, so a booking abandoned at the
+    // calendar still leaves us a name and a phone number to call.
+    fetch('/api/lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
+      credentials: 'same-origin',
+      keepalive: true,
+    }).catch(() => {
+      /* never block the visitor from reaching the calendar */
+    });
+
+    setStep(2);
   };
 
   const handleBack = () => {
