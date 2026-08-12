@@ -13,10 +13,10 @@ import postgres from 'postgres';
  * 1. The connection is created lazily and cached on `globalThis`, because in
  *    development Next.js re-evaluates modules on every edit and would otherwise
  *    open a new pool on each one.
- * 2. Nothing here is allowed to take the public site down. If `DATABASE_URL` is
- *    missing the accessors return null and every caller degrades to "we just
+ * 2. Nothing here is allowed to take the public site down. If the database is
+ *    unusable the accessors return null and every caller degrades to "we just
  *    don't record it" — a visitor must never see an error because analytics is
- *    misconfigured.
+ *    misconfigured. Only the admin console, which cannot degrade, is told why.
  */
 
 const connectionString = process.env.DATABASE_URL;
@@ -26,52 +26,102 @@ declare global {
   var __coastproSql: postgres.Sql | undefined;
 }
 
-export const isDbConfigured = Boolean(connectionString);
+/**
+ * Why the connection string is unusable, if it is — worked out once, up front,
+ * so the console can name the problem instead of showing a DNS error.
+ *
+ * The `railway.internal` case is the mistake that actually gets made: Railway
+ * shows both DATABASE_URL and DATABASE_PUBLIC_URL, and the internal one is the
+ * tempting copy. It resolves only inside Railway's own network, so from Vercel
+ * it fails as `getaddrinfo ENOTFOUND` — and because every ingest write goes
+ * through `quietly()`, the site would look perfectly healthy while recording
+ * nothing at all. That is the worst failure this system can have, so it is
+ * caught by name. RAILWAY_ENVIRONMENT is set only when running inside Railway,
+ * where the internal host is the correct choice.
+ */
+const configError: string | null = !connectionString
+  ? 'DATABASE_URL is not set — the admin panel needs a database.'
+  : connectionString.includes('.railway.internal') && !process.env.RAILWAY_ENVIRONMENT
+    ? 'DATABASE_URL points at a railway.internal host, which resolves only inside ' +
+      "Railway's private network. This site runs on Vercel — use Railway's " +
+      'DATABASE_PUBLIC_URL instead.'
+    : null;
 
-const isLocal = /localhost|127\.0\.0\.1/.test(connectionString ?? '');
+export const isDbConfigured = configError === null;
+
+/**
+ * True only for a database on this machine, where TLS is neither present nor
+ * needed. It inspects the host rather than the whole string: the password lives
+ * in that string too, and a rotated password that happened to contain
+ * "localhost" must not be able to turn encryption off.
+ */
+function isLocal(url: string): boolean {
+  try {
+    const { hostname } = new URL(url);
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+  } catch {
+    return false;
+  }
+}
 
 function create(): postgres.Sql {
-  return postgres(connectionString as string, {
-    // Railway Postgres is a plain server with no pgbouncer in front, so named
-    // prepared statements would work. Measured against the real database they
-    // made no difference — at ~40ms of network round trip per query, parse time
-    // is lost in the noise. Left off so that putting a transaction-mode pooler
-    // in front later cannot break anything.
-    prepare: false,
-    // Railway allows 500 connections and reserves 3. Three per function
-    // instance leaves room for far more concurrency than this site will see,
-    // while still letting the admin screens run their four aggregations at
-    // once rather than one after another.
-    max: 3,
+  const url = connectionString as string;
+
+  return postgres(url, {
+    // Railway is a plain Postgres server behind a TCP proxy — no pgbouncer in
+    // the path — so prepared statements survive for the life of the connection.
+    // Left at the default (on). Measured against this database with the two
+    // settings interleaved, so network drift hit both equally: 58ms mean per
+    // query with them off against 54ms with them on. A real but small win — the
+    // coast-to-coast round trip dominates and parse time is what little is
+    // left. If a transaction-mode pooler is ever put in front of this database,
+    // this is the line to revisit, because prepared statements break there.
+
+    // Five per function instance: the dashboard fires four aggregations through
+    // Promise.all and one of them would otherwise queue. max_connections on
+    // this server is 500 with 3 reserved, and the server is CoastPro's alone,
+    // so the ceiling is nowhere near.
+    max: 5,
     // Opening a connection costs about half a second — TCP, then a TLS
     // handshake, then authentication, across the country. A warm function
     // instance should not pay that again between requests, so idle connections
     // are held for a minute rather than dropped after twenty seconds.
     idle_timeout: 60,
     connect_timeout: 15,
-    // Railway's Postgres presents a self-signed certificate, so 'require'
-    // rather than 'verify-full': the traffic is encrypted, the certificate is
-    // not checked against a public CA. A database on localhost is not crossing
-    // a network at all, and demanding TLS there only breaks local work.
-    ssl: isLocal ? false : 'require',
+    // Railway's Postgres serves a certificate it generated for itself, so the
+    // chain cannot be checked against a public CA and verify-full fails
+    // outright. 'require' encrypts without demanding one. It must never be
+    // dropped: this server also accepts unencrypted connections, and this
+    // connection crosses the public internet carrying the credentials and every
+    // visitor's hashed address.
+    ssl: isLocal(url) ? false : 'require',
+    connection: {
+      // Railway sets no statement_timeout at all, and there is no dashboard to
+      // kill a runaway query — it would have to be found by hand over psql.
+      // Fifteen seconds is longer than any real query here and shorter than the
+      // function timeout, so a stuck query surfaces as an error instead of a
+      // hang. Verified against the live database: it does fire.
+      statement_timeout: 15_000,
+      idle_in_transaction_session_timeout: 30_000,
+      // So a human reading pg_stat_activity can tell the web app apart from the
+      // nightly conversions cron and from their own psql session.
+      application_name: 'coastpro-web',
+    },
     onnotice: () => {},
   });
 }
 
-/** The handle, or null when the site is running without a database. */
+/** The handle, or null when the site is running without a usable database. */
 export function db(): postgres.Sql | null {
-  if (!connectionString) return null;
+  if (configError) return null;
   if (!global.__coastproSql) global.__coastproSql = create();
   return global.__coastproSql;
 }
 
 /** The handle, or a thrown error. For admin routes, which cannot degrade. */
 export function requireDb(): postgres.Sql {
-  const handle = db();
-  if (!handle) {
-    throw new Error('DATABASE_URL is not set — the admin panel needs a database.');
-  }
-  return handle;
+  if (configError) throw new Error(configError);
+  return db() as postgres.Sql;
 }
 
 /**
