@@ -31,6 +31,14 @@ interface LeadRow {
   lt_landing_path: string | null;
 }
 
+/**
+ * Google retires an API version roughly a year after release, and a call to a
+ * sunset version fails outright rather than degrading. Kept as a named constant
+ * so the next bump is one line, and so it is obvious this needs a bump at all —
+ * v25 was released in July 2026 and sunsets in August 2027.
+ */
+const GOOGLE_ADS_API_VERSION = 'v25';
+
 function sha256(value: string): string {
   return createHash('sha256').update(value.trim().toLowerCase()).digest('hex');
 }
@@ -108,7 +116,7 @@ async function sendToGoogleAds(lead: LeadRow) {
   if (loginCustomerId) headers['login-customer-id'] = loginCustomerId;
 
   const response = await fetch(
-    `https://googleads.googleapis.com/v18/customers/${customerId}:uploadClickConversions`,
+    `https://googleads.googleapis.com/${GOOGLE_ADS_API_VERSION}/customers/${customerId}:uploadClickConversions`,
     {
       method: 'POST',
       headers,

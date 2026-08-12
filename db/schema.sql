@@ -282,6 +282,75 @@ create table if not exists ad_spend (
 create index if not exists ad_spend_day_idx on ad_spend (day desc);
 
 -- ---------------------------------------------------------------------------
+-- Platform statistics — what the ad platforms report about themselves.
+--
+-- Deliberately one wide table rather than one per report. The reports differ
+-- only in what a row is *about* — a campaign, a keyword, a search term, a city,
+-- an hour — and every one of them carries the same handful of measures. Ten
+-- near-identical tables would mean ten near-identical queries and a migration
+-- every time a new breakdown is added.
+--
+-- This is kept strictly apart from the first-party tables, and must never be
+-- silently added to them. A platform's "conversions" is its own attribution
+-- model guessing; `leads` is a person who actually got in touch. Showing them
+-- side by side is the point. Adding them together would be a lie.
+-- ---------------------------------------------------------------------------
+create table if not exists platform_stats (
+  day                    date   not null,
+  channel                text   not null,   -- google_ads | google_lsa | meta_ads | bing_ads …
+  level                  text   not null,   -- account | campaign | ad_group | keyword | search_term | ad | device | geo | hour
+  -- The platform's own id where there is one. For rows that are not about an
+  -- object — a search term, a city, an hour — this holds the value itself.
+  entity_id              text   not null default '',
+  entity_name            text,
+  parent_name            text,              -- campaign name, for rows below it
+  -- A second dimension when the report is segmented: device, placement, match
+  -- type. Empty string rather than null so it can sit in the primary key.
+  segment                text   not null default '',
+
+  impressions            bigint not null default 0,
+  clicks                 bigint not null default 0,
+  cost_cents             bigint not null default 0,
+  -- Fractional on purpose: platforms report conversions in fractions when they
+  -- model or attribute partially.
+  conversions            numeric(12, 2) not null default 0,
+  conversion_value_cents bigint not null default 0,
+  -- Everything else the platform sends — impression share, quality score,
+  -- frequency, reach, call counts. Kept as-is rather than as columns, because
+  -- the interesting fields differ per platform and per report.
+  extra                  jsonb,
+
+  source                 text   not null,   -- google_ads_script | meta_api | manual_csv
+  updated_at             timestamptz not null default now(),
+
+  primary key (day, channel, level, entity_id, segment)
+);
+
+create index if not exists platform_stats_day_idx     on platform_stats (day desc);
+create index if not exists platform_stats_channel_idx on platform_stats (channel, level, day desc);
+create index if not exists platform_stats_level_idx   on platform_stats (level, day desc);
+
+-- ---------------------------------------------------------------------------
+-- Import runs — when each importer last ran, what it fetched and what broke.
+-- Without this, a scheduled job that quietly stopped three weeks ago looks
+-- exactly like a period with no advertising.
+-- ---------------------------------------------------------------------------
+create table if not exists import_runs (
+  id          bigserial primary key,
+  source      text not null,
+  started_at  timestamptz not null default now(),
+  finished_at timestamptz,
+  status      text not null default 'running',   -- running | ok | failed
+  day_from    date,
+  day_to      date,
+  rows_written integer not null default 0,
+  reports     jsonb,
+  error       text
+);
+
+create index if not exists import_runs_source_idx on import_runs (source, started_at desc);
+
+-- ---------------------------------------------------------------------------
 -- Conversion exports — the audit trail for what was pushed back to Google Ads
 -- and Meta, so a failed upload is visible rather than silently missing.
 -- ---------------------------------------------------------------------------
@@ -355,7 +424,8 @@ declare t text;
 begin
   foreach t in array array[
     'visitors','sessions','events','leads','tracking_numbers','calls',
-    'ad_spend','conversion_exports','web_vitals','settings','admin_audit'
+    'ad_spend','conversion_exports','web_vitals','settings','admin_audit',
+    'platform_stats','import_runs'
   ] loop
     execute format('alter table %I disable row level security', t);
   end loop;
