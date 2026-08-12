@@ -2,7 +2,18 @@
 --
 -- Run this once against the Railway Postgres service:
 --   psql "$DATABASE_PUBLIC_URL" -f db/schema.sql
--- It is idempotent — re-running it is safe, and is how later columns get added.
+--
+-- It is idempotent — re-running it is safe. But be precise about what that
+-- buys: `create table if not exists` creates a *missing* table and does
+-- nothing at all to one that already exists. Adding a column to a live table
+-- therefore takes an explicit `alter table … add column if not exists`, at the
+-- bottom of this file, as well as the column in the `create table` block for
+-- fresh installs. Both, every time.
+--
+-- Getting that wrong is invisible: the file runs clean, the deploy succeeds,
+-- and every write to the missing column fails inside `quietly()` while the
+-- console looks perfectly healthy. An earlier revision of this header claimed
+-- re-running was how columns got added, which was simply untrue.
 --
 -- Verified against the live database: PostgreSQL 18.4, reached over Railway's
 -- TCP proxy with TLS 1.3.
@@ -202,7 +213,43 @@ create table if not exists leads (
   is_duplicate      boolean not null default false,
   duplicate_of      uuid,
   email_delivered   boolean,
-  time_to_lead_sec  integer                    -- from session start to submit
+  time_to_lead_sec  integer,                   -- from session start to submit
+
+  -- ---------------------------------------------------------------------
+  -- JobPocket: getting the lead onto the owner's phone, and the job's
+  -- outcome back. Mirrored in the `alter table` block below — see the header.
+  -- ---------------------------------------------------------------------
+  jp_push_state      text not null default 'pending',  -- pending|sending|sent|skipped|failed
+  jp_push_attempts   integer not null default 0,
+  jp_push_claimed_at timestamptz,
+  jp_pushed_at       timestamptz,
+  jp_last_error      text,
+
+  jp_request_id      text,
+  jp_status_token    text,
+  jp_request_status  text,
+  jp_job_id          text,
+  jp_job_status      text,
+  jp_payment_status  text,
+  -- Deliberately not `value_cents`. That column is what was uploaded to Google
+  -- Ads under this lead's id, and a figure already sent to a third party must
+  -- never be quietly rewritten — the new one goes beside it.
+  jp_total_cents     integer,
+  jp_responded_at    timestamptz,
+  jp_paid_at         timestamptz,
+
+  jp_state           text,      -- derived: pending|accepted|working|invoiced|paid|…
+  -- What the sync last acted on. The reason this exists rather than comparing
+  -- states: a human who deliberately demotes a lead must not be overruled by
+  -- the next poll seeing the same unchanged state and promoting it again.
+  jp_applied_state   text,
+  jp_poll_state      text not null default 'idle',     -- idle|open|settled|gone
+  jp_poll_failures   integer not null default 0,
+  jp_next_poll_at    timestamptz,
+  jp_synced_at       timestamptz,
+
+  jp_conflict        text,      -- e.g. paid_after_lost, declined_after_booked
+  jp_conflict_at     timestamptz
 );
 
 create index if not exists leads_created_idx  on leads (created_at desc);
@@ -413,6 +460,45 @@ create table if not exists admin_audit (
 );
 
 create index if not exists admin_audit_ts_idx on admin_audit (ts desc);
+
+-- ---------------------------------------------------------------------------
+-- Columns added to tables that already exist.
+--
+-- `create table if not exists` above does nothing to a live table, so anything
+-- added after the first deploy has to be repeated here. See the header.
+-- ---------------------------------------------------------------------------
+alter table leads add column if not exists jp_push_state      text not null default 'pending';
+alter table leads add column if not exists jp_push_attempts   integer not null default 0;
+alter table leads add column if not exists jp_push_claimed_at timestamptz;
+alter table leads add column if not exists jp_pushed_at       timestamptz;
+alter table leads add column if not exists jp_last_error      text;
+alter table leads add column if not exists jp_request_id      text;
+alter table leads add column if not exists jp_status_token    text;
+alter table leads add column if not exists jp_request_status  text;
+alter table leads add column if not exists jp_job_id          text;
+alter table leads add column if not exists jp_job_status      text;
+alter table leads add column if not exists jp_payment_status  text;
+alter table leads add column if not exists jp_total_cents     integer;
+alter table leads add column if not exists jp_responded_at    timestamptz;
+alter table leads add column if not exists jp_paid_at         timestamptz;
+alter table leads add column if not exists jp_state           text;
+alter table leads add column if not exists jp_applied_state   text;
+alter table leads add column if not exists jp_poll_state      text not null default 'idle';
+alter table leads add column if not exists jp_poll_failures   integer not null default 0;
+alter table leads add column if not exists jp_next_poll_at    timestamptz;
+alter table leads add column if not exists jp_synced_at       timestamptz;
+alter table leads add column if not exists jp_conflict        text;
+alter table leads add column if not exists jp_conflict_at     timestamptz;
+
+-- Partial indexes: the queue and the poller each look at a small slice.
+create index if not exists leads_jp_push_idx on leads (created_at)
+  where jp_push_state in ('pending', 'sending', 'failed');
+create index if not exists leads_jp_poll_idx on leads (jp_next_poll_at)
+  where jp_poll_state in ('open');
+-- A tripwire, not an optimisation: two of our leads must never claim the same
+-- JobPocket request. If this ever fires, we generated one id twice.
+create unique index if not exists leads_jp_request_idx on leads (jp_request_id)
+  where jp_request_id is not null;
 
 -- ---------------------------------------------------------------------------
 -- Undo the Row Level Security an earlier revision switched on. Harmless while

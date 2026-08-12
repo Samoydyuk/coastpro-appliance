@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { flushConversionQueue } from '@/lib/conversions';
+import { flushLeadPushQueue, syncJobPocketOutcomes } from '@/lib/jobpocket';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -31,8 +32,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Order matters: get any stranded leads onto the owner's phone first, then
+    // read back what became of the ones already there, then send whatever that
+    // turned into to the ad platforms. Each step feeds the next.
+    const pushed = await flushLeadPushQueue(50);
+    const synced = await syncJobPocketOutcomes(50);
     const result = await flushConversionQueue(50);
-    return NextResponse.json({ ok: true, ...result });
+    return NextResponse.json({ ok: true, pushed, synced, ...result });
   } catch (error) {
     console.error('Conversion cron failed:', error);
     return NextResponse.json({ error: 'Flush failed' }, { status: 500 });

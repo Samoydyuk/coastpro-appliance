@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { siteConfig } from '@/data/site-config';
 import { recordLead } from '@/lib/leads';
+import { pushLeadNow } from '@/lib/jobpocket';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -49,6 +50,11 @@ export async function POST(request: NextRequest) {
       appliance,
       problem,
     });
+
+    // Straight to the owner's phone. Awaited, but on a tight budget inside
+    // pushLeadNow — a promise left running after the response is not guaranteed
+    // to finish on this platform, and the queue is what makes that safe.
+    await pushLeadNow(leadId);
 
     // Best effort. The visitor is on their way to the scheduler and must not be
     // held up, or shown an error, because a notification failed.

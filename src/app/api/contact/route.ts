@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { siteConfig } from '@/data/site-config';
 import { recordLead } from '@/lib/leads';
+import { pushLeadNow } from '@/lib/jobpocket';
 import { db, quietly } from '@/lib/db';
+
+// Node, explicitly: this route uses fetch with an abort signal and Node's
+// crypto downstream, and Edge changes the semantics of both.
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 /**
  * Address the notification is sent from. Resend only accepts a domain you have
@@ -61,51 +67,56 @@ export async function POST(request: NextRequest) {
 
     const apiKey = process.env.RESEND_API_KEY;
 
-    // Without a key nothing can be delivered. Fail loudly: telling the visitor
-    // the message went through when it did not is how leads get lost.
-    if (!apiKey) {
-      console.error(
-        'Contact form: RESEND_API_KEY is not set — submission could not be delivered.',
-        { name, email, phone, service, at: new Date().toISOString() }
-      );
-      await markDelivered(leadId, false);
+    // Two independent ways to reach a human, tried at the same time rather than
+    // one after the other — the visitor waits for the slower, not for both.
+    const [jobPocket, emailed] = await Promise.all([
+      pushLeadNow(leadId),
+      (async () => {
+        if (!apiKey) {
+          console.error(
+            'Contact form: RESEND_API_KEY is not set — no email could be sent.',
+            { name, email, phone, service, at: new Date().toISOString() }
+          );
+          return false;
+        }
+        const resend = new Resend(apiKey);
+        const { error } = await resend.emails.send({
+          from: FROM,
+          to: [TO],
+          replyTo: email,
+          subject: `New service request: ${service} — ${name}`,
+          html: `
+            <h2>New contact form submission</h2>
+            <p><strong>Name:</strong> ${escapeHtml(name)}</p>
+            <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+            <p><strong>Phone:</strong> ${escapeHtml(phone)}</p>
+            <p><strong>Service:</strong> ${escapeHtml(service)}</p>
+            <p><strong>Message:</strong></p>
+            <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
+            <hr>
+            <p style="color:#666;font-size:12px">Sent from ${siteConfig.seo.siteUrl} at ${new Date().toISOString()}</p>
+          `,
+        });
+        if (error) console.error('Contact form: Resend rejected the message', error);
+        return !error;
+      })(),
+    ]);
+
+    await markDelivered(leadId, emailed);
+
+    // A lead that reached JobPocket has made somebody's phone buzz. A lead only
+    // queued for retry has not — so it does not count as delivered, however
+    // safely it is stored. Telling somebody their message went through when
+    // nobody has seen it is how six months of enquiries were lost here.
+    const reachedSomebody =
+      emailed || jobPocket.kind === 'created' || jobPocket.kind === 'duplicate';
+
+    if (!reachedSomebody) {
       return NextResponse.json(
         {
           error: `Our contact form is temporarily unavailable. Please call us at ${siteConfig.contact.phone}.`,
         },
         { status: 503 }
-      );
-    }
-
-    const resend = new Resend(apiKey);
-
-    const { error } = await resend.emails.send({
-      from: FROM,
-      to: [TO],
-      replyTo: email,
-      subject: `New service request: ${service} — ${name}`,
-      html: `
-        <h2>New contact form submission</h2>
-        <p><strong>Name:</strong> ${escapeHtml(name)}</p>
-        <p><strong>Email:</strong> ${escapeHtml(email)}</p>
-        <p><strong>Phone:</strong> ${escapeHtml(phone)}</p>
-        <p><strong>Service:</strong> ${escapeHtml(service)}</p>
-        <p><strong>Message:</strong></p>
-        <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
-        <hr>
-        <p style="color:#666;font-size:12px">Sent from ${siteConfig.seo.siteUrl} at ${new Date().toISOString()}</p>
-      `,
-    });
-
-    await markDelivered(leadId, !error);
-
-    if (error) {
-      console.error('Contact form: Resend rejected the message', error);
-      return NextResponse.json(
-        {
-          error: `We couldn't send your message. Please call us at ${siteConfig.contact.phone}.`,
-        },
-        { status: 502 }
       );
     }
 
