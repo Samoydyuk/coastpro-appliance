@@ -241,6 +241,7 @@ async function sendLead(lead: LeadRow, config: JobPocketConfig): Promise<PushOut
       },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(PUSH_TIMEOUT_MS),
+      cache: 'no-store',
     });
 
     const payload = (await response.json().catch(() => ({}))) as {
@@ -602,6 +603,12 @@ export async function syncJobPocketOutcomes(limit = 50) {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${config.apiKey}` },
       body: JSON.stringify({ tokens: open.map((row) => row.jp_status_token) }),
       signal: AbortSignal.timeout(POLL_TIMEOUT_MS),
+      // Never a cached view of somebody else's state. This framework replaces
+      // the global fetch with one that caches, and a stale answer here means
+      // the console quietly reports a job as unaccepted long after it was
+      // accepted — observed, not theorised: the same token returned ACCEPTED
+      // to curl and PENDING to this function in the same minute.
+      cache: 'no-store',
     });
     if (!response.ok) {
       console.error('[jobpocket] status poll failed:', response.status);
