@@ -71,11 +71,17 @@ function create(): postgres.Sql {
     // Railway is a plain Postgres server behind a TCP proxy — no pgbouncer in
     // the path — so prepared statements survive for the life of the connection.
     // Left at the default (on). Measured against this database with the two
-    // settings interleaved, so network drift hit both equally: 58ms mean per
-    // query with them off against 54ms with them on. A real but small win — the
-    // coast-to-coast round trip dominates and parse time is what little is
-    // left. If a transaction-mode pooler is ever put in front of this database,
-    // this is the line to revisit, because prepared statements break there.
+    // settings interleaved, so network drift hit both equally, mean ms per
+    // call over 40 pairs:
+    //
+    //     simple select   43 off → 39 on
+    //     aggregate       47 off → 41 on
+    //     bulk insert    191 off → 140 on
+    //
+    // The ingest endpoint runs that bulk insert on every beacon, so this is
+    // where it earns its keep. If a transaction-mode pooler is ever put in
+    // front of this database, this is the line to revisit: prepared statements
+    // break there, which is why Supabase needed them off.
 
     // Five per function instance: the dashboard fires four aggregations through
     // Promise.all and one of them would otherwise queue. max_connections on
