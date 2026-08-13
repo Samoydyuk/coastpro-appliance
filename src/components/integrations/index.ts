@@ -1,1 +1,0 @@
-export { CalendlyEmbed } from './CalendlyEmbed';
