@@ -41,7 +41,10 @@ export default async function BookAppointmentPage() {
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-3 gap-12">
             {/* Booking Widget Area */}
-            <div className="lg:col-span-2">
+            {/* min-w-0: a grid child defaults to min-width:auto, so the
+                horizontally scrolling date strip inside would widen this
+                column instead of scrolling, and push the form off-screen. */}
+            <div className="lg:col-span-2 min-w-0">
               <Card>
                 <CardContent className="p-8">
                   <BookingStepForm services={services} />
