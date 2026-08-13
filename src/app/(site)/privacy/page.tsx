@@ -46,8 +46,9 @@ export default function PrivacyPage() {
             <p>
               <strong className="text-ink">When you book an appointment:</strong> your name, email
               address, phone number, service address, city and ZIP code, the appliance type and your
-              description of the problem. Scheduling is handled by Calendly, so the details you
-              enter on the booking step are submitted to Calendly along with your chosen time.
+              description of the problem, and the arrival window you choose. Scheduling is handled
+              by JobPocket, our booking and dispatch system, so those details are submitted
+              there to create the appointment.
             </p>
             <p>
               <strong className="text-ink">Automatically:</strong> standard analytics data through
@@ -74,7 +75,7 @@ export default function PrivacyPage() {
           <LegalSection number="04" title="Who We Share It With">
             <p>
               Only the service providers that make the site work: Resend delivers contact form
-              submissions to our inbox, Calendly handles appointment scheduling, Vercel hosts the
+              submissions to our inbox, JobPocket handles appointment scheduling and dispatch, Vercel hosts the
               site, and Google provides analytics, advertising and the embedded map. Each processes
               the data under its own privacy terms.
             </p>

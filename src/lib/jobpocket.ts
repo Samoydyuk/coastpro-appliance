@@ -57,7 +57,7 @@ export async function jobPocketConfig(): Promise<JobPocketConfig | null> {
   const envKey = process.env.JOBPOCKET_API_KEY;
   if (envKey) {
     const value = {
-      baseUrl: process.env.JOBPOCKET_BASE_URL || DEFAULT_BASE_URL,
+      baseUrl: process.env.JOBPOCKET_API_BASE || process.env.JOBPOCKET_BASE_URL || DEFAULT_BASE_URL,
       apiKey: envKey,
       enabled: true,
     };
@@ -87,6 +87,87 @@ export async function jobPocketConfig(): Promise<JobPocketConfig | null> {
 /** Called after the key is changed in the console, so the next request sees it. */
 export function forgetJobPocketConfig() {
   cached = null;
+}
+
+/**
+ * The booking form's reads.
+ *
+ * These three are the public face of a JobPocket booking page — no key, no
+ * lead, nothing written. They are what lets the form show the technician's
+ * real calendar instead of a wishlist the office has to phone back and undo.
+ *
+ * The slug identifies whose calendar, and is the one piece of this file that
+ * is genuinely per-site, so it stays an environment variable.
+ */
+const BOOKING_SLUG = process.env.JOBPOCKET_BOOKING_SLUG || 'coastpro';
+
+export interface BookingService {
+  id: string;
+  name: string;
+  description: string | null;
+  duration: number | null;
+  priceFrom: number | null;
+  priceTo: number | null;
+}
+
+export interface ArrivalWindow {
+  label: string;
+  start: string;
+  end: string;
+  startISO: string;
+  endISO: string;
+}
+
+/**
+ * Where the public booking endpoints live.
+ *
+ * Deliberately *not* the settings row the API key comes from. The key rotates
+ * and must be read fresh; the host does not. Looking it up in Postgres would
+ * put a database round-trip inside a public page render — and, worse, would
+ * hide these fetches from Next's cache, freezing the service list at whatever
+ * it was on the day of the last deploy.
+ */
+const BOOKING_BASE = process.env.JOBPOCKET_API_BASE || DEFAULT_BASE_URL;
+
+/** The service list shown in the form, straight from JobPocket. */
+export async function getServices(): Promise<BookingService[]> {
+  const res = await fetch(`${BOOKING_BASE}/book/${BOOKING_SLUG}/services`, {
+    // The list changes when the owner edits it in the app, not per request.
+    next: { revalidate: 300 },
+  }).catch(() => null);
+  if (!res?.ok) return [];
+  const data = (await res.json().catch(() => ({}))) as { services?: BookingService[] };
+  return data.services ?? [];
+}
+
+/** Arrival windows still open on a given day, for a given service. */
+export async function getWindows(date: string, serviceId?: string): Promise<ArrivalWindow[]> {
+  const url = new URL(`${BOOKING_BASE}/book/${BOOKING_SLUG}/slots`);
+  url.searchParams.set('date', date);
+  if (serviceId) url.searchParams.set('serviceId', serviceId);
+
+  // Availability is the one thing that must never be cached.
+  const res = await fetch(url, { cache: 'no-store' }).catch(() => null);
+  if (!res?.ok) return [];
+  const data = (await res.json().catch(() => ({}))) as {
+    windows?: ArrivalWindow[];
+    slots?: ArrivalWindow[];
+  };
+  return data.windows ?? data.slots ?? [];
+}
+
+/** Google address suggestions, proxied so we need no Google key of our own. */
+export async function getAddressSuggestions(input: string): Promise<string[]> {
+  if (input.trim().length < 4) return [];
+  const url = new URL(`${BOOKING_BASE}/book/${BOOKING_SLUG}/address-autocomplete`);
+  url.searchParams.set('input', input);
+
+  const res = await fetch(url, { cache: 'no-store' }).catch(() => null);
+  if (!res?.ok) return [];
+  const data = (await res.json().catch(() => ({}))) as {
+    predictions?: Array<{ description: string }>;
+  };
+  return (data.predictions ?? []).map((p) => p.description);
 }
 
 // ---------------------------------------------------------------------------
@@ -138,8 +219,12 @@ interface LeadRow {
   city: string | null;
   zip: string | null;
   appliance: string | null;
+  brand: string | null;
   problem: string | null;
   message: string | null;
+  service_name: string | null;
+  preferred_start: string | null;
+  preferred_end: string | null;
   device: string | null;
   geo_city: string | null;
   geo_region: string | null;
@@ -221,14 +306,26 @@ async function sendLead(lead: LeadRow, config: JobPocketConfig): Promise<PushOut
     name: lead.name || 'Website enquiry',
     phone: lead.phone || '',
     email: lead.email ?? undefined,
-    service: lead.appliance ? `${lead.appliance.replace(/-/g, ' ')} repair` : undefined,
+    // The booking form sends JobPocket's own service name; the contact form
+    // only knows which appliance, so its label is built from that.
+    service:
+      lead.service_name ||
+      (lead.appliance ? `${lead.appliance.replace(/-/g, ' ')} repair` : undefined),
     description: lead.problem || lead.message || undefined,
     address: {
       line1: lead.address ?? undefined,
       city: lead.city ?? undefined,
       zip: lead.zip ?? undefined,
     },
-    appliance: lead.appliance ? { type: lead.appliance } : undefined,
+    appliance:
+      lead.appliance || lead.brand
+        ? { type: lead.appliance ?? undefined, brand: lead.brand ?? undefined }
+        : undefined,
+    // The window the visitor picked off the real calendar. Without it the
+    // request lands with no time on it and somebody has to ring back to agree
+    // the slot the customer already chose.
+    preferredStart: lead.preferred_start ?? undefined,
+    preferredEnd: lead.preferred_end ?? undefined,
     attribution,
   };
 
@@ -341,7 +438,8 @@ export async function pushLeadNow(leadId: string | null): Promise<PushOutcome> {
 
   const lead = await quietly(async () => {
     const [row] = (await sql`
-      select id, name, email, phone, address, city, zip, appliance, problem, message,
+      select id, name, email, phone, address, city, zip, appliance, brand, problem, message,
+             service_name, preferred_start, preferred_end,
              device, geo_city, geo_region,
              lt_source, lt_medium, lt_campaign, lt_term, lt_content,
              lt_landing_path, lt_referrer,

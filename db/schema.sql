@@ -166,8 +166,12 @@ create table if not exists leads (
   city              text,
   zip               text,
   appliance         text,
+  brand             text,
   problem           text,
   message           text,
+  service_name      text,           -- JobPocket's own name for the job booked
+  preferred_start   timestamptz,     -- the arrival window the visitor chose
+  preferred_end     timestamptz,
 
   -- First touch
   ft_channel        text,
@@ -467,6 +471,12 @@ create index if not exists admin_audit_ts_idx on admin_audit (ts desc);
 -- `create table if not exists` above does nothing to a live table, so anything
 -- added after the first deploy has to be repeated here. See the header.
 -- ---------------------------------------------------------------------------
+-- The booking form carries more than the contact form does.
+alter table leads add column if not exists brand             text;
+alter table leads add column if not exists service_name      text;
+alter table leads add column if not exists preferred_start   timestamptz;
+alter table leads add column if not exists preferred_end     timestamptz;
+
 alter table leads add column if not exists jp_push_state      text not null default 'pending';
 alter table leads add column if not exists jp_push_attempts   integer not null default 0;
 alter table leads add column if not exists jp_push_claimed_at timestamptz;

@@ -48,14 +48,7 @@ export const trackFormError = (formName: string, fields: string[]) => {
   track('form_error', { label: formName, meta: { fields } });
 };
 
-export const trackCalendlyBooking = () => {
-  trackEvent('calendly_booking', 'conversion', 'appointment_scheduled');
-  track('calendly_booked', { label: 'appointment_scheduled' });
-};
 
-export const trackCalendlyView = () => {
-  track('calendly_view', { label: 'scheduler_shown' });
-};
 
 // Google Ads conversion tracking (will be activated when AW-ID is added)
 export const trackAdsConversion = (conversionLabel: string) => {

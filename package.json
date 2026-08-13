@@ -14,7 +14,6 @@
     "next": "^14.2.0",
     "postgres": "^3.4.9",
     "react": "^18.2.0",
-    "react-calendly": "^4.4.0",
     "react-dom": "^18.2.0",
     "resend": "^6.18.1",
     "tailwind-merge": "^2.2.0"

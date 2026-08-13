@@ -1,9 +1,9 @@
 import { Metadata } from 'next';
-import Link from 'next/link';
 import { Phone, Shield, Check } from 'lucide-react';
 import { Card, CardContent, Button } from '@/components/ui';
 import { PageHeader } from '@/components/sections';
 import { BookingStepForm } from '@/components/forms';
+import { getServices } from '@/lib/jobpocket';
 import { siteConfig } from '@/data/site-config';
 
 export const metadata: Metadata = {
@@ -24,7 +24,9 @@ const benefits = [
   `${siteConfig.trustSignals.warrantyDays}-day warranty on all repairs`,
 ];
 
-export default function BookAppointmentPage() {
+export default async function BookAppointmentPage() {
+  const services = await getServices();
+
   return (
     <>
       <PageHeader
@@ -39,20 +41,13 @@ export default function BookAppointmentPage() {
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-3 gap-12">
             {/* Booking Widget Area */}
-            <div className="lg:col-span-2">
+            {/* min-w-0: a grid child defaults to min-width:auto, so the
+                horizontally scrolling date strip inside would widen this
+                column instead of scrolling, and push the form off-screen. */}
+            <div className="lg:col-span-2 min-w-0">
               <Card>
                 <CardContent className="p-8">
-                  <BookingStepForm />
-
-                  {/* Alternative: Contact Form Link */}
-                  <div className="mt-8 text-center border-t border-primary-500/20 pt-8">
-                    <p className="text-gray-600 mb-4">
-                      Prefer to describe your issue in detail?
-                    </p>
-                    <Link href="/contact">
-                      <Button variant="outline">Use Contact Form Instead</Button>
-                    </Link>
-                  </div>
+                  <BookingStepForm services={services} />
                 </CardContent>
               </Card>
             </div>

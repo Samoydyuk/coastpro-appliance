@@ -1,6 +1,7 @@
 import { getTrackingNumbers } from '@/lib/admin/queries';
 import { channelLabel } from '@/lib/attribution';
 import { googleAdsConfigured, metaConfigured } from '@/lib/conversions';
+import { jobPocketConfig } from '@/lib/jobpocket';
 import { siteConfig } from '@/data/site-config';
 import { Empty, Hint, Panel, SetupNotice, Table, Td, Th } from '@/components/admin/ui';
 import { NumberEditor, RetireNumberButton } from '@/components/admin/NumberEditor';
@@ -14,6 +15,7 @@ export default async function SettingsPage() {
       string,
       string | boolean | Date | null
     >[];
+    const jobPocket = await jobPocketConfig();
 
     const integrations = [
       {
@@ -29,11 +31,13 @@ export default async function SettingsPage() {
           : 'RESEND_API_KEY is not set — form submissions are recorded but nobody is emailed.',
       },
       {
-        name: 'Calendly bookings',
-        ready: Boolean(process.env.CALENDLY_WEBHOOK_SECRET),
-        detail: process.env.CALENDLY_WEBHOOK_SECRET
-          ? 'Signed webhook active — bookings and cancellations are recorded.'
-          : 'No signing key. Bookings are still caught in the browser, but a cancelled appointment will not be.',
+        name: 'JobPocket bookings',
+        ready: Boolean(jobPocket?.enabled),
+        detail: jobPocket?.enabled
+          ? 'Enquiries go straight to the phone as booking requests, and the outcome of each job comes back here.'
+          : jobPocket
+            ? 'Configured but switched off — enquiries are being recorded and queued, not dispatched.'
+            : 'No plugin key. Enquiries are recorded here but nobody is notified.',
       },
       {
         name: 'Call tracking (Telnyx)',

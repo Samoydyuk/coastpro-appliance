@@ -20,8 +20,14 @@ export interface LeadInput {
   city?: string | null;
   zip?: string | null;
   appliance?: string | null;
+  brand?: string | null;
   problem?: string | null;
   message?: string | null;
+  /** JobPocket's own name for the service booked, when the form knows it. */
+  serviceName?: string | null;
+  /** The arrival window the visitor picked, ISO-8601. */
+  preferredStart?: string | null;
+  preferredEnd?: string | null;
   status?: string;
 }
 
@@ -119,7 +125,8 @@ export async function recordLead(request: Request, input: LeadInput): Promise<st
     const [lead] = (await sql`
       insert into leads (
         visitor_id, session_id, source_form,
-        name, email, phone, phone_e164, address, city, zip, appliance, problem, message,
+        name, email, phone, phone_e164, address, city, zip, appliance, brand, problem, message,
+        service_name, preferred_start, preferred_end,
         ft_channel, ft_source, ft_medium, ft_campaign, ft_content, ft_term,
         ft_click_id, ft_click_id_type, ft_landing_path,
         lt_channel, lt_source, lt_medium, lt_campaign, lt_content, lt_term,
@@ -131,7 +138,10 @@ export async function recordLead(request: Request, input: LeadInput): Promise<st
         ${visitorId}, ${sessionId}, ${input.sourceForm},
         ${input.name ?? null}, ${input.email ?? null}, ${input.phone ?? null}, ${phoneE164},
         ${input.address ?? null}, ${input.city ?? null}, ${input.zip ?? null},
-        ${input.appliance ?? null}, ${input.problem ?? null}, ${input.message ?? null},
+        ${input.appliance ?? null}, ${input.brand ?? null},
+        ${input.problem ?? null}, ${input.message ?? null},
+        ${input.serviceName ?? null},
+        ${input.preferredStart ?? null}::timestamptz, ${input.preferredEnd ?? null}::timestamptz,
         ${visitor?.ft_channel ?? session?.channel ?? null}, ${visitor?.ft_source ?? null},
         ${visitor?.ft_medium ?? null}, ${visitor?.ft_campaign ?? null},
         ${visitor?.ft_content ?? null}, ${visitor?.ft_term ?? null},
