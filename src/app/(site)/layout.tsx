@@ -62,7 +62,12 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: siteConfig.seo.siteUrl,
+    // './' resolves against metadataBase AND the current route, so each page
+    // is canonical to itself. An absolute URL here was inherited by every
+    // page, telling Google that all 34 of them — every city, every service —
+    // were duplicates of the home page and only the home page was worth
+    // indexing. Pages may still override this with one of their own.
+    canonical: './',
   },
 };
 
