@@ -28,7 +28,12 @@ import { buildPrompt, channelSpec, PROMPT_VERSION } from '@/lib/marketing/prompt
 
 const API_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = 'claude-sonnet-5';
-const MAX_TOKENS = 2000;
+/**
+ * An article with its meta fields runs well past a thousand words. At two
+ * thousand tokens the reply was being cut off, which is one of the two ways
+ * "the model did not reply with JSON" happens.
+ */
+const MAX_TOKENS = 4000;
 const TIMEOUT_MS = 90_000;
 
 export class GenerationError extends Error {}
@@ -64,7 +69,15 @@ async function ask(prompt: string): Promise<string> {
     body: JSON.stringify({
       model: MODEL,
       max_tokens: MAX_TOKENS,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [
+        { role: 'user', content: prompt },
+        // The reply is made to start inside the object. Asking politely for
+        // "JSON only" works until something in the input makes the model want
+        // to say a sentence first — a note in another language will do it —
+        // and then there is no JSON to find at all. Putting the opening brace
+        // in its mouth removes the option.
+        { role: 'assistant', content: '{' },
+      ],
     }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
@@ -83,7 +96,8 @@ async function ask(prompt: string): Promise<string> {
     .join('');
 
   if (!text.trim()) throw new GenerationError('The model returned nothing.');
-  return text;
+  // Put back the brace the assistant turn was seeded with.
+  return `{${text}`;
 }
 
 /**
@@ -97,7 +111,12 @@ function parse(reply: string): Record<string, unknown> {
   const start = reply.indexOf('{');
   const end = reply.lastIndexOf('}');
   if (start < 0 || end <= start) {
-    throw new GenerationError('The model did not reply with JSON.');
+    // Say what it did reply with. "Did not reply with JSON" on its own leaves
+    // nobody anything to act on — the first line of the actual answer usually
+    // explains itself.
+    throw new GenerationError(
+      `The model did not reply with JSON. It said: ${reply.trim().slice(0, 200)}`
+    );
   }
   try {
     return JSON.parse(reply.slice(start, end + 1)) as Record<string, unknown>;

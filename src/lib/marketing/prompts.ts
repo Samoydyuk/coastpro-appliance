@@ -181,6 +181,10 @@ export function buildPrompt(job: MarketingJobRow, spec: ChannelSpec, voice: Bran
     '   as it is clearly general and is not presented as something found on this job.',
     '',
     '## Output',
+    // The technician writes for themselves, in whatever language is quickest —
+    // the note this is built from may well be in Ukrainian. That must change
+    // nothing about what comes out.
+    'The material above may be in any language. Write in American English regardless.',
     'Reply with JSON only — no preamble, no code fence — with exactly these keys:',
     ...spec.fields.map((field) => `- ${field}: ${FIELD_HELP[field]}`),
   ].join('\n');
