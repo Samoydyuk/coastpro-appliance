@@ -4,6 +4,7 @@ import { getMarketingJob } from '@/lib/marketing/queries';
 import { dateTime } from '@/lib/admin/format';
 import { Empty, Hint, Panel, SetupNotice, Warning } from '@/components/admin/ui';
 import { MarketingContent } from '@/components/admin/MarketingContent';
+import { MarketingPhotos } from '@/components/admin/MarketingPhotos';
 import { CHANNELS } from '@/lib/marketing/prompts';
 
 export const dynamic = 'force-dynamic';
@@ -132,6 +133,7 @@ export default async function MarketingJobPage({ params }: { params: { jobId: st
                 pieces={content.map((piece) => ({
                   channel: piece.channel,
                   status: piece.status,
+                  slug: piece.slug,
                   title: piece.title,
                   metaTitle: piece.meta_title,
                   metaDesc: piece.meta_desc,
@@ -145,7 +147,7 @@ export default async function MarketingJobPage({ params }: { params: { jobId: st
             </Panel>
           </div>
 
-          <Panel title="Photos" subtitle={`${photos.length} released`}>
+          <Panel title="Photos" subtitle={`${photos.length} released · tap to choose`}>
             {photos.length === 0 ? (
               <Empty>
                 No photos released for this job. A picture has its own switch in the app — off
@@ -153,23 +155,16 @@ export default async function MarketingJobPage({ params }: { params: { jobId: st
                 face in an image.
               </Empty>
             ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {photos.map((photo) => (
-                  <figure key={photo.photo_id} className="space-y-1">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`/api/admin/marketing/photo/${photo.photo_id}`}
-                      alt={photo.alt_text || photo.caption || 'Job photo'}
-                      className="aspect-square w-full rounded-card border border-primary-500/20 object-cover"
-                    />
-                    {photo.caption && (
-                      <figcaption className="text-[11px] leading-snug text-gray-500">
-                        {photo.caption}
-                      </figcaption>
-                    )}
-                  </figure>
-                ))}
-              </div>
+              <MarketingPhotos
+                jobId={job.job_id}
+                photos={photos.map((photo) => ({
+                  id: photo.photo_id,
+                  caption: photo.caption,
+                  selected: photo.selected,
+                  sortOrder: photo.sort_order,
+                  altText: photo.alt_text,
+                }))}
+              />
             )}
             <Hint>
               Served through this console rather than from storage, so the location the camera

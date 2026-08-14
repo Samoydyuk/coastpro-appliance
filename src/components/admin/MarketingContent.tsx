@@ -6,14 +6,16 @@ import { useRouter } from 'next/navigation';
 /**
  * Writing, reading and correcting the drafts for one job.
  *
- * One panel per channel, all of them closed until asked for. The shape of the
- * screen carries the rule the whole module is built on: the button says Write,
- * the result is a draft, and there is nothing on this page that publishes it.
+ * One panel per channel, all of them closed until asked for. Writing produces
+ * a draft and stops there; publishing is a separate, deliberate press, offered
+ * only for the article, and only the website is a destination. Nothing here
+ * posts to anyone else's platform on the owner's behalf.
  */
 
 export interface ContentPiece {
   channel: string;
   status: string;
+  slug: string | null;
   title: string | null;
   metaTitle: string | null;
   metaDesc: string | null;
@@ -40,6 +42,26 @@ export function MarketingContent({ jobId, channels, pieces }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState<string | null>(null);
+
+  const publish = async (channel: string, action: 'publish' | 'unpublish') => {
+    setBusy(channel);
+    setErrors((current) => ({ ...current, [channel]: '' }));
+    try {
+      const response = await fetch('/api/admin/marketing/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId, channel, action }),
+      });
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as { error?: string } | null;
+        setErrors((current) => ({ ...current, [channel]: data?.error ?? 'Could not change it.' }));
+        return;
+      }
+      router.refresh();
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const byChannel = new Map(pieces.map((piece) => [piece.channel, piece]));
 
@@ -156,7 +178,7 @@ export function MarketingContent({ jobId, channels, pieces }: Props) {
                   className="w-full rounded-card border border-primary-500/30 bg-[#fcfcfb] p-3 font-mono text-xs leading-relaxed"
                 />
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <button
                     type="button"
                     onClick={() => save(channel.key)}
@@ -167,6 +189,34 @@ export function MarketingContent({ jobId, channels, pieces }: Props) {
                   </button>
                   {saved === channel.key && (
                     <span className="text-xs text-gray-500">Saved</span>
+                  )}
+
+                  {/* Only the article goes anywhere from this screen. A social
+                      draft is copied out by hand, because posting to somebody's
+                      Instagram for them is a different kind of act. */}
+                  {channel.key === 'article' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          publish(channel.key, piece.status === 'published' ? 'unpublish' : 'publish')
+                        }
+                        disabled={working}
+                        className={`${button} border border-primary-500/30 text-gray-600 hover:border-ink hover:text-ink`}
+                      >
+                        {piece.status === 'published' ? 'Take it down' : 'Put it on the site'}
+                      </button>
+                      {piece.status === 'published' && piece.slug && (
+                        <a
+                          href={`/blog/${piece.slug}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-heading text-[10px] uppercase tracking-label text-primary-600 underline-offset-2 hover:underline"
+                        >
+                          View it
+                        </a>
+                      )}
+                    </>
                   )}
                   <span className="ml-auto text-[11px] text-gray-500">
                     {piece.model ? `Written by ${piece.model}` : ''}

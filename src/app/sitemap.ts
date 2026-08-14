@@ -2,10 +2,22 @@ import { MetadataRoute } from 'next';
 import { services } from '@/data/services';
 import { serviceAreas } from '@/data/service-areas';
 import { siteConfig } from '@/data/site-config';
+import { readPublishedArticles } from '@/lib/marketing/published';
 
 const BASE_URL = siteConfig.seo.siteUrl;
 
-export default function sitemap(): MetadataRoute.Sitemap {
+/**
+ * Built per request, because part of this file now comes from the database.
+ *
+ * Left static it would be frozen at build time, and a sitemap that is quietly
+ * a week behind is worse than one that costs a query: it is the file that
+ * tells a crawler what exists, and nothing about it looks broken when it is
+ * wrong. The cost is one query per fetch of a file crawlers ask for a handful
+ * of times a day.
+ */
+export const dynamic = 'force-dynamic';
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const currentDate = new Date();
 
   // Static pages
@@ -59,6 +71,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: `${BASE_URL}/blog`,
+      lastModified: currentDate,
+      changeFrequency: 'weekly',
+      priority: 0.6,
+    },
+    {
       url: `${BASE_URL}/privacy`,
       lastModified: currentDate,
       changeFrequency: 'yearly',
@@ -88,5 +106,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...servicePages, ...cityPages];
+  // Published write-ups. Read from the database, and an empty list when there
+  // is none to reach — a sitemap short a few pages is a far smaller problem
+  // than a sitemap that 500s and takes the whole file out of the index.
+  const articles = await readPublishedArticles();
+  const articlePages: MetadataRoute.Sitemap = articles.map((article) => ({
+    url: `${BASE_URL}/blog/${article.slug}`,
+    lastModified: article.updatedAt ?? currentDate,
+    changeFrequency: 'yearly' as const,
+    priority: 0.5,
+  }));
+
+  return [...staticPages, ...servicePages, ...cityPages, ...articlePages];
 }

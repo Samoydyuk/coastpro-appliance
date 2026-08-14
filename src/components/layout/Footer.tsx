@@ -98,6 +98,11 @@ export function Footer() {
                 <Clock className="h-4 w-4 mt-1 shrink-0" strokeWidth={1.5} />
                 <span>Every Day: {siteConfig.businessHours.weekdays}</span>
               </li>
+              <li>
+                <Link href="/blog" className={linkClass}>
+                  Repair notes
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
