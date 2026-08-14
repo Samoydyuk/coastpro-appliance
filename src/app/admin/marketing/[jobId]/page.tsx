@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { getMarketingJob } from '@/lib/marketing/queries';
 import { dateTime } from '@/lib/admin/format';
 import { Empty, Hint, Panel, SetupNotice, Warning } from '@/components/admin/ui';
+import { MarketingContent } from '@/components/admin/MarketingContent';
+import { CHANNELS } from '@/lib/marketing/prompts';
 
 export const dynamic = 'force-dynamic';
 
@@ -120,27 +122,26 @@ export default async function MarketingJobPage({ params }: { params: { jobId: st
               )}
             </Panel>
 
-            <Panel title="Content">
-              {content.length === 0 ? (
-                <Empty>
-                  Nothing written for this job yet. Generation arrives in the next step; for now
-                  this page is here so the material can be read before anything is made of it.
-                </Empty>
-              ) : (
-                <ul className="divide-y divide-primary-500/15">
-                  {content.map((piece) => (
-                    <li key={piece.id} className="flex items-center justify-between py-3">
-                      <div>
-                        <p className="text-sm font-medium capitalize text-ink">{piece.channel}</p>
-                        <p className="text-xs text-gray-500">{piece.title || 'Untitled'}</p>
-                      </div>
-                      <span className="font-heading text-[10px] uppercase tracking-label text-gray-500">
-                        {piece.status}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+            <Panel
+              title="Content"
+              subtitle="Written from the fields above and nothing else. Every piece is a draft."
+            >
+              <MarketingContent
+                jobId={job.job_id}
+                channels={CHANNELS.map((channel) => ({ key: channel.key, label: channel.label }))}
+                pieces={content.map((piece) => ({
+                  channel: piece.channel,
+                  status: piece.status,
+                  title: piece.title,
+                  metaTitle: piece.meta_title,
+                  metaDesc: piece.meta_desc,
+                  generatedBody: piece.generated_body,
+                  editedBody: piece.edited_body,
+                  model: piece.model,
+                  flags: piece.flags,
+                  updatedAt: piece.updated_at ? String(piece.updated_at) : null,
+                }))}
+              />
             </Panel>
           </div>
 

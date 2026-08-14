@@ -74,7 +74,15 @@ export default async function MarketingPage({
                 : `${total} finished ${total === 1 ? 'job' : 'jobs'} released for content`}
             </p>
           </div>
-          <MarketingRefresh lastRefresh={lastRefresh ? dateTime(lastRefresh) : null} />
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/admin/marketing/voice"
+              className="inline-flex h-8 items-center rounded-card border border-primary-500/30 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 hover:border-ink hover:text-ink"
+            >
+              House voice
+            </Link>
+            <MarketingRefresh lastRefresh={lastRefresh ? dateTime(lastRefresh) : null} />
+          </div>
         </header>
 
         {total === 0 && (

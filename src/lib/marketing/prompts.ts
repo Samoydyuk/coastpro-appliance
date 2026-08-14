@@ -1,0 +1,195 @@
+import type { MarketingJobRow } from '@/lib/marketing/queries';
+import type { BrandVoice } from '@/lib/marketing/voice';
+
+/**
+ * Turning one repair into a brief.
+ *
+ * The rule this file exists to enforce: **the outline is built from the fields
+ * that are actually present.** A job with no diagnosis does not get a "what we
+ * found" section with the model's best guess in it — it gets an outline with no
+ * such section. Telling a model "do not invent" and then handing it a heading
+ * called "The fault" with nothing under it is an invitation, not an instruction.
+ *
+ * So the outline below is assembled in code, section by section, each one
+ * conditional on the field it is written from. What the model is asked to do is
+ * write; what it is asked not to do is supply facts, and the way it is stopped
+ * is by never being asked for one.
+ */
+
+export const PROMPT_VERSION = '1';
+
+export interface ChannelSpec {
+  key: string;
+  label: string;
+  /** What the piece is for, in the model's terms. */
+  brief: string;
+  /** Keys the model must return. Anything else is dropped. */
+  fields: Array<'title' | 'slug' | 'metaTitle' | 'metaDesc' | 'body'>;
+  length: string;
+}
+
+export const CHANNELS: ChannelSpec[] = [
+  {
+    key: 'article',
+    label: 'Article',
+    brief:
+      'A page on the shop\'s own website about this repair. Its reader arrived from a search ' +
+      'for the same symptom and wants to know what the fault usually turns out to be, whether ' +
+      'it is fixable, and roughly what happens next.',
+    fields: ['title', 'slug', 'metaTitle', 'metaDesc', 'body'],
+    length: '450–700 words of body, in markdown, with ## subheadings.',
+  },
+  {
+    key: 'instagram',
+    label: 'Instagram',
+    brief:
+      'A caption for a photo of this repair. Opens with the specific thing that was wrong, ' +
+      'not with a question or a hook. Hashtags on their own last line, at most six, all of ' +
+      'them either the appliance, the brand, the fault or the town.',
+    fields: ['body'],
+    length: '60–110 words plus the hashtag line.',
+  },
+  {
+    key: 'facebook',
+    label: 'Facebook',
+    brief:
+      'A post for the shop\'s page. Reads like the owner wrote it between jobs: what came in, ' +
+      'what it turned out to be, what was done. No hashtags.',
+    fields: ['body'],
+    length: '80–150 words.',
+  },
+  {
+    key: 'google_business',
+    label: 'Google Business',
+    brief:
+      'A Google Business Profile update. Local and concrete — the town and the appliance in ' +
+      'the first sentence, because that is what the listing is being read for.',
+    fields: ['body'],
+    length: 'Under 750 characters, and it must end with the call to action.',
+  },
+  {
+    key: 'short',
+    label: 'Short version',
+    brief:
+      'Two sentences that can sit under a photo anywhere: what was wrong, what was done. ' +
+      'No call to action, no hashtags.',
+    fields: ['body'],
+    length: 'Two sentences.',
+  },
+];
+
+export function channelSpec(key: string): ChannelSpec | undefined {
+  return CHANNELS.find((c) => c.key === key);
+}
+
+/** The fields that survived the whitelist and the redactor, named plainly. */
+function material(job: MarketingJobRow): string[] {
+  const lines: string[] = [];
+
+  if (job.appliance_type) lines.push(`Appliance: ${job.appliance_type}`);
+  if (job.manufacturer) lines.push(`Brand: ${job.manufacturer}`);
+  if (job.model) lines.push(`Model: ${job.model}`);
+  if (job.error_codes.length) lines.push(`Error codes shown: ${job.error_codes.join(', ')}`);
+  if (job.diagnosis) lines.push(`What the technician found: ${job.diagnosis}`);
+  if (job.repair_performed) lines.push(`What the technician did: ${job.repair_performed}`);
+  if (job.technician_notes) lines.push(`Technician's note for the website: ${job.technician_notes}`);
+  if (job.replaced_parts.length) {
+    lines.push(
+      `Parts replaced: ${job.replaced_parts
+        .map((p) => `${p.description}${p.partNumber ? ` (${p.partNumber})` : ''}`)
+        .join('; ')}`
+    );
+  }
+  if (job.city) lines.push(`Town: ${[job.city, job.state].filter(Boolean).join(', ')}`);
+
+  return lines;
+}
+
+/**
+ * The outline, built only from what is there.
+ *
+ * Each entry names the section and the field it is written from. A field that
+ * is absent contributes no entry, which is the whole mechanism.
+ */
+function outline(job: MarketingJobRow): string[] {
+  const sections: string[] = [];
+
+  const symptom = job.error_codes.length
+    ? `the symptom, including the code ${job.error_codes.join('/')}`
+    : 'the symptom';
+  sections.push(`Open with ${symptom} on a ${[job.manufacturer, job.appliance_type].filter(Boolean).join(' ') || 'appliance'}.`);
+
+  if (job.diagnosis) sections.push('A section on what the fault turned out to be, from "what the technician found".');
+  if (job.repair_performed) sections.push('A section on the repair itself, from "what the technician did".');
+  if (job.replaced_parts.length) sections.push('Name the parts that were replaced. Part numbers only if they are listed above.');
+  if (job.technician_notes) sections.push("A short section built on the technician's note.");
+  if (job.city) sections.push('One mention of the town, in passing. Not a paragraph about the area.');
+  sections.push('Close with the call to action, once.');
+
+  return sections;
+}
+
+/** What is missing, stated so it is a boundary rather than a gap to fill. */
+function absent(job: MarketingJobRow): string[] {
+  const missing: string[] = [];
+  if (!job.diagnosis) missing.push('what the fault turned out to be');
+  if (!job.repair_performed) missing.push('what was actually done');
+  if (!job.replaced_parts.length) missing.push('which parts were replaced');
+  if (!job.error_codes.length) missing.push('any error code');
+  if (!job.model) missing.push('the model number');
+  if (!job.manufacturer) missing.push('the brand');
+  if (!job.city) missing.push('the town');
+  return missing;
+}
+
+export function buildPrompt(job: MarketingJobRow, spec: ChannelSpec, voice: BrandVoice): string {
+  const missing = absent(job);
+
+  return [
+    `Write one piece of content for ${voice.businessName}, an appliance repair shop working in ${voice.serviceArea}.`,
+    '',
+    `## What this piece is`,
+    spec.brief,
+    `Length: ${spec.length}`,
+    '',
+    '## The job, and the only facts about it that exist',
+    ...material(job).map((line) => `- ${line}`),
+    '',
+    '## How it should sound',
+    voice.tone,
+    `Call to action, when one is called for: ${voice.callToAction}`,
+    '',
+    '## Structure',
+    ...outline(job).map((line) => `- ${line}`),
+    '',
+    '## Rules, in order of importance',
+    '1. Every fact about this repair must come from the list above. If something is not there,',
+    '   it is not known, and it must not appear — not as a guess, not as a hedge, not as a',
+    '   "typically" or "in most cases" sentence standing in for it.',
+    missing.length
+      ? `   Not known for this job, and therefore not to be written about: ${missing.join('; ')}.`
+      : '   Every field is present for this job.',
+    '2. Where the text above says [removed], personal detail was deliberately taken out. Do not',
+    '   refer to it, work around it, or guess what it was. Write as if that clause is not there.',
+    '3. Facts about the business may only be the following, verbatim in substance:',
+    ...voice.facts.map((fact) => `   - ${fact}`),
+    '4. Never write any of these:',
+    ...voice.forbidden.map((rule) => `   - ${rule}`),
+    '5. No customer is ever mentioned, described, quoted or alluded to. The subject is the',
+    '   appliance and the fault, not the household.',
+    '6. General knowledge about how this kind of appliance works is allowed and useful, as long',
+    '   as it is clearly general and is not presented as something found on this job.',
+    '',
+    '## Output',
+    'Reply with JSON only — no preamble, no code fence — with exactly these keys:',
+    ...spec.fields.map((field) => `- ${field}: ${FIELD_HELP[field]}`),
+  ].join('\n');
+}
+
+const FIELD_HELP: Record<string, string> = {
+  title: 'the headline, under 60 characters, with the appliance and the fault in it',
+  slug: 'url slug, lowercase, hyphenated, under 60 characters',
+  metaTitle: 'search title, under 60 characters',
+  metaDesc: 'search description, 140–160 characters, no quotation marks',
+  body: 'the text itself',
+};

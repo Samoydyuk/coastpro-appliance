@@ -570,6 +570,11 @@ create table if not exists marketing_content (
   approved_by    text,
   approved_at    timestamptz,
 
+  -- What the draft-checker found: an invented part number, a price nobody
+  -- agreed to, a superlative. Stored rather than recomputed so the warning is
+  -- attached to the version it was raised against.
+  flags          jsonb not null default '[]',
+
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now(),
 
@@ -607,6 +612,7 @@ create index if not exists marketing_publication_content_idx
 -- added after the first deploy has to be repeated here. See the header.
 -- ---------------------------------------------------------------------------
 alter table marketing_job add column if not exists released boolean not null default true;
+alter table marketing_content add column if not exists flags jsonb not null default '[]';
 
 -- The booking form carries more than the contact form does.
 alter table leads add column if not exists brand             text;

@@ -60,6 +60,7 @@ export interface MarketingContentRow {
   prompt_version: string | null;
   approved_by: string | null;
   approved_at: Date | null;
+  flags: Array<{ label: string; excerpt: string }>;
   created_at: Date;
   updated_at: Date;
 }
@@ -313,10 +314,16 @@ export async function getMarketingJob(jobId: string): Promise<{
     order by sort_order, photo_id
   `) as unknown as MarketingPhotoRow[];
 
-  const content = (await sql`
+  const contentRows = (await sql`
     select * from marketing_content where job_id = ${jobId}
     order by channel
   `) as unknown as MarketingContentRow[];
+  // Same jsonb caution as the parts list: a flag array the page cannot map
+  // over would take the page down rather than the draft.
+  const content = contentRows.map((row) => ({
+    ...row,
+    flags: Array.isArray(row.flags) ? row.flags : [],
+  }));
 
   return { job, photos, content };
 }
