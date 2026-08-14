@@ -106,7 +106,15 @@ export function checkClaims(text: string, job: MarketingJobRow, voice: BrandVoic
   // A part or model number: has letters and digits, or is a long digit run.
   for (const match of prose.matchAll(/\b(?=[A-Z0-9-]{5,})(?=[A-Z0-9-]*\d)[A-Z0-9][A-Z0-9-]{4,}\b/g)) {
     const token = match[0].toUpperCase();
-    if (knownParts.has(token) || knownCodes.has(token) || token === knownModel) continue;
+    // A part number is never published, not even the right one. It is a
+    // shopping list for somebody else's van, and the part is named by what it
+    // is — "the drain pump" (owner's rule). The model number stays: it is what
+    // people search for, and it identifies the machine rather than the fix.
+    if (knownParts.has(token)) {
+      add('a part number — we do not publish these', match[0]);
+      continue;
+    }
+    if (knownCodes.has(token) || token === knownModel) continue;
     add('a part or model number not in the job data', match[0]);
   }
 

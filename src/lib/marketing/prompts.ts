@@ -95,8 +95,11 @@ function material(job: MarketingJobRow): string[] {
   if (job.technician_notes) lines.push(`Technician's note for the website: ${job.technician_notes}`);
   if (job.replaced_parts.length) {
     lines.push(
+      // Descriptions only. A part number in a public article is a shopping
+      // list for somebody else's van — the owner's rule, and the surest way to
+      // keep it is never to put the number in front of the model.
       `Parts replaced: ${job.replaced_parts
-        .map((p) => `${p.description}${p.partNumber ? ` (${p.partNumber})` : ''}`)
+        .map((p) => p.description)
         .join('; ')}`
     );
   }
@@ -121,7 +124,7 @@ function outline(job: MarketingJobRow): string[] {
 
   if (job.diagnosis) sections.push('A section on what the fault turned out to be, from "what the technician found".');
   if (job.repair_performed) sections.push('A section on the repair itself, from "what the technician did".');
-  if (job.replaced_parts.length) sections.push('Name the parts that were replaced. Part numbers only if they are listed above.');
+  if (job.replaced_parts.length) sections.push('Name the parts that were replaced, by what they are — never by part number.');
   if (job.technician_notes) sections.push("A short section built on the technician's note.");
   if (job.city) sections.push('One mention of the town, in passing. Not a paragraph about the area.');
   sections.push('Close with the call to action, once.');

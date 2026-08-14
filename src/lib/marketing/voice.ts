@@ -39,6 +39,7 @@ export const DEFAULT_VOICE: BrandVoice = {
     'work out whether it is worth calling someone.',
   ].join(' '),
   forbidden: [
+    'part numbers of any kind — name the part by what it is ("the drain pump"), never by its number',
     'guaranteed results or promises about how long a repair will last',
     'claims about being the cheapest, the best, or number one',
     'invented customer quotes, testimonials or review scores',
