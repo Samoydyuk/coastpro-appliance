@@ -49,8 +49,37 @@ export interface Draft {
   model: string;
 }
 
+/**
+ * What the reply has to look like, as a tool the model is made to call.
+ *
+ * Asking for JSON in words is a request; a tool with a schema is a shape the
+ * answer has to fit. This model refuses an assistant prefill — the other way of
+ * forcing it — and refusing outright is better than the failure it replaces:
+ * a model handed a note in Ukrainian answered in prose, and there was no JSON
+ * to find at all.
+ */
+function draftTool(fields: readonly string[]) {
+  const properties: Record<string, { type: 'string'; description: string }> = {};
+  for (const field of fields) {
+    properties[field] = { type: 'string', description: FIELD_DESCRIPTIONS[field] ?? field };
+  }
+  return {
+    name: 'draft',
+    description: 'Return the finished piece.',
+    input_schema: { type: 'object' as const, properties, required: [...fields] },
+  };
+}
+
+const FIELD_DESCRIPTIONS: Record<string, string> = {
+  title: 'The headline, under 60 characters.',
+  slug: 'URL slug, lowercase and hyphenated, under 60 characters.',
+  metaTitle: 'Search title, under 60 characters.',
+  metaDesc: 'Search description, 140–160 characters, no quotation marks.',
+  body: 'The text itself, in American English.',
+};
+
 /** The SDK is one fetch call; a dependency for it would be the larger cost. */
-async function ask(prompt: string): Promise<string> {
+async function ask(prompt: string, fields: readonly string[]): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new GenerationError(
@@ -69,15 +98,10 @@ async function ask(prompt: string): Promise<string> {
     body: JSON.stringify({
       model: MODEL,
       max_tokens: MAX_TOKENS,
-      messages: [
-        { role: 'user', content: prompt },
-        // The reply is made to start inside the object. Asking politely for
-        // "JSON only" works until something in the input makes the model want
-        // to say a sentence first — a note in another language will do it —
-        // and then there is no JSON to find at all. Putting the opening brace
-        // in its mouth removes the option.
-        { role: 'assistant', content: '{' },
-      ],
+      messages: [{ role: 'user', content: prompt }],
+      tools: [draftTool(fields)],
+      // Not "you may use this tool" — this tool, this turn.
+      tool_choice: { type: 'tool', name: 'draft' },
     }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
@@ -89,15 +113,24 @@ async function ask(prompt: string): Promise<string> {
     );
   }
 
-  const data = (await response.json()) as { content?: Array<{ type: string; text?: string }> };
-  const text = (data.content ?? [])
+  const data = (await response.json()) as {
+    content?: Array<{ type: string; text?: string; input?: unknown }>;
+  };
+  const blocks = data.content ?? [];
+
+  // The tool call is the answer. Its arguments are already an object — there
+  // is nothing left to parse and nothing left to go wrong.
+  const call = blocks.find((block) => block.type === 'tool_use' && block.input);
+  if (call) return JSON.stringify(call.input);
+
+  // A model that answered in prose anyway. Keep the old path so the brace hunt
+  // still gets its chance, and say what was said if it does not.
+  const text = blocks
     .filter((block) => block.type === 'text')
     .map((block) => block.text ?? '')
     .join('');
-
   if (!text.trim()) throw new GenerationError('The model returned nothing.');
-  // Put back the brace the assistant turn was seeded with.
-  return `{${text}`;
+  return text;
 }
 
 /**
@@ -164,7 +197,7 @@ export async function generate(jobId: string, channel: string): Promise<Draft> {
   });
 
   const voice = await getVoice();
-  const reply = await ask(buildPrompt(job, spec, voice));
+  const reply = await ask(buildPrompt(job, spec, voice), spec.fields);
   const parsed = parse(reply);
 
   const body = str(parsed.body);
