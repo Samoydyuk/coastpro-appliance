@@ -466,11 +466,148 @@ create table if not exists admin_audit (
 create index if not exists admin_audit_ts_idx on admin_audit (ts desc);
 
 -- ---------------------------------------------------------------------------
+-- Marketing jobs — a local copy of the safe dataset JobPocket hands over.
+--
+-- Note what is *not* here: no name, no phone, no email, no street, no
+-- coordinates, no serial number, no money. The Marketing API never sends them,
+-- and this table has nowhere to put them, so a change on the other side cannot
+-- quietly start storing a customer's address on a marketing server. City and
+-- state are the whole location, because a local article needs a town and
+-- nothing finer.
+--
+-- It is a cache, not a source: `job_id` is JobPocket's, the row is replaced on
+-- every refresh, and losing the table costs one re-fetch. What must survive is
+-- the writing, which lives in marketing_content and keys on the same id.
+-- ---------------------------------------------------------------------------
+create table if not exists marketing_job (
+  job_id           text primary key,
+  fetched_at       timestamptz not null default now(),
+
+  status           text,
+  completed_at     timestamptz,
+  job_created_at   timestamptz,
+  job_updated_at   timestamptz,
+
+  appliance_type   text,
+  manufacturer     text,
+  model            text,
+
+  diagnosis        text,
+  repair_performed text,
+  technician_notes text,
+  error_codes      text[]      not null default '{}',
+  replaced_parts   jsonb       not null default '[]',
+
+  city             text,
+  state            text,
+
+  -- What the redactor took out of the free text on the way here. Labels only,
+  -- never values — it is shown in the console so the owner can see the
+  -- redaction working rather than take it on trust.
+  redacted         text[]      not null default '{}',
+  photo_count      integer     not null default 0,
+
+  -- Still on the list JobPocket hands over. A job the owner takes back off it
+  -- stops arriving, and this goes false rather than the row being deleted:
+  -- anything already written about the job has to survive, and "was released,
+  -- then withdrawn" is a different fact from "never existed". The console hides
+  -- a withdrawn job unless something has been written about it.
+  released         boolean     not null default true
+);
+
+create index if not exists marketing_job_completed_idx on marketing_job (completed_at desc);
+create index if not exists marketing_job_city_idx on marketing_job (city);
+create index if not exists marketing_job_type_idx on marketing_job (appliance_type);
+
+-- ---------------------------------------------------------------------------
+-- Marketing photos — which pictures came with a job, and which ones a person
+-- picked for a piece.
+--
+-- `url` is a path on this site, not on JobPocket: the image is proxied so the
+-- key stays server-side and so the EXIF is stripped on the way through. The
+-- selection and the order are the human's, and are the reason this table
+-- outlives a refresh of marketing_job.
+-- ---------------------------------------------------------------------------
+create table if not exists marketing_photo (
+  photo_id     text primary key,
+  job_id       text not null references marketing_job (job_id) on delete cascade,
+  caption      text,
+  category     text,
+
+  selected     boolean not null default false,
+  sort_order   integer not null default 0,
+  alt_text     text
+);
+
+create index if not exists marketing_photo_job_idx on marketing_photo (job_id, sort_order);
+
+-- ---------------------------------------------------------------------------
+-- Marketing content — one row per job per channel.
+--
+-- Two bodies, deliberately: what the model wrote and what the person made of
+-- it. Keeping them apart is what lets a regeneration be offered without
+-- destroying an edit, and what makes "did a human touch this" answerable.
+--
+-- The model and prompt version are recorded because in six months the only way
+-- to explain why a piece reads the way it does is to know what produced it.
+-- ---------------------------------------------------------------------------
+create table if not exists marketing_content (
+  id             uuid primary key default gen_random_uuid(),
+  job_id         text not null references marketing_job (job_id) on delete cascade,
+  channel        text not null,
+
+  status         text not null default 'draft',
+
+  title          text,
+  slug           text,
+  meta_title     text,
+  meta_desc      text,
+  generated_body text,
+  edited_body    text,
+
+  model          text,
+  prompt_version text,
+  approved_by    text,
+  approved_at    timestamptz,
+
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now(),
+
+  unique (job_id, channel)
+);
+
+create index if not exists marketing_content_status_idx on marketing_content (status, updated_at desc);
+create unique index if not exists marketing_content_slug_idx on marketing_content (slug)
+  where slug is not null;
+
+-- ---------------------------------------------------------------------------
+-- Marketing publications — where a piece actually went, and when.
+--
+-- Separate from the content's status because publishing is an event with a
+-- destination, and a piece can go out to more than one place. An unpublish is
+-- a row with `unpublished_at` set, not a delete: the question later is always
+-- "what was live in March", and a deleted row cannot answer it.
+-- ---------------------------------------------------------------------------
+create table if not exists marketing_publication (
+  id             uuid primary key default gen_random_uuid(),
+  content_id     uuid not null references marketing_content (id) on delete cascade,
+  destination    text not null,
+  url            text,
+  published_at   timestamptz not null default now(),
+  unpublished_at timestamptz
+);
+
+create index if not exists marketing_publication_content_idx
+  on marketing_publication (content_id, published_at desc);
+
+-- ---------------------------------------------------------------------------
 -- Columns added to tables that already exist.
 --
 -- `create table if not exists` above does nothing to a live table, so anything
 -- added after the first deploy has to be repeated here. See the header.
 -- ---------------------------------------------------------------------------
+alter table marketing_job add column if not exists released boolean not null default true;
+
 -- The booking form carries more than the contact form does.
 alter table leads add column if not exists brand             text;
 alter table leads add column if not exists service_name      text;
@@ -521,7 +658,8 @@ begin
   foreach t in array array[
     'visitors','sessions','events','leads','tracking_numbers','calls',
     'ad_spend','conversion_exports','web_vitals','settings','admin_audit',
-    'platform_stats','import_runs'
+    'platform_stats','import_runs',
+    'marketing_job','marketing_photo','marketing_content','marketing_publication'
   ] loop
     execute format('alter table %I disable row level security', t);
   end loop;

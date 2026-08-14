@@ -18,6 +18,7 @@ const SECTIONS = [
   { href: '/admin/spend', label: 'Spend' },
   { href: '/admin/quality', label: 'Quality' },
   { href: '/admin/speed', label: 'Speed' },
+  { href: '/admin/marketing', label: 'Marketing' },
   { href: '/admin/settings', label: 'Settings' },
 ];
 
