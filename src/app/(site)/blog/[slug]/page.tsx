@@ -107,25 +107,56 @@ export default async function ArticlePage({ params }: Props) {
 
           <div className="rule-short my-8" />
 
+          {/* One photograph up here, the rest after the text.
+              A grid of four above the first sentence is a gallery, and a
+              gallery is what the reader scrolls past. The first frame belongs
+              to the article; the others belong to the end of it, each saying
+              what it is of. */}
           {article.photos.length > 0 && (
-            <div className="mb-10 grid gap-3 sm:grid-cols-2">
-              {article.photos.map((photo) => (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  key={photo.id}
-                  src={`/api/repair-photo/${photo.id}`}
-                  alt={photo.alt || `${subject} repair`}
-                  loading="lazy"
-                  className="w-full rounded-card border border-primary-500/20 object-cover"
-                />
-              ))}
-            </div>
+            <figure className="mb-10">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`/api/repair-photo/${article.photos[0].id}`}
+                alt={article.photos[0].alt || `${subject} repair`}
+                loading="eager"
+                className="w-full rounded-card border border-primary-500/20 object-cover"
+              />
+              {article.photos[0].alt && (
+                <figcaption className="mt-2 text-[13px] text-gray-500">
+                  {article.photos[0].alt}
+                </figcaption>
+              )}
+            </figure>
           )}
 
           <div
             className="space-y-5 text-[15px] leading-relaxed text-gray-700 [&>h2]:mt-10 [&>h2]:font-heading [&>h2]:text-lg [&>h2]:font-bold [&>h2]:uppercase [&>h2]:tracking-label [&>h2]:text-ink [&>h3]:mt-8 [&>h3]:font-heading [&>h3]:text-base [&>h3]:font-semibold [&>h3]:text-ink [&>ul]:list-disc [&>ul]:space-y-2 [&>ul]:pl-5 [&_strong]:font-semibold [&_strong]:text-ink"
             dangerouslySetInnerHTML={{ __html: renderMarkdown(article.body) }}
           />
+
+          {article.photos.length > 1 && (
+            <div className="mt-12">
+              <div className="eyebrow mb-4">From the job</div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {article.photos.slice(1).map((photo) => (
+                  <figure key={photo.id}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`/api/repair-photo/${photo.id}`}
+                      alt={photo.alt || `${subject} repair`}
+                      loading="lazy"
+                      className="w-full rounded-card border border-primary-500/20 object-cover"
+                    />
+                    {photo.alt && (
+                      <figcaption className="mt-2 text-[13px] text-gray-500">
+                        {photo.alt}
+                      </figcaption>
+                    )}
+                  </figure>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </article>
 

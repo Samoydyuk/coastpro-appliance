@@ -145,7 +145,13 @@ function absent(job: MarketingJobRow): string[] {
   return missing;
 }
 
-export function buildPrompt(job: MarketingJobRow, spec: ChannelSpec, voice: BrandVoice): string {
+export function buildPrompt(
+  job: MarketingJobRow,
+  spec: ChannelSpec,
+  voice: BrandVoice,
+  /** The photographs chosen for this piece, in the order they will appear. */
+  photos: Array<{ category: string | null; caption: string | null }> = []
+): string {
   const missing = absent(job);
 
   return [
@@ -165,6 +171,18 @@ export function buildPrompt(job: MarketingJobRow, spec: ChannelSpec, voice: Bran
     '## Structure',
     ...outline(job).map((line) => `- ${line}`),
     '',
+    ...(photos.length
+      ? [
+          '## The photographs',
+          'These will appear with the piece, in this order. You have not seen them — what is',
+          'known about each is below. Write one description per photograph for photoAlts.',
+          ...photos.map((photo, index) => {
+            const what = [photo.category, photo.caption].filter(Boolean).join(' — ');
+            return `${index + 1}. ${what || 'a photograph from the job'}`;
+          }),
+          '',
+        ]
+      : []),
     '## Rules, in order of importance',
     '1. Every fact about this repair must come from the list above. If something is not there,',
     '   it is not known, and it must not appear — not as a guess, not as a hedge, not as a',

@@ -58,15 +58,30 @@ export interface Draft {
  * a model handed a note in Ukrainian answered in prose, and there was no JSON
  * to find at all.
  */
-function draftTool(fields: readonly string[]) {
-  const properties: Record<string, { type: 'string'; description: string }> = {};
+function draftTool(fields: readonly string[], photoCount: number) {
+  const properties: Record<string, unknown> = {};
   for (const field of fields) {
     properties[field] = { type: 'string', description: FIELD_DESCRIPTIONS[field] ?? field };
+  }
+  const required = [...fields];
+  if (photoCount > 0) {
+    // Every picture needs a line describing it — for the reader who cannot see
+    // it and for the search engine that cannot either. The model has not seen
+    // the photograph, so it is told what each one is of and writes from that.
+    properties.photoAlts = {
+      type: 'array',
+      description:
+        `One short description per photograph, ${photoCount} in all, in the order listed. ` +
+        'Say what is in the frame — "lint packed around the dryer blower housing" — not ' +
+        '"photo of a repair". No customer, no room, no address.',
+      items: { type: 'string' },
+    };
+    required.push('photoAlts');
   }
   return {
     name: 'draft',
     description: 'Return the finished piece.',
-    input_schema: { type: 'object' as const, properties, required: [...fields] },
+    input_schema: { type: 'object' as const, properties, required },
   };
 }
 
@@ -79,7 +94,7 @@ const FIELD_DESCRIPTIONS: Record<string, string> = {
 };
 
 /** The SDK is one fetch call; a dependency for it would be the larger cost. */
-async function ask(prompt: string, fields: readonly string[]): Promise<string> {
+async function ask(prompt: string, fields: readonly string[], photoCount = 0): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new GenerationError(
@@ -99,7 +114,7 @@ async function ask(prompt: string, fields: readonly string[]): Promise<string> {
       model: MODEL,
       max_tokens: MAX_TOKENS,
       messages: [{ role: 'user', content: prompt }],
-      tools: [draftTool(fields)],
+      tools: [draftTool(fields, photoCount)],
       // Not "you may use this tool" — this tool, this turn.
       tool_choice: { type: 'tool', name: 'draft' },
     }),
@@ -197,11 +212,39 @@ export async function generate(jobId: string, channel: string): Promise<Draft> {
   });
 
   const voice = await getVoice();
-  const reply = await ask(buildPrompt(job, spec, voice), spec.fields);
+  // Only the pictures that were chosen, in the order they were chosen — the
+  // same list the article will show.
+  const chosen = detail.photos
+    .filter((photo) => photo.selected)
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  const wantsPhotos = spec.fields.includes('body') && spec.key === 'article' && chosen.length > 0;
+
+  const reply = await ask(
+    buildPrompt(job, spec, voice, wantsPhotos ? chosen : []),
+    spec.fields,
+    wantsPhotos ? chosen.length : 0
+  );
   const parsed = parse(reply);
 
   const body = str(parsed.body);
   if (!body) throw new GenerationError('The model returned no body text.');
+
+  // Keep the descriptions with the photographs they belong to. Written once,
+  // corrected in the console if they are wrong.
+  if (wantsPhotos && Array.isArray(parsed.photoAlts)) {
+    const alts = (parsed.photoAlts as unknown[]).map((alt) => str(alt));
+    const sql = requireDb();
+    await Promise.all(
+      chosen.map((photo, index) => {
+        const alt = alts[index];
+        if (!alt) return null;
+        return sql`
+          update marketing_photo set alt_text = ${alt}
+          where job_id = ${jobId} and photo_id = ${photo.photo_id}
+        `;
+      }).filter(Boolean) as Promise<unknown>[]
+    );
+  }
 
   const title = spec.fields.includes('title') ? str(parsed.title) : null;
   const slug = spec.fields.includes('slug')
