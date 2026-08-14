@@ -6,6 +6,7 @@ import { Button, Badge } from '@/components/ui';
 import { CTABanner, ServicesGrid, StatsBand } from '@/components/sections';
 import { serviceAreas, getServiceAreaBySlug, getNeighboringAreas } from '@/data/service-areas';
 import { siteConfig } from '@/data/site-config';
+import { breadcrumbSchema } from '@/lib/schema';
 
 interface CityPageProps {
   params: Promise<{ city: string }>;
@@ -52,6 +53,12 @@ export default async function CityPage({ params }: CityPageProps) {
   const localBusinessSchema = {
     '@context': 'https://schema.org',
     '@type': 'HomeAndConstructionBusiness',
+    // The same business as the one in the site layout, not a second branch in
+    // each of fifteen towns. Without a matching @id these pages describe
+    // fifteen separate companies with one phone number between them, which is
+    // exactly the shape a search engine is right to distrust. With it, the
+    // page adds the town it serves to the business that already exists.
+    '@id': `${siteConfig.seo.siteUrl}/#organization`,
     name: `${siteConfig.name} - ${area.name}`,
     description: area.description,
     url: `${siteConfig.seo.siteUrl}/service-areas/${area.slug}`,
@@ -73,6 +80,18 @@ export default async function CityPage({ params }: CityPageProps) {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            breadcrumbSchema([
+              { name: 'Service Areas', path: '/service-areas' },
+              { name: area.name, path: `/service-areas/${area.slug}` },
+            ])
+          ),
+        }}
+      />
+
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}

@@ -10,7 +10,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.seo.siteUrl),
   title: {
     default: `${siteConfig.name} | Professional Appliance Repair in Orange County`,
-    template: `%s | ${siteConfig.name}`,
+    // Just the shop name, not the full legal one. The suffix is appended to
+    // every page title, so its length is spent twenty-four times over: at 28
+    // characters it pushed every service and city page past the point a result
+    // gets truncated, no matter how short the page's own title was.
+    template: '%s | CoastPro',
   },
   description: siteConfig.description,
   keywords: [
@@ -81,12 +85,19 @@ const jsonLd = {
   url: siteConfig.seo.siteUrl,
   telephone: siteConfig.contact.phone,
   email: siteConfig.contact.email,
+  // Street and ZIP are omitted rather than sent empty. This is a mobile
+  // business with no shopfront, and `streetAddress: ""` is not "we have no
+  // street" — it is a malformed field, which is the kind of thing that gets a
+  // whole block of structured data ignored. The town, the county and the
+  // coordinates are true and are what a local search needs.
   address: {
     '@type': 'PostalAddress',
-    streetAddress: siteConfig.contact.address.street,
+    ...(siteConfig.contact.address.street
+      ? { streetAddress: siteConfig.contact.address.street }
+      : {}),
     addressLocality: siteConfig.contact.address.city,
     addressRegion: siteConfig.contact.address.state,
-    postalCode: siteConfig.contact.address.zip,
+    ...(siteConfig.contact.address.zip ? { postalCode: siteConfig.contact.address.zip } : {}),
     addressCountry: 'US',
   },
   geo: {

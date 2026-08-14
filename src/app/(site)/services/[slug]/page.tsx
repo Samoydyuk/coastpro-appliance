@@ -6,6 +6,7 @@ import { Button, Card, CardContent, Badge } from '@/components/ui';
 import { CTABanner, StatsBand } from '@/components/sections';
 import { services, getServiceBySlug, getRelatedServices } from '@/data/services';
 import { siteConfig } from '@/data/site-config';
+import { breadcrumbSchema, serviceSchema } from '@/lib/schema';
 
 interface ServicePageProps {
   params: Promise<{ slug: string }>;
@@ -58,8 +59,30 @@ export default async function ServicePage({ params }: ServicePageProps) {
   const step = (label: string) =>
     `${String(sections.indexOf(label) + 1).padStart(2, '0')} — ${label}`;
 
+  // The visible breadcrumb below has been here all along; this is the same
+  // trail said in the form a search result can render.
+  const schema = [
+    serviceSchema({
+      name: service.name,
+      description: service.shortDescription,
+      path: `/services/${service.slug}`,
+      priceFrom: service.pricing ? service.pricing.minimum : service.priceRange.min,
+      priceTo: service.priceRange.max,
+      brands: service.brands,
+    }),
+    breadcrumbSchema([
+      { name: 'Services', path: '/services' },
+      { name: service.name, path: `/services/${service.slug}` },
+    ]),
+  ];
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      />
+
       {/* Hero Section */}
       <section className="bg-cream border-b border-primary-500/20 py-16 lg:py-20">
         <div className="container mx-auto px-4">

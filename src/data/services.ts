@@ -48,8 +48,8 @@ export const services: Service[] = [
     brands: ["Samsung", "LG", "Whirlpool", "GE", "Frigidaire", "KitchenAid", "Sub-Zero", "Viking", "Maytag", "Kenmore"],
     relatedServices: ["ice-maker", "freezer"],
     seo: {
-      title: "Refrigerator Repair Orange County | Same-Day Service",
-      description: "Professional refrigerator repair in Orange County. All brands serviced including Samsung, LG, Sub-Zero. Same-day appointments. 90-day warranty. Call (949) 749-0006.",
+      title: "Refrigerator Repair Orange County | Same-Day",
+      description: "Refrigerator repair across Orange County — cooling faults, ice makers and leaks. All brands, same-day appointments, 90-day warranty. Call (949) 749-0006.",
       keywords: ["refrigerator repair orange county", "fridge repair near me", "samsung refrigerator repair", "lg refrigerator repair irvine"]
     }
   },
@@ -256,7 +256,7 @@ export const services: Service[] = [
     brands: ["GE", "Whirlpool", "Samsung", "LG", "KitchenAid", "Frigidaire", "Viking", "Wolf", "Thermador"],
     relatedServices: ["microwave"],
     seo: {
-      title: "Oven & Range Repair Orange County | Gas & Electric",
+      title: "Oven & Range Repair Orange County",
       description: "Expert oven and stove repair in Orange County. Gas & electric. Fix heating, ignition, temperature issues. Same-day service. Call (949) 749-0006.",
       keywords: ["oven repair orange county", "stove repair near me", "gas range repair", "electric oven repair"]
     }
@@ -308,7 +308,7 @@ export const services: Service[] = [
     brands: ["Samsung", "LG", "Panasonic", "GE", "Whirlpool", "Sharp", "KitchenAid", "Frigidaire"],
     relatedServices: ["oven-range"],
     seo: {
-      title: "Microwave Repair Orange County | Built-In & Countertop",
+      title: "Microwave Repair Orange County | Built-In",
       description: "Professional microwave repair in Orange County. Samsung, LG, GE & more. Fix heating, turntable, display issues. Call (949) 749-0006.",
       keywords: ["microwave repair orange county", "microwave not heating", "built-in microwave repair", "over the range microwave repair"]
     }
@@ -360,7 +360,7 @@ export const services: Service[] = [
     brands: ["InSinkErator", "Waste King", "Moen", "GE", "KitchenAid", "Whirlpool"],
     relatedServices: ["dishwasher"],
     seo: {
-      title: "Garbage Disposal Repair Orange County | Fast Service",
+      title: "Garbage Disposal Repair Orange County",
       description: "Expert garbage disposal repair in Orange County. Fix jams, leaks, motor issues. Installation available. Same-day service. Call (949) 749-0006.",
       keywords: ["garbage disposal repair orange county", "disposal not working", "insinkerator repair", "garbage disposal installation"]
     }
@@ -477,7 +477,7 @@ export const services: Service[] = [
     brands: [],
     relatedServices: ["dryer"],
     seo: {
-      title: "Dryer Vent Cleaning Orange County | CoastPro",
+      title: "Dryer Vent Cleaning Orange County",
       description: "Dryer vent cleaning in Orange County. $200 covers the first 6 feet, $50 each additional foot. Restore airflow and cut drying times. Call (949) 749-0006.",
       keywords: ["dryer vent cleaning orange county", "dryer duct cleaning irvine", "lint removal dryer vent", "dryer vent cleaning near me"]
     }

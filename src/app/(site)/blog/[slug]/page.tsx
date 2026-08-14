@@ -6,6 +6,7 @@ import { CTABanner } from '@/components/sections';
 import { getPublishedArticle, listPublishedArticles } from '@/lib/marketing/published';
 import { renderMarkdown } from '@/lib/marketing/markdown';
 import { siteConfig } from '@/data/site-config';
+import { breadcrumbSchema } from '@/lib/schema';
 
 export const revalidate = 3600;
 /**
@@ -70,7 +71,15 @@ export default async function ArticlePage({ params }: Props) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([
+            schema,
+            breadcrumbSchema([
+              { name: 'Repair Notes', path: '/blog' },
+              { name: article.title, path: `/blog/${slug}` },
+            ]),
+          ]),
+        }}
       />
 
       <article className="container mx-auto px-4 py-16 lg:py-24">
