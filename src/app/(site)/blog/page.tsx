@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { PageHeader, CTABanner } from '@/components/sections';
-import { listPublishedArticles } from '@/lib/marketing/published';
+import { listPublishedArticles, photoUrl } from '@/lib/marketing/published';
 
 /**
  * Repairs that were actually done, written up.
@@ -41,19 +41,24 @@ export default async function BlogIndexPage() {
           <ul className="grid gap-px overflow-hidden rounded-card border border-primary-500/20 bg-primary-500/20 sm:grid-cols-2">
             {articles.map((article) => (
               <li key={article.slug} className="bg-cream">
-                <Link href={`/blog/${article.slug}`} className="group block h-full p-6 sm:p-8">
-                  {/* The frame the article opens with. A repair note without a
-                      picture of the repair is a paragraph in a list; with one it
-                      is the reason somebody clicks. */}
+                <Link
+                  href={`/blog/${article.slug}`}
+                  className="group flex h-full flex-col gap-5 p-6 sm:flex-row sm:gap-6 sm:p-8"
+                >
+                  {/* Beside the words, not above them. Full-width it swamped the
+                      card — the picture is there to say what the job was, and a
+                      thumbnail does that in a fifth of the room. Stacks again on
+                      a phone, where there is only one column anyway. */}
                   {article.photos[0] && (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
-                      src={`/api/repair-photo/${article.photos[0].id}`}
+                      src={photoUrl(article.photos[0])}
                       alt={article.photos[0].alt || ''}
                       loading="lazy"
-                      className="mb-5 aspect-[16/10] w-full rounded-card border border-primary-500/15 object-cover"
+                      className="aspect-[4/3] w-full shrink-0 rounded-card border border-primary-500/15 object-cover sm:aspect-square sm:w-32 md:w-40"
                     />
                   )}
+                  <div className="min-w-0">
                   <div className="eyebrow mb-3">
                     {[article.manufacturer, article.applianceType].filter(Boolean).join(' ') ||
                       'Repair'}
@@ -72,6 +77,7 @@ export default async function BlogIndexPage() {
                       strokeWidth={1.5}
                     />
                   </span>
+                  </div>
                 </Link>
               </li>
             ))}

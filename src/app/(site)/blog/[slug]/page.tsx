@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { CTABanner } from '@/components/sections';
-import { getPublishedArticle, listPublishedArticles } from '@/lib/marketing/published';
+import { getPublishedArticle, listPublishedArticles, photoUrl } from '@/lib/marketing/published';
 import { renderMarkdown } from '@/lib/marketing/markdown';
 import { siteConfig } from '@/data/site-config';
 import { breadcrumbSchema } from '@/lib/schema';
@@ -116,7 +116,7 @@ export default async function ArticlePage({ params }: Props) {
             <figure className="mb-10">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={`/api/repair-photo/${article.photos[0].id}`}
+                src={photoUrl(article.photos[0])}
                 alt={article.photos[0].alt || `${subject} repair`}
                 loading="eager"
                 className="w-full rounded-card border border-primary-500/20 object-cover"
@@ -142,7 +142,7 @@ export default async function ArticlePage({ params }: Props) {
                   <figure key={photo.id}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={`/api/repair-photo/${photo.id}`}
+                      src={photoUrl(photo)}
                       alt={photo.alt || `${subject} repair`}
                       loading="lazy"
                       className="w-full rounded-card border border-primary-500/20 object-cover"

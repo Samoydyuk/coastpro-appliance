@@ -44,7 +44,9 @@ export interface PublishedArticle {
   city: string | null;
   state: string | null;
 
-  photos: Array<{ id: string; alt: string | null }>;
+  /** `rev` versions the URL: an edit changes it, which is what gets past the
+   *  day-long immutable cache on the image itself. */
+  photos: Array<{ id: string; alt: string | null; rev: string | null }>;
 }
 
 const SELECT = `
@@ -61,7 +63,10 @@ function iso(value: unknown): string | null {
   return null;
 }
 
-function shape(row: Record<string, unknown>, photos: Array<{ id: string; alt: string | null }>): PublishedArticle {
+function shape(
+  row: Record<string, unknown>,
+  photos: Array<{ id: string; alt: string | null; rev: string | null }>
+): PublishedArticle {
   return {
     slug: String(row.slug),
     title: String(row.title ?? ''),
@@ -106,7 +111,7 @@ export async function readPublishedArticles(): Promise<PublishedArticle[]> {
         -- The lead photograph, so the list can show one. First in the chosen
         -- order, which is the same frame the article opens with.
         (
-          select json_build_object('id', p.photo_id, 'alt', p.alt_text)
+          select json_build_object('id', p.photo_id, 'alt', p.alt_text, 'rev', p.edited_rev)
           from marketing_photo p
           where p.job_id = c.job_id and p.selected
           order by p.sort_order, p.photo_id
@@ -118,8 +123,8 @@ export async function readPublishedArticles(): Promise<PublishedArticle[]> {
       order by c.approved_at desc nulls last
     `) as unknown as Record<string, unknown>[];
     return rows.map((row) => {
-      const lead = row.lead_photo as { id?: string; alt?: string | null } | null;
-      return shape(row, lead?.id ? [{ id: lead.id, alt: lead.alt ?? null }] : []);
+      const lead = row.lead_photo as { id?: string; alt?: string | null; rev?: string | null } | null;
+      return shape(row, lead?.id ? [{ id: lead.id, alt: lead.alt ?? null, rev: lead.rev ?? null }] : []);
     });
   } catch {
     return [];
@@ -145,19 +150,44 @@ export const getPublishedArticle = cache('article', async function getPublishedA
     if (!row) return null;
 
     const photos = (await sql`
-      select photo_id, alt_text from marketing_photo
+      select photo_id, alt_text, edited_rev from marketing_photo
       where job_id = ${String(row.job_id)} and selected
       order by sort_order, photo_id
-    `) as unknown as Array<{ photo_id: string; alt_text: string | null }>;
+    `) as unknown as Array<{ photo_id: string; alt_text: string | null; edited_rev: string | null }>;
 
     return shape(
       row,
-      photos.map((photo) => ({ id: photo.photo_id, alt: photo.alt_text }))
+      photos.map((photo) => ({ id: photo.photo_id, alt: photo.alt_text, rev: photo.edited_rev }))
     );
   } catch {
     return null;
   }
 });
+
+/**
+ * The edited bytes for a photo, if somebody made some.
+ *
+ * Deliberately not cached with the article tags: the image route has its own
+ * day-long cache keyed by a URL that already carries the revision, so caching
+ * here would only add a second thing to get wrong.
+ */
+export async function editedPhoto(photoId: string): Promise<Buffer | null> {
+  const sql = db();
+  if (!sql) return null;
+  try {
+    const [row] = (await sql`
+      select p.edited_image from marketing_photo p
+      join marketing_content c on c.job_id = p.job_id
+      where p.photo_id = ${photoId} and p.selected
+        and p.edited_image is not null
+        and c.status = 'published' and c.channel = 'article'
+      limit 1
+    `) as unknown as Array<{ edited_image: Buffer | null }>;
+    return row?.edited_image ?? null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Whether one photo may be shown to the public: it was chosen for a piece, and
@@ -183,3 +213,16 @@ export const photoIsPublic = cache('photo', async function photoIsPublic(
     return false;
   }
 });
+
+/**
+ * Where to fetch a photograph, with its revision in the address.
+ *
+ * The image route caches for a day and says `immutable`, which is true only
+ * because an edit changes this URL. Every place that renders a repair photo
+ * goes through here so none of them can forget.
+ */
+export function photoUrl(photo: { id: string; rev?: string | null }): string {
+  return photo.rev
+    ? `/api/repair-photo/${photo.id}?v=${photo.rev}`
+    : `/api/repair-photo/${photo.id}`;
+}

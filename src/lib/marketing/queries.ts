@@ -43,6 +43,9 @@ export interface MarketingPhotoRow {
   selected: boolean;
   sort_order: number;
   alt_text: string | null;
+  /** A crop and any marks drawn on it — kept so an edit can be reopened. */
+  edit_recipe: { crop?: { x: number; y: number; w: number; h: number }; marks?: unknown[] } | null;
+  edited_rev: string | null;
 }
 
 export interface MarketingContentRow {

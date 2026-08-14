@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { PhotoEditor, type EditRecipe } from '@/components/admin/PhotoEditor';
 
 /**
  * Choosing which photos go out with a piece, and in what order.
@@ -18,9 +19,14 @@ export interface PhotoChoice {
   selected: boolean;
   sortOrder: number;
   altText: string | null;
+  /** What was done to it last time, so an edit can be reopened rather than
+   *  started again. */
+  editRecipe?: EditRecipe | null;
+  editedRev?: string | null;
 }
 
 export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: PhotoChoice[] }) {
+  const [editing, setEditing] = useState<PhotoChoice | null>(null);
   const router = useRouter();
   const [chosen, setChosen] = useState<string[]>(
     photos
@@ -133,6 +139,26 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
                   Make main
                 </span>
               )}
+              {/* The whole tile is the selection toggle, so anything else on it has to
+                  stop the click travelling — same as "Make main" above. */}
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setEditing(photo);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setEditing(photo);
+                  }
+                }}
+                className="absolute bottom-2 left-2 cursor-pointer rounded-card border border-cream/60 bg-ink/70 px-2 py-0.5 font-heading text-[9px] font-semibold uppercase tracking-label text-cream hover:bg-ink"
+              >
+                {photo.editedRev ? 'Edited' : 'Edit'}
+              </span>
               {photo.caption && (
                 <span className="block px-2 py-1 text-[11px] leading-snug text-gray-500">
                   {photo.caption}
@@ -159,6 +185,15 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
         </span>
         {saved && !dirty && <span className="ml-auto text-xs text-gray-500">Saved</span>}
       </div>
+
+      {editing && (
+        <PhotoEditor
+          photoId={editing.id}
+          jobId={jobId}
+          recipe={editing.editRecipe ?? null}
+          onClose={() => setEditing(null)}
+        />
+      )}
     </div>
   );
 }

@@ -536,7 +536,23 @@ create table if not exists marketing_photo (
 
   selected     boolean not null default false,
   sort_order   integer not null default 0,
-  alt_text     text
+  alt_text     text,
+
+  -- An edited copy: cropped, and with arrows or a label drawn on it. Made in
+  -- the browser and stored here rather than in a bucket, because the rule that
+  -- keeps the original safe is that no storage URL ever reaches a visitor —
+  -- the only bytes the public can fetch are the ones that came through the
+  -- proxy with the metadata stripped. A canvas re-encode has no metadata at
+  -- all, so this copy is the safer of the two.
+  --
+  -- `edit_recipe` is what was done (crop box, marks) so it can be reopened and
+  -- adjusted; `edited_image` is the finished JPEG; `edited_rev` versions the
+  -- public URL, without which the day-long immutable cache would keep serving
+  -- the picture somebody just cropped.
+  edit_recipe  jsonb,
+  edited_image bytea,
+  edited_rev   text,
+  edited_at    timestamptz
 );
 
 create index if not exists marketing_photo_job_idx on marketing_photo (job_id, sort_order);
@@ -669,6 +685,11 @@ alter table leads add column if not exists jp_next_poll_at    timestamptz;
 alter table leads add column if not exists jp_synced_at       timestamptz;
 alter table leads add column if not exists jp_conflict        text;
 alter table leads add column if not exists jp_conflict_at     timestamptz;
+
+alter table marketing_photo add column if not exists edit_recipe  jsonb;
+alter table marketing_photo add column if not exists edited_image bytea;
+alter table marketing_photo add column if not exists edited_rev   text;
+alter table marketing_photo add column if not exists edited_at    timestamptz;
 
 -- Partial indexes: the queue and the poller each look at a small slice.
 create index if not exists leads_jp_push_idx on leads (created_at)
