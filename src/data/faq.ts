@@ -28,7 +28,7 @@ export const faqItems: FAQItem[] = [
   {
     id: "service-call-cost",
     question: "How much does a service call cost?",
-    answer: "Our minimum service call is $150. It covers the technician visit and a complete diagnosis. Quick fixes are included in that call rather than billed on top — resetting the appliance, adjustments, leveling and anything else that doesn't take long. If the job needs parts or more extensive work, we quote it for your approval before we start.",
+    answer: "Our minimum service call is $150. It covers the technician visit and a complete diagnosis. Quick fixes are included in that call rather than billed on top — resetting the appliance, adjustments, leveling and anything else that doesn't take long. If the job needs parts or more extensive work, we quote it for your approval before we start — and if you approve that repair, the service call goes toward it as labor rather than being charged on top. You pay the quoted price for the repair, not the repair plus a visit. The call stands on its own only if you decide not to go ahead, since the diagnosis was still done.",
     category: "pricing",
     order: 1
   },

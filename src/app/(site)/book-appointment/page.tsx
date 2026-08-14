@@ -103,6 +103,9 @@ export default async function BookAppointmentPage() {
                   <p className="text-gray-600 text-sm">
                     Covers the visit, a full diagnosis and {siteConfig.serviceCall.includes}. Bigger jobs are quoted for your approval first.
                   </p>
+                  <p className="text-gray-600 text-sm mt-3">
+                    {siteConfig.serviceCall.appliedToRepair}.
+                  </p>
                 </CardContent>
               </Card>
 

@@ -28,10 +28,18 @@ export function Hero() {
 
       <div className="relative container mx-auto px-4 py-20 lg:py-28">
         <div className="max-w-3xl">
-          {/* Wordmark lockup */}
+          {/* The lockup that used to sit here repeated the one in the header,
+              word for word, a hundred and fifty pixels below it. The rhythm it
+              gave the page is worth keeping; saying the name twice is not, so
+              the line now carries something the header does not. */}
           <div className="mb-10">
-            <div className="wordmark text-sm text-ink">CoastPro</div>
-            <div className="eyebrow mt-2">Appliance Repair</div>
+            {/* Same-day and the warranty are already in the bar above and in
+                the trust row below. This line earns its place by saying the
+                thing neither of them does, and the thing people actually want
+                to know before they call. */}
+            <div className="eyebrow">
+              ${siteConfig.serviceCall.minimum} service call · Credited to the repair
+            </div>
             <div className="rule-short mt-6" />
           </div>
 

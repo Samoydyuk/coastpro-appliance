@@ -44,6 +44,12 @@ export default function TermsPage() {
               repair is started until you approve the quote.
             </p>
             <p>
+              Where you approve a repair, the service call is credited against it as labor rather
+              than charged separately. You pay the quoted price for the repair, not the repair plus
+              a visit. It is charged on its own only where no repair is approved — the diagnosis
+              was still done and the visit still made.
+            </p>
+            <p>
               Price ranges shown on our service pages are typical figures, not a cap. High-end
               brands and faults that are difficult to access can run higher, which is why the quote
               rather than the range is what binds.

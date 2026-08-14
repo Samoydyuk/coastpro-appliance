@@ -52,6 +52,12 @@ export const siteConfig = {
     note: "Quick fixes included",
     // The kind of work the call itself covers, spelled out.
     includes: "resets, adjustments, leveling and other work that doesn't take long",
+    // What happens to the fee when the job turns out to be a real repair. This
+    // is the thing customers are actually worried about when they hear a
+    // minimum — that agreeing to the work means paying for the visit twice —
+    // so it is said plainly wherever the minimum is.
+    appliedToRepair:
+      "Approve the repair and this becomes part of its labor — you don't pay for the visit twice",
   },
 } as const;
 

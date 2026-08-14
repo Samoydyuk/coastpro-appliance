@@ -118,6 +118,9 @@ export default function FAQPage() {
                       <dd className="font-heading font-semibold text-ink">
                         ${siteConfig.serviceCall.minimum}
                       </dd>
+                      <dd className="text-xs leading-relaxed text-gray-600 mt-1">
+                        {siteConfig.serviceCall.appliedToRepair}.
+                      </dd>
                     </div>
                     <div>
                       <dt className="text-xs uppercase tracking-label text-primary-500 mb-1">Warranty</dt>

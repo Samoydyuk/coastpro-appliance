@@ -47,6 +47,7 @@ export const DEFAULT_VOICE: BrandVoice = {
   ],
   facts: [
     `Service call minimum $${siteConfig.serviceCall.minimum}, which covers the visit, a full diagnosis and ${siteConfig.serviceCall.includes}.`,
+    `If the customer approves a larger repair, the service call is credited against it as labor rather than charged separately — they pay the quoted price for the repair, not the repair plus a visit.`,
     `Arrival is a ${siteConfig.appointment.arrivalWindow} window, and the technician calls at least ${siteConfig.appointment.noticeMinutes} minutes before arriving.`,
     `${siteConfig.trustSignals.warrantyDays}-day warranty on repairs.`,
     `Bigger jobs are quoted for approval before any work starts.`,

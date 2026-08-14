@@ -278,10 +278,15 @@ export default async function ServicePage({ params }: ServicePageProps) {
                       : `Covers the visit, a full diagnosis and ${siteConfig.serviceCall.includes}.`}
                   </p>
                   {!service.pricing && (
-                    <p className="text-gray-600 text-sm mb-4">
-                      Most {service.name.replace(' Repair', '').toLowerCase()} jobs land between $
-                      {service.priceRange.min} and ${service.priceRange.max}, parts included.
-                    </p>
+                    <>
+                      <p className="text-gray-600 text-sm mb-4">
+                        {siteConfig.serviceCall.appliedToRepair}.
+                      </p>
+                      <p className="text-gray-600 text-sm mb-4">
+                        Most {service.name.replace(' Repair', '').toLowerCase()} jobs land between $
+                        {service.priceRange.min} and ${service.priceRange.max}, parts included.
+                      </p>
+                    </>
                   )}
                   <Link href="/book-appointment">
                     <Button className="w-full">

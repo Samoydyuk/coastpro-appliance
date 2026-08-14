@@ -26,13 +26,18 @@ const navigation = [
   },
   { name: 'Service Areas', href: '/service-areas' },
   { name: 'Gallery', href: '/gallery' },
+  { name: 'Repair Notes', href: '/blog' },
   { name: 'About', href: '/about' },
   { name: 'FAQ', href: '/faq' },
   { name: 'Contact', href: '/contact' },
 ];
 
+// `whitespace-nowrap` and the tighter padding below xl are what keep the row a
+// row: at 1024 — the width the desktop nav first appears at — eight items, a
+// phone number and a button do not fit, and the labels were breaking mid-name
+// ("SERVICE / AREAS") long before this file gained an eighth item.
 const navLinkClass =
-  'px-3 py-2 font-heading text-[11px] font-semibold uppercase tracking-label text-primary-600 hover:text-ink transition-colors flex items-center gap-1';
+  'px-2 xl:px-3 py-2 font-heading text-[11px] font-semibold uppercase tracking-label text-primary-600 hover:text-ink transition-colors flex items-center gap-1 whitespace-nowrap';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -108,7 +113,11 @@ export function Header() {
             <div className="flex items-center gap-4">
               <a
                 href={`tel:${siteConfig.contact.phoneClean}`}
-                className="hidden md:flex items-center gap-2 font-heading text-xs font-semibold uppercase tracking-label text-ink hover:text-primary-600 transition-colors"
+                // Hidden exactly where the nav needs the room: between 1024
+                // and 1280 the links are on screen and this is the thing that
+                // pushes them onto a second line. The number is still in the
+                // bar above at every one of those widths.
+                className="hidden md:flex lg:hidden xl:flex items-center gap-2 font-heading text-xs font-semibold uppercase tracking-label text-ink hover:text-primary-600 transition-colors whitespace-nowrap"
                 onClick={() => trackPhoneClick('header')}
               >
                 <Phone className="h-4 w-4" strokeWidth={1.5} />

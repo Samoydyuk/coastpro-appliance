@@ -25,8 +25,17 @@ export interface PublishedArticle {
   metaTitle: string | null;
   metaDesc: string | null;
   body: string;
-  publishedAt: Date | null;
-  updatedAt: Date;
+  /**
+   * ISO strings, not Dates, and deliberately.
+   *
+   * Everything here goes through a cache that serialises to JSON, so a Date
+   * put in comes back out as a string. Typing these as Date compiled cleanly
+   * and then threw `publishedAt?.toISOString is not a function` on the first
+   * cached read — at build time, on the page it had just generated. The type
+   * now says what the value actually is.
+   */
+  publishedAt: string | null;
+  updatedAt: string | null;
 
   applianceType: string | null;
   manufacturer: string | null;
@@ -45,6 +54,13 @@ const SELECT = `
   j.appliance_type, j.manufacturer, j.model, j.error_codes, j.city, j.state
 `;
 
+/** A timestamp from the driver, or from the cache, as one thing. */
+function iso(value: unknown): string | null {
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'string') return value;
+  return null;
+}
+
 function shape(row: Record<string, unknown>, photos: Array<{ id: string; alt: string | null }>): PublishedArticle {
   return {
     slug: String(row.slug),
@@ -52,8 +68,8 @@ function shape(row: Record<string, unknown>, photos: Array<{ id: string; alt: st
     metaTitle: (row.meta_title as string) ?? null,
     metaDesc: (row.meta_desc as string) ?? null,
     body: String(row.body ?? ''),
-    publishedAt: (row.approved_at as Date) ?? null,
-    updatedAt: row.updated_at as Date,
+    publishedAt: iso(row.approved_at),
+    updatedAt: iso(row.updated_at),
     applianceType: (row.appliance_type as string) ?? null,
     manufacturer: (row.manufacturer as string) ?? null,
     model: (row.model as string) ?? null,

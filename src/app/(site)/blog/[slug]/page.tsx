@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: article.metaTitle || article.title,
       description: article.metaDesc ?? undefined,
       type: 'article',
-      publishedTime: article.publishedAt?.toISOString(),
+      publishedTime: article.publishedAt ?? undefined,
     },
   };
 }
@@ -58,8 +58,8 @@ export default async function ArticlePage({ params }: Props) {
     '@type': 'Article',
     headline: article.title,
     description: article.metaDesc ?? undefined,
-    datePublished: article.publishedAt?.toISOString(),
-    dateModified: article.updatedAt?.toISOString(),
+    datePublished: article.publishedAt ?? undefined,
+    dateModified: article.updatedAt ?? undefined,
     author: { '@type': 'Organization', name: siteConfig.name },
     publisher: { '@type': 'Organization', name: siteConfig.name },
     about: subject,
