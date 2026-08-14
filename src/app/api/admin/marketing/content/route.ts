@@ -26,15 +26,21 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Missing job or channel.' }, { status: 400 });
   }
 
+  // An empty box means "use what the model wrote", not "publish nothing".
+  // The published page reads coalesce(edited_body, generated_body), and an
+  // empty string is not null — so a cleared edit was quietly blanking the
+  // article while the original sat intact beside it.
+  const edited = typeof body.body === 'string' && body.body.trim() ? body.body : null;
+
   try {
     const sql = requireDb();
     const [row] = (await sql`
       update marketing_content set
-        edited_body = ${body.body ?? null},
+        edited_body = ${edited},
         title       = coalesce(${body.title ?? null}, title),
         meta_title  = coalesce(${body.metaTitle ?? null}, meta_title),
         meta_desc   = coalesce(${body.metaDesc ?? null}, meta_desc),
-        status      = case when ${body.body ?? null}::text is null then status else 'edited' end,
+        status      = case when ${edited}::text is null then status else 'edited' end,
         updated_at  = now()
       where job_id = ${body.jobId} and channel = ${body.channel}
       returning id

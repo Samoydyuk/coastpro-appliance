@@ -177,7 +177,10 @@ export function buildPrompt(job: MarketingJobRow, spec: ChannelSpec, voice: Bran
     ...voice.forbidden.map((rule) => `   - ${rule}`),
     '5. No customer is ever mentioned, described, quoted or alluded to. The subject is the',
     '   appliance and the fault, not the household.',
-    '6. General knowledge about how this kind of appliance works is allowed and useful, as long',
+    '6. The headline obeys rule 1 like every other sentence. A fault that is not in the list',
+    '   above must not appear in it, as a question or otherwise — "Not heating?" on a job that',
+    '   never mentioned heat is an invented fact with a question mark on it.',
+    '7. General knowledge about how this kind of appliance works is allowed and useful, as long',
     '   as it is clearly general and is not presented as something found on this job.',
     '',
     '## Output',
@@ -191,7 +194,10 @@ export function buildPrompt(job: MarketingJobRow, spec: ChannelSpec, voice: Bran
 }
 
 const FIELD_HELP: Record<string, string> = {
-  title: 'the headline, under 60 characters, with the appliance and the fault in it',
+  title:
+    'the headline, under 60 characters. Name the appliance, and the fault ONLY if the ' +
+    'material above says what the fault was. With no diagnosis, the headline is about what ' +
+    'the piece is actually about — never a symptom nobody reported.',
   slug: 'url slug, lowercase, hyphenated, under 60 characters',
   metaTitle: 'search title, under 60 characters',
   metaDesc: 'search description, 140–160 characters, no quotation marks',

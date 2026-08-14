@@ -159,6 +159,10 @@ export default async function MarketingJobPage({ params }: { params: { jobId: st
             >
               <MarketingContent
                 jobId={job.job_id}
+                // No diagnosis and no repair means there is nothing to write an
+                // article *about* — only a note. Say so before the button is
+                // pressed rather than producing three paragraphs of hedging.
+                thin={!job.diagnosis && !job.repair_performed}
                 channels={CHANNELS.map((channel) => ({ key: channel.key, label: channel.label }))}
                 pieces={content.map((piece) => ({
                   channel: piece.channel,

@@ -31,12 +31,19 @@ interface Props {
   jobId: string;
   channels: Array<{ key: string; label: string }>;
   pieces: ContentPiece[];
+  /**
+   * True when the job has no diagnosis and no repair — a note and nothing else.
+   * There is a real article in a fault that was found and fixed; there is no
+   * article in a good intention, and asking for one produces three paragraphs
+   * of hedging wrapped around the price list.
+   */
+  thin?: boolean;
 }
 
 const button =
   'h-8 rounded-card px-3 font-heading text-[10px] font-semibold uppercase tracking-label disabled:opacity-50';
 
-export function MarketingContent({ jobId, channels, pieces }: Props) {
+export function MarketingContent({ jobId, channels, pieces, thin = false }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState<string | null>(pieces[0]?.channel ?? null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -146,6 +153,11 @@ export function MarketingContent({ jobId, channels, pieces }: Props) {
                 {piece && piece.flags.length > 0 && (
                   <span className="font-heading text-[10px] uppercase tracking-label text-amber-700">
                     {piece.flags.length} to check
+                  </span>
+                )}
+                {thin && channel.key === 'article' && !piece && (
+                  <span className="font-heading text-[10px] uppercase tracking-label text-gray-500">
+                    thin — a post reads better
                   </span>
                 )}
               </button>
