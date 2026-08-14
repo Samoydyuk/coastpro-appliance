@@ -38,6 +38,12 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
     );
   };
 
+  /** Move a chosen photo to the front — it becomes the one that leads. */
+  const makeMain = (id: string) => {
+    setSaved(false);
+    setChosen((current) => [id, ...current.filter((entry) => entry !== id)]);
+  };
+
   const save = async () => {
     setBusy(true);
     try {
@@ -98,6 +104,35 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
                   {position + 1}
                 </span>
               )}
+              {/* Which one leads was decided by the order you happened to tap
+                  them in, and nothing said so. The first is the frame that
+                  opens the article and stands on the list of repair notes —
+                  worth naming, and worth being able to set directly. */}
+              {position === 0 && (
+                <span className="absolute right-2 top-2 rounded-card bg-ink/90 px-2 py-0.5 font-heading text-[9px] font-semibold uppercase tracking-label text-cream">
+                  Main
+                </span>
+              )}
+              {position > 0 && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    makeMain(photo.id);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      makeMain(photo.id);
+                    }
+                  }}
+                  className="absolute right-2 top-2 cursor-pointer rounded-card border border-cream/60 bg-ink/70 px-2 py-0.5 font-heading text-[9px] font-semibold uppercase tracking-label text-cream hover:bg-ink"
+                >
+                  Make main
+                </span>
+              )}
               {photo.caption && (
                 <span className="block px-2 py-1 text-[11px] leading-snug text-gray-500">
                   {photo.caption}
@@ -120,7 +155,7 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
         <span className="text-xs text-gray-500">
           {chosen.length === 0
             ? 'None chosen — the article goes out without pictures.'
-            : `${chosen.length} chosen, in this order.`}
+            : `${chosen.length} chosen. The first opens the article and shows on the repair-notes list; the rest sit under the text.`}
         </span>
         {saved && !dirty && <span className="ml-auto text-xs text-gray-500">Saved</span>}
       </div>

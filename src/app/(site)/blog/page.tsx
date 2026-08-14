@@ -42,6 +42,18 @@ export default async function BlogIndexPage() {
             {articles.map((article) => (
               <li key={article.slug} className="bg-cream">
                 <Link href={`/blog/${article.slug}`} className="group block h-full p-6 sm:p-8">
+                  {/* The frame the article opens with. A repair note without a
+                      picture of the repair is a paragraph in a list; with one it
+                      is the reason somebody clicks. */}
+                  {article.photos[0] && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={`/api/repair-photo/${article.photos[0].id}`}
+                      alt={article.photos[0].alt || ''}
+                      loading="lazy"
+                      className="mb-5 aspect-[16/10] w-full rounded-card border border-primary-500/15 object-cover"
+                    />
+                  )}
                   <div className="eyebrow mb-3">
                     {[article.manufacturer, article.applianceType].filter(Boolean).join(' ') ||
                       'Repair'}

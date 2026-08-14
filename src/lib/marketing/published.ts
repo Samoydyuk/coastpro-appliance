@@ -102,13 +102,25 @@ export async function readPublishedArticles(): Promise<PublishedArticle[]> {
 
   try {
     const rows = (await sql`
-      select ${sql.unsafe(SELECT)}
+      select ${sql.unsafe(SELECT)},
+        -- The lead photograph, so the list can show one. First in the chosen
+        -- order, which is the same frame the article opens with.
+        (
+          select json_build_object('id', p.photo_id, 'alt', p.alt_text)
+          from marketing_photo p
+          where p.job_id = c.job_id and p.selected
+          order by p.sort_order, p.photo_id
+          limit 1
+        ) as lead_photo
       from marketing_content c
       join marketing_job j on j.job_id = c.job_id
       where c.status = 'published' and c.channel = 'article' and c.slug is not null
       order by c.approved_at desc nulls last
     `) as unknown as Record<string, unknown>[];
-    return rows.map((row) => shape(row, []));
+    return rows.map((row) => {
+      const lead = row.lead_photo as { id?: string; alt?: string | null } | null;
+      return shape(row, lead?.id ? [{ id: lead.id, alt: lead.alt ?? null }] : []);
+    });
   } catch {
     return [];
   }
