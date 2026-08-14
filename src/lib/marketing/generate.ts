@@ -165,7 +165,7 @@ export async function generate(jobId: string, channel: string): Promise<Draft> {
   );
 
   const sql = requireDb();
-  await sql`
+  const [row] = (await sql`
     insert into marketing_content (
       job_id, channel, status, title, slug, meta_title, meta_desc,
       generated_body, model, prompt_version, flags, updated_at
@@ -189,7 +189,18 @@ export async function generate(jobId: string, channel: string): Promise<Draft> {
       prompt_version = excluded.prompt_version,
       flags          = excluded.flags,
       updated_at     = now()
-  `;
+    returning id
+  `) as unknown as { id: string }[];
+
+  // The attempt is kept whatever happens to it next. This is what makes
+  // "Write again" a safe press: the previous draft is still here, so trying
+  // once more costs nothing you cannot get back.
+  if (row) {
+    await sql`
+      insert into marketing_content_version (content_id, source, title, body, model, prompt_version, flags)
+      values (${row.id}, 'model', ${title}, ${body}, ${MODEL}, ${PROMPT_VERSION}, ${sql.json(flags as never)})
+    `;
+  }
 
   return {
     channel,

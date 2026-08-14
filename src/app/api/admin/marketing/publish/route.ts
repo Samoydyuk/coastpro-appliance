@@ -45,8 +45,13 @@ export async function POST(request: NextRequest) {
     if (!piece) return NextResponse.json({ error: 'Nothing written yet.' }, { status: 404 });
 
     if (body.action === 'unpublish') {
+      // Back to whatever it was before it went up — 'edited' only if somebody
+      // actually edited it. Taking a page down does not make it a page that
+      // was worked on.
       await sql`
-        update marketing_content set status = 'edited', updated_at = now()
+        update marketing_content set
+          status = case when edited_body is null then 'generated' else 'edited' end,
+          updated_at = now()
         where id = ${piece.id}
       `;
       await sql`

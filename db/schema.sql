@@ -586,6 +586,33 @@ create unique index if not exists marketing_content_slug_idx on marketing_conten
   where slug is not null;
 
 -- ---------------------------------------------------------------------------
+-- Marketing content versions — every draft this system has ever produced or
+-- a person has ever saved, in order.
+--
+-- Kept because "why does this read the way it does" is a question that arrives
+-- months later, and the only honest answer needs the model, the prompt version
+-- and the text as it stood. It is also what makes regeneration safe to press:
+-- the previous attempt is not gone, so nothing is lost by trying again.
+-- ---------------------------------------------------------------------------
+create table if not exists marketing_content_version (
+  id             uuid primary key default gen_random_uuid(),
+  content_id     uuid not null references marketing_content (id) on delete cascade,
+  created_at     timestamptz not null default now(),
+
+  -- 'model' or 'human'. The distinction is the point of the table.
+  source         text not null,
+
+  title          text,
+  body           text,
+  model          text,
+  prompt_version text,
+  flags          jsonb not null default '[]'
+);
+
+create index if not exists marketing_content_version_idx
+  on marketing_content_version (content_id, created_at desc);
+
+-- ---------------------------------------------------------------------------
 -- Marketing publications — where a piece actually went, and when.
 --
 -- Separate from the content's status because publishing is an event with a
@@ -665,7 +692,8 @@ begin
     'visitors','sessions','events','leads','tracking_numbers','calls',
     'ad_spend','conversion_exports','web_vitals','settings','admin_audit',
     'platform_stats','import_runs',
-    'marketing_job','marketing_photo','marketing_content','marketing_publication'
+    'marketing_job','marketing_photo','marketing_content','marketing_publication',
+    'marketing_content_version'
   ] loop
     execute format('alter table %I disable row level security', t);
   end loop;

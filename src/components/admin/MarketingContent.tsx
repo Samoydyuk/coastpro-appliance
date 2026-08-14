@@ -24,6 +24,7 @@ export interface ContentPiece {
   model: string | null;
   flags: Array<{ label: string; excerpt: string }>;
   updatedAt: string | null;
+  history: Array<{ id: string; at: string; source: string; model: string | null }>;
 }
 
 interface Props {
@@ -42,6 +43,20 @@ export function MarketingContent({ jobId, channels, pieces }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState<string | null>(null);
+
+  const skip = async (channel: string) => {
+    setBusy(channel);
+    try {
+      await fetch('/api/admin/marketing/skip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId, channel }),
+      });
+      router.refresh();
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const publish = async (channel: string, action: 'publish' | 'unpublish') => {
     setBusy(channel);
@@ -135,14 +150,26 @@ export function MarketingContent({ jobId, channels, pieces }: Props) {
                 )}
               </button>
 
-              <button
-                type="button"
-                onClick={() => write(channel.key)}
-                disabled={working}
-                className={`${button} ${piece ? 'border border-primary-500/30 text-gray-600 hover:border-ink hover:text-ink' : 'bg-ink text-cream'}`}
-              >
-                {working ? 'Writing…' : piece ? 'Write again' : 'Write'}
-              </button>
+              <div className="flex items-center gap-2">
+                {!piece && (
+                  <button
+                    type="button"
+                    onClick={() => skip(channel.key)}
+                    disabled={working}
+                    className={`${button} text-gray-500 hover:text-ink`}
+                  >
+                    Skip
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => write(channel.key)}
+                  disabled={working}
+                  className={`${button} ${piece ? 'border border-primary-500/30 text-gray-600 hover:border-ink hover:text-ink' : 'bg-ink text-cream'}`}
+                >
+                  {working ? 'Writing…' : piece ? 'Write again' : 'Write'}
+                </button>
+              </div>
             </div>
 
             {errors[channel.key] && (
@@ -223,6 +250,22 @@ export function MarketingContent({ jobId, channels, pieces }: Props) {
                     {piece.editedBody ? ' · edited by hand' : ''}
                   </span>
                 </div>
+
+                {piece.history.length > 1 && (
+                  <details className="text-[11px] text-gray-500">
+                    <summary className="cursor-pointer font-heading uppercase tracking-label">
+                      {piece.history.length} versions
+                    </summary>
+                    <ul className="mt-2 space-y-1">
+                      {piece.history.map((version) => (
+                        <li key={version.id}>
+                          {new Date(version.at).toLocaleString()} —{' '}
+                          {version.source === 'human' ? 'saved by hand' : version.model || 'model'}
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
               </div>
             )}
           </div>

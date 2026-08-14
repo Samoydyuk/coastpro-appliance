@@ -41,6 +41,16 @@ export async function PATCH(request: NextRequest) {
     `) as unknown as { id: string }[];
 
     if (!row) return NextResponse.json({ error: 'Nothing written for that channel yet.' }, { status: 404 });
+
+    // Recorded alongside the model's attempts, and marked as a person's, so
+    // the history answers "who wrote this" and not only "what did it say".
+    if (body.body?.trim()) {
+      await sql`
+        insert into marketing_content_version (content_id, source, title, body)
+        values (${row.id}, 'human', ${body.title ?? null}, ${body.body})
+      `;
+    }
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('Content save failed:', error);

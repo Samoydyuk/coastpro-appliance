@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getMarketingJob } from '@/lib/marketing/queries';
+import { getMarketingJob, getContentHistory, findSimilarJobs } from '@/lib/marketing/queries';
 import { dateTime } from '@/lib/admin/format';
 import { Empty, Hint, Panel, SetupNotice, Warning } from '@/components/admin/ui';
 import { MarketingContent } from '@/components/admin/MarketingContent';
@@ -27,8 +27,16 @@ export default async function MarketingJobPage({ params }: { params: { jobId: st
   // signal Next needs to see, so it is raised after the catch rather than
   // inside it, where it would be reported as a database problem.
   let detail: Awaited<ReturnType<typeof getMarketingJob>>;
+  let history: Awaited<ReturnType<typeof getContentHistory>> = {};
+  let similar: Awaited<ReturnType<typeof findSimilarJobs>> = [];
   try {
     detail = await getMarketingJob(params.jobId);
+    if (detail) {
+      [history, similar] = await Promise.all([
+        getContentHistory(params.jobId),
+        findSimilarJobs(detail.job),
+      ]);
+    }
   } catch (error) {
     return <SetupNotice error={error} />;
   }
@@ -81,6 +89,28 @@ export default async function MarketingJobPage({ params }: { params: { jobId: st
             This job has been taken off the website list in the app. It is still here because
             something has been written from it — but nothing new should be, and anything already
             published from it is worth taking down.
+          </Warning>
+        )}
+
+        {similar.length > 0 && (
+          <Warning>
+            Something has already been written about {similar.length === 1 ? 'a' : similar.length}{' '}
+            similar {similar.length === 1 ? 'job' : 'jobs'}:{' '}
+            {similar.map((entry, index) => (
+              <span key={entry.job_id}>
+                {index > 0 ? ', ' : ''}
+                <Link
+                  href={`/admin/marketing/${entry.job_id}`}
+                  className="underline underline-offset-2"
+                >
+                  {entry.title || `${entry.manufacturer ?? ''} ${entry.appliance_type ?? ''}`.trim()}
+                </Link>
+                {entry.status === 'published' ? ' (live)' : ''}
+              </span>
+            ))}
+            . Worth a look before writing another — two pages about the same fault compete with
+            each other for the search that matters. Not a reason not to: the second one may be
+            the better page.
           </Warning>
         )}
 
@@ -142,6 +172,12 @@ export default async function MarketingJobPage({ params }: { params: { jobId: st
                   model: piece.model,
                   flags: piece.flags,
                   updatedAt: piece.updated_at ? String(piece.updated_at) : null,
+                  history: (history[piece.channel] ?? []).map((version) => ({
+                    id: version.id,
+                    at: String(version.created_at),
+                    source: version.source,
+                    model: version.model,
+                  })),
                 }))}
               />
             </Panel>

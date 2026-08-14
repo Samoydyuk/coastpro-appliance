@@ -362,3 +362,89 @@ export async function setPhotoSelection(
     `;
   }
 }
+
+// ---------------------------------------------------------------------------
+// History and similarity
+// ---------------------------------------------------------------------------
+
+export interface VersionRow {
+  id: string;
+  channel: string;
+  created_at: Date;
+  source: string;
+  title: string | null;
+  body: string | null;
+  model: string | null;
+}
+
+/** Every draft ever produced for this job, newest first, by channel. */
+export async function getContentHistory(jobId: string): Promise<Record<string, VersionRow[]>> {
+  const sql = requireDb();
+  const rows = (await sql`
+    select v.id, c.channel, v.created_at, v.source, v.title, v.body, v.model
+    from marketing_content_version v
+    join marketing_content c on c.id = v.content_id
+    where c.job_id = ${jobId}
+    order by v.created_at desc
+  `) as unknown as VersionRow[];
+
+  const byChannel: Record<string, VersionRow[]> = {};
+  for (const row of rows) {
+    (byChannel[row.channel] ??= []).push(row);
+  }
+  return byChannel;
+}
+
+export interface SimilarJob {
+  job_id: string;
+  appliance_type: string | null;
+  manufacturer: string | null;
+  city: string | null;
+  completed_at: Date | null;
+  title: string | null;
+  status: string | null;
+}
+
+/**
+ * Other jobs something has already been written about that are close enough to
+ * this one to read as the same article.
+ *
+ * A warning, never a block — two Bosch dishwashers with the same drain fault
+ * is a perfectly good reason to write twice, and the second piece may be the
+ * better one. What it prevents is writing the same page by accident and
+ * competing with yourself for the search that matters.
+ *
+ * Closeness is the appliance plus at least one of: the same brand, a shared
+ * error code, or the same town. Appliance alone would match half the table.
+ */
+export async function findSimilarJobs(job: MarketingJobRow): Promise<SimilarJob[]> {
+  const sql = requireDb();
+  if (!job.appliance_type) return [];
+
+  return (await sql`
+    select
+      j.job_id, j.appliance_type, j.manufacturer, j.city, j.completed_at,
+      c.title, c.status
+    from marketing_job j
+    join marketing_content c on c.job_id = j.job_id and c.channel = 'article'
+    where j.job_id <> ${job.job_id}
+      and j.appliance_type = ${job.appliance_type}
+      and (
+        (${job.manufacturer}::text is not null and j.manufacturer = ${job.manufacturer})
+        or (${job.city}::text is not null and j.city = ${job.city})
+        or j.error_codes && ${job.error_codes}
+      )
+    order by j.completed_at desc
+    limit 5
+  `) as unknown as SimilarJob[];
+}
+
+/** "Nothing worth writing here" — said once, so the list stops offering it. */
+export async function skipJob(jobId: string, channel: string): Promise<void> {
+  const sql = requireDb();
+  await sql`
+    insert into marketing_content (job_id, channel, status, updated_at)
+    values (${jobId}, ${channel}, 'skipped', now())
+    on conflict (job_id, channel) do update set status = 'skipped', updated_at = now()
+  `;
+}
