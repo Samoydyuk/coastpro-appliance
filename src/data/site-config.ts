@@ -1,7 +1,7 @@
 export const siteConfig = {
   name: "CoastPro Appliance Repair",
   tagline: "Orange County's Trusted Appliance Repair Experts",
-  description: "Professional appliance repair services in Orange County, CA. Same-day service, 90-day warranty on all repairs. We fix refrigerators, washers, dryers, dishwashers, and more.",
+  description: "Appliance repair across Orange County, CA — refrigerators, washers, dryers, dishwashers and ovens. Same-day service, 90-day warranty, $150 service call.",
 
   contact: {
     phone: "(949) 749-0006",

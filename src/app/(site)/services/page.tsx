@@ -4,7 +4,7 @@ import { siteConfig } from '@/data/site-config';
 
 export const metadata: Metadata = {
   title: 'Appliance Repair Services',
-  description: `Professional appliance repair services in Orange County. We repair refrigerators, washers, dryers, dishwashers, ovens, microwaves, and more. Same-day service available. Call ${siteConfig.contact.phone}.`,
+  description: `Refrigerators, washers, dryers, dishwashers, ovens, microwaves and disposals, repaired across Orange County. Same-day service. Call ${siteConfig.contact.phone}.`,
   openGraph: {
     title: 'Appliance Repair Services | CoastPro Appliance Repair',
     description: 'Complete appliance repair services for all major brands. Same-day service, 90-day warranty.',

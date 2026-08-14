@@ -9,7 +9,7 @@ import { siteConfig } from '@/data/site-config';
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.seo.siteUrl),
   title: {
-    default: `${siteConfig.name} | Professional Appliance Repair in Orange County`,
+    default: 'Appliance Repair in Orange County, CA | CoastPro',
     // Just the shop name, not the full legal one. The suffix is appended to
     // every page title, so its length is spent twenty-four times over: at 28
     // characters it pushed every service and city page past the point a result

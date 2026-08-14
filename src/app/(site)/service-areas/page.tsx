@@ -9,7 +9,7 @@ import { getInitials } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'Service Areas in Orange County',
-  description: 'CoastPro Appliance Repair serves all of Orange County, CA including Irvine, Newport Beach, Costa Mesa, Huntington Beach, Anaheim, and more. Same-day service available.',
+  description: 'Appliance repair across Orange County, CA — Irvine, Newport Beach, Costa Mesa, Huntington Beach, Anaheim and more. Same-day service available.',
   openGraph: {
     title: 'Service Areas | CoastPro Appliance Repair',
     description: 'Professional appliance repair throughout Orange County, CA.',

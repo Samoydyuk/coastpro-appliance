@@ -215,12 +215,16 @@ export function buildPrompt(
 }
 
 const FIELD_HELP: Record<string, string> = {
+  // 45, not 60: the site appends " | CoastPro" to every title, and a result
+  // is cut at about sixty characters. Sixty here means seventy-one there, and
+  // the eleven characters that fall off the end are the ones the model chose
+  // to finish on.
   title:
-    'the headline, under 60 characters. Name the appliance, and the fault ONLY if the ' +
+    'the headline, under 45 characters. Name the appliance, and the fault ONLY if the ' +
     'material above says what the fault was. With no diagnosis, the headline is about what ' +
     'the piece is actually about — never a symptom nobody reported.',
   slug: 'url slug, lowercase, hyphenated, under 60 characters',
-  metaTitle: 'search title, under 60 characters',
+  metaTitle: 'search title, under 45 characters',
   metaDesc: 'search description, 140–160 characters, no quotation marks',
   body: 'the text itself',
 };
