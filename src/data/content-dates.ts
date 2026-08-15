@@ -32,9 +32,13 @@ export const pageUpdated: Record<string, string> = {
   gallery: '2026-08-12',
   'book-appointment': '2026-08-14',
   blog: '2026-08-14',
+  brands: '2026-08-15',
   privacy: '2026-08-13',
   terms: '2026-08-14',
 };
+
+/** The day the brand pages were written. */
+export const BRAND_CONTENT_UPDATED = '2026-08-15';
 
 /** Service detail pages, keyed by slug. */
 export const serviceUpdated: Record<string, string> = {

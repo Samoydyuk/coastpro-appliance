@@ -1,8 +1,10 @@
 import { MetadataRoute } from 'next';
 import { services } from '@/data/services';
 import { serviceAreas } from '@/data/service-areas';
+import { brands } from '@/data/brands';
 import { siteConfig } from '@/data/site-config';
 import {
+  BRAND_CONTENT_UPDATED,
   CITY_CONTENT_UPDATED,
   pageUpdated,
   serviceUpdated,
@@ -31,6 +33,7 @@ const STATIC_ROUTES: Array<[string, MetadataRoute.Sitemap[number]['changeFrequen
   ['', 'weekly', 1],
   ['services', 'weekly', 0.9],
   ['service-areas', 'monthly', 0.8],
+  ['brands', 'monthly', 0.8],
   ['book-appointment', 'monthly', 0.9],
   ['contact', 'monthly', 0.8],
   ['about', 'monthly', 0.7],
@@ -54,6 +57,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const servicePages: MetadataRoute.Sitemap = services.map((service) => ({
     url: `${BASE_URL}/services/${service.slug}`,
     lastModified: updatedAt(serviceUpdated[service.slug]),
+    changeFrequency: 'monthly' as const,
+    priority: 0.8,
+  }));
+
+  const brandPages: MetadataRoute.Sitemap = brands.map((brand) => ({
+    url: `${BASE_URL}/brands/${brand.slug}`,
+    lastModified: updatedAt(BRAND_CONTENT_UPDATED),
     changeFrequency: 'monthly' as const,
     priority: 0.8,
   }));
@@ -83,5 +93,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     };
   });
 
-  return [...staticPages, ...servicePages, ...cityPages, ...articlePages];
+  return [...staticPages, ...servicePages, ...brandPages, ...cityPages, ...articlePages];
 }

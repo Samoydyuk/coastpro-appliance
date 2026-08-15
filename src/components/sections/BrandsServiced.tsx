@@ -1,4 +1,7 @@
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import { services } from '@/data/services';
+import { brands as brandPages } from '@/data/brands';
 
 /**
  * The brands, gathered from the service data rather than typed out again.
@@ -13,17 +16,20 @@ import { services } from '@/data/services';
  * keep two clicks later.
  */
 
-const premium = new Set(['Sub-Zero', 'Wolf', 'Viking', 'Thermador', 'Miele', 'Bosch', 'Dacor']);
+/** Slug for a brand that has a page of its own, or undefined. */
+const pageFor = new Map(brandPages.map((brand) => [brand.name, brand.slug]));
 
 function collectBrands() {
   const all = new Set<string>();
   for (const service of services) {
     for (const brand of service.brands ?? []) all.add(brand);
   }
-  const list = [...all];
+  // Every brand with a page belongs in the premium column whether or not a
+  // service happens to list it, so the two never disagree about which is which.
+  const list = new Set([...all, ...pageFor.keys()]);
   return {
-    premium: list.filter((b) => premium.has(b)).sort(),
-    mainstream: list.filter((b) => !premium.has(b)).sort(),
+    premium: [...list].filter((b) => pageFor.has(b)).sort(),
+    mainstream: [...list].filter((b) => !pageFor.has(b)).sort(),
   };
 }
 
@@ -68,9 +74,13 @@ export function BrandsServiced() {
             </h3>
             <div className="flex flex-wrap gap-x-6 gap-y-3 mb-6">
               {high.map((brand) => (
-                <span key={brand} className="text-lg text-gray-600">
+                <Link
+                  key={brand}
+                  href={`/brands/${pageFor.get(brand)}`}
+                  className="text-lg text-primary-600 hover:text-ink underline underline-offset-4 decoration-primary-500/40 hover:decoration-ink transition-colors"
+                >
                   {brand}
-                </span>
+                </Link>
               ))}
             </div>
             <p className="text-gray-600 max-w-prose leading-relaxed">
@@ -88,6 +98,16 @@ export function BrandsServiced() {
           finish: where a unit needs a factory-authorised repair to keep its warranty intact, we say
           so and point you at the manufacturer rather than charging you to find that out.
         </p>
+
+        <div className="mt-8">
+          <Link
+            href="/brands"
+            className="inline-flex items-center font-heading text-[11px] font-semibold uppercase tracking-label text-primary-600 hover:text-ink transition-colors"
+          >
+            All brands we service
+            <ArrowRight className="h-3.5 w-3.5 ml-2" />
+          </Link>
+        </div>
       </div>
     </section>
   );

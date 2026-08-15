@@ -60,6 +60,14 @@ export function Footer() {
                   View All Services →
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/brands"
+                  className="text-cream hover:text-primary-300 transition-colors"
+                >
+                  Brands We Service →
+                </Link>
+              </li>
             </ul>
           </div>
 

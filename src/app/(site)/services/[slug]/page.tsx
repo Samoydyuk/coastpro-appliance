@@ -5,8 +5,12 @@ import { Check, Clock, Shield, ArrowRight, Phone, Wrench, Info } from 'lucide-re
 import { Button, Card, CardContent, Badge } from '@/components/ui';
 import { CTABanner, StatsBand } from '@/components/sections';
 import { services, getServiceBySlug, getRelatedServices } from '@/data/services';
+import { brands as brandPages } from '@/data/brands';
 import { siteConfig } from '@/data/site-config';
 import { breadcrumbSchema, serviceSchema } from '@/lib/schema';
+
+/** Which brand names have a page of their own. */
+const brandPageFor = new Map(brandPages.map((brand) => [brand.name, brand.slug]));
 
 interface ServicePageProps {
   params: Promise<{ slug: string }>;
@@ -31,7 +35,6 @@ export async function generateMetadata({ params }: ServicePageProps): Promise<Me
   return {
     title: service.seo.title,
     description: service.seo.description,
-    keywords: service.seo.keywords,
     openGraph: {
       title: service.seo.title,
       description: service.seo.description,
@@ -256,12 +259,22 @@ export default async function ServicePage({ params }: ServicePageProps) {
               <div>
                 <div className="eyebrow mb-4">{step('Brands')}</div>
                 <h2 className="headline text-2xl mb-6">Brands we service</h2>
+                {/* The premium names link through to their own page — someone
+                    reading "Sub-Zero" on the refrigerator page is one click from
+                    the page written for exactly that machine. */}
                 <div className="flex flex-wrap gap-3">
-                  {service.brands.map((brand) => (
-                    <Badge key={brand} size="md">
-                      {brand}
-                    </Badge>
-                  ))}
+                  {service.brands.map((brand) => {
+                    const slug = brandPageFor.get(brand);
+                    return slug ? (
+                      <Link key={brand} href={`/brands/${slug}`}>
+                        <Badge size="md">{brand}</Badge>
+                      </Link>
+                    ) : (
+                      <Badge key={brand} size="md">
+                        {brand}
+                      </Badge>
+                    );
+                  })}
                 </div>
               </div>
               )}
