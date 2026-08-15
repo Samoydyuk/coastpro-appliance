@@ -88,6 +88,11 @@ export function splitArticle(body: string, title: string): SplitArticle {
   const sections: ArticleSection[] = [];
   let intro: string[] = [];
   let current: { heading: string; lines: string[] } | null = null;
+  /// Only the first heading can be the opener. Testing "have we numbered
+  /// anything yet" instead swallowed the second one too — "What the Technician
+  /// Found" shares two words with a title ending "What We Found", so the piece
+  /// lost its findings and started at The Repair.
+  let seenFirstHeading = false;
 
   const flush = () => {
     if (!current) return;
@@ -96,7 +101,9 @@ export function splitArticle(body: string, title: string): SplitArticle {
     // written to opens with it every time, and the page has already said it in
     // the headline and again in the summary card. Printing it as section 01
     // reads like the article starts twice.
-    if (sections.length === 0 && (echoesTitle(current.heading, title) || isOpener(current.heading))) {
+    const isFirst = !seenFirstHeading;
+    seenFirstHeading = true;
+    if (isFirst && (echoesTitle(current.heading, title) || isOpener(current.heading))) {
       intro = intro.concat(text ? [text] : []);
     } else {
       sections.push({
