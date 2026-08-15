@@ -38,6 +38,7 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
   const [saved, setSaved] = useState(false);
   const [describing, setDescribing] = useState(false);
   const [describeNote, setDescribeNote] = useState<string | null>(null);
+  const [alts, setAlts] = useState<Record<string, string>>({});
 
   const toggle = (id: string) => {
     setSaved(false);
@@ -66,7 +67,7 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
             // The order is the order they were picked in, which is what the
             // numbered badge on each tile is showing.
             sortOrder: chosen.indexOf(photo.id) < 0 ? 0 : chosen.indexOf(photo.id),
-            altText: photo.altText,
+            altText: alts[photo.id] ?? photo.altText,
           })),
         }),
       });
@@ -94,19 +95,27 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
           ? `Described ${payload.described ?? 0} photograph${payload.described === 1 ? '' : 's'} from the pictures themselves.`
           : payload.error ?? 'Could not describe the photographs.'
       );
-      if (response.ok) router.refresh();
+      if (response.ok) {
+        // The captions on screen are the old ones until the page comes back.
+        setAlts({});
+        router.refresh();
+      }
     } finally {
       setDescribing(false);
     }
   };
 
-  const dirty =
+  const selectionChanged =
     chosen.join(',') !==
     photos
       .filter((photo) => photo.selected)
       .sort((a, b) => a.sortOrder - b.sortOrder)
       .map((photo) => photo.id)
       .join(',');
+  const captionsChanged = photos.some(
+    (photo) => alts[photo.id] !== undefined && alts[photo.id] !== (photo.altText ?? '')
+  );
+  const dirty = selectionChanged || captionsChanged;
 
   return (
     <div className="space-y-3">
@@ -114,8 +123,8 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
         {photos.map((photo) => {
           const position = chosen.indexOf(photo.id);
           return (
+            <div key={photo.id} className="space-y-1.5">
             <button
-              key={photo.id}
               type="button"
               onClick={() => toggle(photo.id)}
               className={`relative overflow-hidden rounded-card border text-left transition-colors ${
@@ -183,11 +192,23 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
                 {photo.editedRev ? 'Edited' : 'Edit'}
               </span>
               {photo.caption && (
-                <span className="block px-2 py-1 text-[11px] leading-snug text-gray-500">
+                <span className="block px-2 pt-1 text-[11px] leading-snug text-gray-500">
                   {photo.caption}
                 </span>
               )}
             </button>
+            {/* What the article will actually print under this photograph, and
+                what a screen reader will say. It was written by the model and
+                never shown here, so a wrong description could only be found by
+                reading the published page (owner report). */}
+            <textarea
+              value={alts[photo.id] ?? photo.altText ?? ''}
+              onChange={(event) => setAlts({ ...alts, [photo.id]: event.target.value })}
+              rows={2}
+              placeholder="Caption — say what is in the frame"
+              className="w-full resize-y rounded-card border border-primary-500/20 bg-cream px-2 py-1.5 text-[11px] leading-snug text-ink placeholder:text-gray-400 focus:border-ink focus:outline-none"
+            />
+            </div>
           );
         })}
       </div>
@@ -199,7 +220,7 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
           disabled={busy || !dirty}
           className="h-8 rounded-card bg-ink px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-cream disabled:opacity-40"
         >
-          {busy ? 'Saving…' : 'Save selection'}
+          {busy ? 'Saving…' : 'Save selection & captions'}
         </button>
         {/* Written from the pictures, not from the story. Every article
             published before the model was shown its own photographs carries

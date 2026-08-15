@@ -46,14 +46,26 @@ export interface PublishedArticle {
 
   /** `rev` versions the URL: an edit changes it, which is what gets past the
    *  day-long immutable cache on the image itself. */
-  photos: Array<{ id: string; alt: string | null; rev: string | null }>;
+  photos: Array<{ id: string; alt: string | null; rev: string | null; category: string | null }>;
+
+  /**
+   * The job sheet's own words, for the summary card at the top.
+   *
+   * Deliberately not the article's prose: a reader who wants to know whether
+   * this is their fault reads three lines and leaves, and those three lines
+   * should be what the technician wrote rather than a paraphrase of it.
+   */
+  diagnosis: string | null;
+  repairPerformed: string | null;
+  parts: Array<{ description: string; partNumber: string | null }>;
 }
 
 const SELECT = `
   c.slug, c.title, c.meta_title, c.meta_desc,
   coalesce(c.edited_body, c.generated_body) as body,
   c.approved_at, c.updated_at,
-  j.appliance_type, j.manufacturer, j.model, j.error_codes, j.city, j.state
+  j.appliance_type, j.manufacturer, j.model, j.error_codes, j.city, j.state,
+  j.diagnosis, j.repair_performed, j.replaced_parts
 `;
 
 /** A timestamp from the driver, or from the cache, as one thing. */
@@ -65,7 +77,7 @@ function iso(value: unknown): string | null {
 
 function shape(
   row: Record<string, unknown>,
-  photos: Array<{ id: string; alt: string | null; rev: string | null }>
+  photos: Array<{ id: string; alt: string | null; rev: string | null; category: string | null }>
 ): PublishedArticle {
   return {
     slug: String(row.slug),
@@ -82,6 +94,18 @@ function shape(
     city: (row.city as string) ?? null,
     state: (row.state as string) ?? null,
     photos,
+    diagnosis: (row.diagnosis as string) ?? null,
+    repairPerformed: (row.repair_performed as string) ?? null,
+    // Same jsonb caution as everywhere else here: a malformed array must not
+    // take the page down.
+    parts: Array.isArray(row.replaced_parts)
+      ? (row.replaced_parts as Array<{ description?: unknown; partNumber?: unknown }>)
+          .map((part) => ({
+            description: String(part?.description ?? '').trim(),
+            partNumber: part?.partNumber ? String(part.partNumber) : null,
+          }))
+          .filter((part) => part.description.length > 0)
+      : [],
   };
 }
 
@@ -111,7 +135,8 @@ export async function readPublishedArticles(): Promise<PublishedArticle[]> {
         -- The lead photograph, so the list can show one. First in the chosen
         -- order, which is the same frame the article opens with.
         (
-          select json_build_object('id', p.photo_id, 'alt', p.alt_text, 'rev', p.edited_rev)
+          select json_build_object('id', p.photo_id, 'alt', p.alt_text, 'rev', p.edited_rev,
+                                   'category', p.category)
           from marketing_photo p
           where p.job_id = c.job_id and p.selected
           order by p.sort_order, p.photo_id
@@ -123,8 +148,15 @@ export async function readPublishedArticles(): Promise<PublishedArticle[]> {
       order by c.approved_at desc nulls last
     `) as unknown as Record<string, unknown>[];
     return rows.map((row) => {
-      const lead = row.lead_photo as { id?: string; alt?: string | null; rev?: string | null } | null;
-      return shape(row, lead?.id ? [{ id: lead.id, alt: lead.alt ?? null, rev: lead.rev ?? null }] : []);
+      const lead = row.lead_photo as {
+        id?: string; alt?: string | null; rev?: string | null; category?: string | null;
+      } | null;
+      return shape(
+        row,
+        lead?.id
+          ? [{ id: lead.id, alt: lead.alt ?? null, rev: lead.rev ?? null, category: lead.category ?? null }]
+          : []
+      );
     });
   } catch {
     return [];
@@ -150,14 +182,21 @@ export const getPublishedArticle = cache('article', async function getPublishedA
     if (!row) return null;
 
     const photos = (await sql`
-      select photo_id, alt_text, edited_rev from marketing_photo
+      select photo_id, alt_text, edited_rev, category from marketing_photo
       where job_id = ${String(row.job_id)} and selected
       order by sort_order, photo_id
-    `) as unknown as Array<{ photo_id: string; alt_text: string | null; edited_rev: string | null }>;
+    `) as unknown as Array<{
+      photo_id: string; alt_text: string | null; edited_rev: string | null; category: string | null;
+    }>;
 
     return shape(
       row,
-      photos.map((photo) => ({ id: photo.photo_id, alt: photo.alt_text, rev: photo.edited_rev }))
+      photos.map((photo) => ({
+        id: photo.photo_id,
+        alt: photo.alt_text,
+        rev: photo.edited_rev,
+        category: photo.category,
+      }))
     );
   } catch {
     return null;

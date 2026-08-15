@@ -1,10 +1,11 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Clock, FileText, Check } from 'lucide-react';
 import { CTABanner } from '@/components/sections';
 import { getPublishedArticle, listPublishedArticles, photoUrl } from '@/lib/marketing/published';
 import { renderMarkdown } from '@/lib/marketing/markdown';
+import { splitArticle, readingMinutes } from '@/lib/marketing/sections';
 import { siteConfig } from '@/data/site-config';
 import { breadcrumbSchema } from '@/lib/schema';
 import { articleTitle } from '@/lib/seo';
@@ -70,6 +71,15 @@ export default async function ArticlePage({ params }: Props) {
     ...(place ? { contentLocation: { '@type': 'Place', name: place } } : {}),
   };
 
+  const { intro, sections } = splitArticle(article.body, article.title);
+  const [lead, ...rest] = article.photos;
+  // One line under the pair rather than one under each: two captions side by
+  // side under two pictures is a wall of small grey text nobody reads.
+  const restCaption = rest
+    .map((photo) => photo.alt)
+    .filter(Boolean)
+    .join(' · ');
+
   return (
     <>
       <script
@@ -95,12 +105,23 @@ export default async function ArticlePage({ params }: Props) {
             Repair notes
           </Link>
 
-          <div className="eyebrow mb-4 mt-8">
-            {subject}
-            {place ? ` — ${place}` : ''}
+          {/* What it was and where, against how long this takes to read. Both
+              are the first things somebody scanning a list of repairs wants. */}
+          <div className="mt-8 flex items-baseline justify-between gap-4 border-b border-primary-500/15 pb-3">
+            <div className="eyebrow">
+              {subject}
+              {place ? ` · ${place}` : ''}
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-500">
+              <Clock className="h-3 w-3" strokeWidth={1.5} />
+              {readingMinutes(article.body)} min read
+            </div>
           </div>
 
-          <h1 className="headline text-[1.7rem] sm:text-3xl md:text-4xl">{article.title}</h1>
+          <h1 className="headline mt-6 text-[1.7rem] sm:text-3xl md:text-4xl">{article.title}</h1>
+          <p className="mt-3 text-[15px] text-gray-600">
+            What our technician found — and why it matters.
+          </p>
 
           {article.errorCodes.length > 0 && (
             <p className="mt-4 font-mono text-xs text-primary-600">
@@ -108,56 +129,175 @@ export default async function ArticlePage({ params }: Props) {
             </p>
           )}
 
-          <div className="rule-short my-8" />
-
-          {/* One photograph up here, the rest after the text.
-              A grid of four above the first sentence is a gallery, and a
-              gallery is what the reader scrolls past. The first frame belongs
-              to the article; the others belong to the end of it, each saying
-              what it is of. */}
-          {article.photos.length > 0 && (
-            <figure className="mb-10">
+          {lead && (
+            <figure className="mt-8">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={photoUrl(article.photos[0])}
-                alt={article.photos[0].alt || `${subject} repair`}
+                src={photoUrl(lead)}
+                alt={lead.alt || `${subject} repair`}
                 loading="eager"
                 className="w-full rounded-card border border-primary-500/20 object-cover"
               />
-              {article.photos[0].alt && (
-                <figcaption className="mt-2 text-[13px] text-gray-500">
-                  {article.photos[0].alt}
-                </figcaption>
-              )}
             </figure>
           )}
 
-          <div
-            className="space-y-5 text-[15px] leading-relaxed text-gray-700 [&>h2]:mt-10 [&>h2]:font-heading [&>h2]:text-lg [&>h2]:font-bold [&>h2]:uppercase [&>h2]:tracking-label [&>h2]:text-ink [&>h3]:mt-8 [&>h3]:font-heading [&>h3]:text-base [&>h3]:font-semibold [&>h3]:text-ink [&>ul]:list-disc [&>ul]:space-y-2 [&>ul]:pl-5 [&_strong]:font-semibold [&_strong]:text-ink"
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(article.body) }}
-          />
-
-          {article.photos.length > 1 && (
-            <div className="mt-12">
-              <div className="eyebrow mb-4">From the job</div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {article.photos.slice(1).map((photo) => (
-                  <figure key={photo.id}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photoUrl(photo)}
-                      alt={photo.alt || `${subject} repair`}
-                      loading="lazy"
-                      className="w-full rounded-card border border-primary-500/20 object-cover"
-                    />
-                    {photo.alt && (
-                      <figcaption className="mt-2 text-[13px] text-gray-500">
-                        {photo.alt}
-                      </figcaption>
-                    )}
-                  </figure>
-                ))}
+          {/* The three lines somebody reads to decide whether this is their
+              fault. Taken from the job sheet rather than the prose — a
+              paraphrase of a diagnosis is not a diagnosis. */}
+          {(article.diagnosis || article.repairPerformed) && (
+            <div className="mt-8 flex flex-col gap-4 rounded-card border border-primary-500/20 p-5 sm:flex-row sm:gap-6">
+              <div className="flex shrink-0 flex-col items-start gap-2 sm:w-28 sm:items-center sm:text-center">
+                <span className="icon-disc h-10 w-10 border-ink bg-ink text-cream">
+                  <FileText className="h-4 w-4" strokeWidth={1.5} />
+                </span>
+                <span className="font-heading text-[10px] font-semibold uppercase tracking-label text-ink">
+                  The issue
+                </span>
               </div>
+              <dl className="grid flex-1 gap-2 border-t border-primary-500/15 pt-4 text-[14px] sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
+                {article.metaDesc && (
+                  <div className="flex gap-3">
+                    <dt className="w-20 shrink-0 font-heading text-[11px] font-semibold uppercase tracking-label text-ink">
+                      Issue
+                    </dt>
+                    <dd className="text-gray-700">{article.metaDesc}</dd>
+                  </div>
+                )}
+                {article.diagnosis && (
+                  <div className="flex gap-3">
+                    <dt className="w-20 shrink-0 font-heading text-[11px] font-semibold uppercase tracking-label text-ink">
+                      Diagnosis
+                    </dt>
+                    <dd className="text-gray-700">{article.diagnosis}</dd>
+                  </div>
+                )}
+                {article.repairPerformed && (
+                  <div className="flex gap-3">
+                    <dt className="w-20 shrink-0 font-heading text-[11px] font-semibold uppercase tracking-label text-ink">
+                      Repair
+                    </dt>
+                    <dd className="text-gray-700">{article.repairPerformed}</dd>
+                  </div>
+                )}
+              </dl>
+            </div>
+          )}
+
+          {intro && (
+            <div
+              className="mt-8 space-y-4 text-[15px] leading-relaxed text-gray-700"
+              dangerouslySetInnerHTML={{ __html: renderMarkdown(intro) }}
+            />
+          )}
+
+          {/* Numbered, because a repair is a sequence and the reader is
+              following one. */}
+          <div className="mt-10 space-y-9">
+            {sections.map((section, index) => (
+              <section key={section.heading} className="flex gap-4 sm:gap-6">
+                <div className="flex shrink-0 items-start gap-2 pt-0.5 sm:gap-3">
+                  <span className="font-heading text-lg font-extrabold tabular-nums text-primary-600">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <span className="mt-3 hidden h-px w-4 bg-primary-500/40 sm:block" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="font-heading text-base font-bold uppercase tracking-label text-ink">
+                    {section.heading}
+                  </h2>
+
+                  {section.kind === 'parts' && article.parts.length > 0 ? (
+                    <ul className="mt-3 space-y-2">
+                      {article.parts.map((part) => (
+                        <li
+                          key={part.description}
+                          className="rounded-card border border-primary-500/20 px-4 py-3"
+                        >
+                          <div className="font-heading text-[13px] font-semibold uppercase tracking-label text-ink">
+                            {part.description}
+                          </div>
+                          {/* Deliberately the make, never the number: a part
+                              number in public copy is an invitation to order
+                              the wrong thing. */}
+                          {article.manufacturer && (
+                            <div className="mt-0.5 text-[12px] text-gray-500">
+                              {article.manufacturer} OEM
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : section.kind === 'expect' && section.bullets.length > 0 ? (
+                    <>
+                      {section.body.split('\n').some((line) => line.trim() && !/^[-*+]\s/.test(line.trim())) && (
+                        <div
+                          className="mt-3 text-[15px] leading-relaxed text-gray-700"
+                          dangerouslySetInnerHTML={{
+                            __html: renderMarkdown(
+                              section.body
+                                .split('\n')
+                                .filter((line) => !/^[-*+]\s/.test(line.trim()))
+                                .join('\n')
+                            ),
+                          }}
+                        />
+                      )}
+                      <ul className="mt-3 space-y-2">
+                        {section.bullets.map((bullet) => (
+                          <li key={bullet} className="flex gap-3 text-[15px] text-gray-700">
+                            <span className="mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full bg-ink text-cream">
+                              <Check className="h-2.5 w-2.5" strokeWidth={3} />
+                            </span>
+                            {bullet}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : (
+                    <div
+                      className="mt-3 space-y-4 text-[15px] leading-relaxed text-gray-700 [&>ul]:list-disc [&>ul]:space-y-2 [&>ul]:pl-5 [&_strong]:font-semibold [&_strong]:text-ink"
+                      dangerouslySetInnerHTML={{ __html: renderMarkdown(section.body) }}
+                    />
+                  )}
+                </div>
+              </section>
+            ))}
+          </div>
+
+          {/* The rest of the photographs. Labelled before and after only when
+              the job sheet says which is which — a guess here would caption a
+              picture wrongly, which is the whole reason these captions were
+              rewritten in the first place. */}
+          {rest.length > 0 && (
+            <div className="mt-12">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {rest.map((photo) => {
+                  const label = photo.category?.toLowerCase().includes('before')
+                    ? 'Before'
+                    : photo.category?.toLowerCase().includes('after')
+                      ? 'After'
+                      : null;
+                  return (
+                    <figure key={photo.id} className="relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photoUrl(photo)}
+                        alt={photo.alt || `${subject} repair`}
+                        loading="lazy"
+                        className="w-full rounded-card border border-primary-500/20 object-cover"
+                      />
+                      {label && (
+                        <figcaption className="absolute left-2 top-2 rounded-card bg-ink/90 px-2 py-0.5 font-heading text-[9px] font-semibold uppercase tracking-label text-cream">
+                          {label}
+                        </figcaption>
+                      )}
+                    </figure>
+                  );
+                })}
+              </div>
+              {restCaption && (
+                <p className="mt-3 text-center text-[13px] text-gray-500">{restCaption}</p>
+              )}
             </div>
           )}
         </div>
