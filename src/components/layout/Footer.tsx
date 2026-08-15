@@ -33,7 +33,7 @@ export function Footer() {
               alt="CoastPro.us"
               width={2264}
               height={321}
-              className="mt-1 h-7 w-auto"
+              className="mt-1 h-6 w-auto"
             />
             <div className="h-px w-16 bg-primary-500/50 my-6" />
             <p className="leading-relaxed">
