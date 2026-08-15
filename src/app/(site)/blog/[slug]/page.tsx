@@ -80,6 +80,54 @@ export default async function ArticlePage({ params }: Props) {
     .filter(Boolean)
     .join(' · ');
 
+  /**
+   * The three lines somebody reads to decide whether this is their fault.
+   *
+   * Taken from the job sheet rather than the prose — a paraphrase of a
+   * diagnosis is not a diagnosis. Declared once because the desktop layout puts
+   * it in the rail beside the piece and the narrow one keeps it under the
+   * photograph, where the drawing has it.
+   */
+  const issueCard = (article.diagnosis || article.repairPerformed) ? (
+      
+      <div className="flex flex-col gap-4 rounded-card border border-primary-500/20 p-5 sm:flex-row sm:gap-6 lg:flex-col lg:gap-4">
+        <div className="flex shrink-0 flex-row items-center gap-3 sm:w-28 sm:flex-col sm:items-center sm:text-center lg:w-auto lg:flex-row lg:items-center lg:text-left">
+          <span className="icon-disc h-10 w-10 border-ink bg-ink text-cream">
+            <FileText className="h-4 w-4" strokeWidth={1.5} />
+          </span>
+          <span className="font-heading text-[10px] font-semibold uppercase tracking-label text-ink">
+            The issue
+          </span>
+        </div>
+        <dl className="grid flex-1 gap-2 border-t border-primary-500/15 pt-4 text-[14px] sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0 lg:border-l-0 lg:border-t lg:pl-0 lg:pt-4">
+          {article.metaDesc && (
+            <div className="flex gap-3">
+              <dt className="w-20 shrink-0 font-heading text-[11px] font-semibold uppercase tracking-label text-ink">
+                Issue
+              </dt>
+              <dd className="text-gray-700">{article.metaDesc}</dd>
+            </div>
+          )}
+          {article.diagnosis && (
+            <div className="flex gap-3">
+              <dt className="w-20 shrink-0 font-heading text-[11px] font-semibold uppercase tracking-label text-ink">
+                Diagnosis
+              </dt>
+              <dd className="text-gray-700">{article.diagnosis}</dd>
+            </div>
+          )}
+          {article.repairPerformed && (
+            <div className="flex gap-3">
+              <dt className="w-20 shrink-0 font-heading text-[11px] font-semibold uppercase tracking-label text-ink">
+                Repair
+              </dt>
+              <dd className="text-gray-700">{article.repairPerformed}</dd>
+            </div>
+          )}
+        </dl>
+      </div>
+  ) : null;
+
   return (
     <>
       <script
@@ -96,7 +144,7 @@ export default async function ArticlePage({ params }: Props) {
       />
 
       <article className="container mx-auto px-4 py-16 lg:py-24">
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto max-w-6xl">
           <Link
             href="/blog"
             className="inline-flex items-center gap-2 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-500 hover:text-ink"
@@ -104,6 +152,13 @@ export default async function ArticlePage({ params }: Props) {
             <ArrowLeft className="h-3.5 w-3.5" strokeWidth={1.5} />
             Repair notes
           </Link>
+
+          {/* Wide screens get a rail rather than the same narrow column with
+              more air around it — the piece was readable but looked like a
+              phone held up to a monitor (owner report). The prose keeps its
+              measure; the summary and the ask move beside it. */}
+          <div className="mt-2 grid gap-10 lg:grid-cols-[minmax(0,1fr)_19rem] lg:gap-14">
+            <div className="min-w-0">
 
           {/* What it was and where, against how long this takes to read. Both
               are the first things somebody scanning a list of repairs wants. */}
@@ -118,7 +173,7 @@ export default async function ArticlePage({ params }: Props) {
             </div>
           </div>
 
-          <h1 className="headline mt-6 text-[1.7rem] sm:text-3xl md:text-4xl">{article.title}</h1>
+          <h1 className="headline mt-6 max-w-2xl text-[1.7rem] sm:text-3xl md:text-4xl lg:text-[2.6rem]">{article.title}</h1>
           <p className="mt-3 text-[15px] text-gray-600">
             What our technician found — and why it matters.
           </p>
@@ -141,58 +196,18 @@ export default async function ArticlePage({ params }: Props) {
             </figure>
           )}
 
-          {/* The three lines somebody reads to decide whether this is their
-              fault. Taken from the job sheet rather than the prose — a
-              paraphrase of a diagnosis is not a diagnosis. */}
-          {(article.diagnosis || article.repairPerformed) && (
-            <div className="mt-8 flex flex-col gap-4 rounded-card border border-primary-500/20 p-5 sm:flex-row sm:gap-6">
-              <div className="flex shrink-0 flex-col items-start gap-2 sm:w-28 sm:items-center sm:text-center">
-                <span className="icon-disc h-10 w-10 border-ink bg-ink text-cream">
-                  <FileText className="h-4 w-4" strokeWidth={1.5} />
-                </span>
-                <span className="font-heading text-[10px] font-semibold uppercase tracking-label text-ink">
-                  The issue
-                </span>
-              </div>
-              <dl className="grid flex-1 gap-2 border-t border-primary-500/15 pt-4 text-[14px] sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
-                {article.metaDesc && (
-                  <div className="flex gap-3">
-                    <dt className="w-20 shrink-0 font-heading text-[11px] font-semibold uppercase tracking-label text-ink">
-                      Issue
-                    </dt>
-                    <dd className="text-gray-700">{article.metaDesc}</dd>
-                  </div>
-                )}
-                {article.diagnosis && (
-                  <div className="flex gap-3">
-                    <dt className="w-20 shrink-0 font-heading text-[11px] font-semibold uppercase tracking-label text-ink">
-                      Diagnosis
-                    </dt>
-                    <dd className="text-gray-700">{article.diagnosis}</dd>
-                  </div>
-                )}
-                {article.repairPerformed && (
-                  <div className="flex gap-3">
-                    <dt className="w-20 shrink-0 font-heading text-[11px] font-semibold uppercase tracking-label text-ink">
-                      Repair
-                    </dt>
-                    <dd className="text-gray-700">{article.repairPerformed}</dd>
-                  </div>
-                )}
-              </dl>
-            </div>
-          )}
+          {issueCard && <div className="mt-8 lg:hidden">{issueCard}</div>}
 
           {intro && (
             <div
-              className="mt-8 space-y-4 text-[15px] leading-relaxed text-gray-700"
+              className="mt-8 max-w-2xl space-y-4 text-[15px] leading-relaxed text-gray-700"
               dangerouslySetInnerHTML={{ __html: renderMarkdown(intro) }}
             />
           )}
 
           {/* Numbered, because a repair is a sequence and the reader is
               following one. */}
-          <div className="mt-10 space-y-9">
+          <div className="mt-10 max-w-2xl space-y-9">
             {sections.map((section, index) => (
               <section key={section.heading} className="flex gap-4 sm:gap-6">
                 <div className="flex shrink-0 items-start gap-2 pt-0.5 sm:gap-3">
@@ -301,10 +316,46 @@ export default async function ArticlePage({ params }: Props) {
             </div>
           )}
 
+            </div>
+
+            {/* The rail. Sticky, because the summary is what somebody checks
+                against their own machine halfway down the piece. */}
+            <aside className="hidden lg:block">
+              <div className="sticky top-28 space-y-6">
+                {issueCard}
+                <div className="rounded-card bg-ink px-5 py-6 text-center">
+                  <h2 className="font-heading text-base font-bold uppercase tracking-label text-cream">
+                    Having a similar issue?
+                  </h2>
+                  <p className="mt-2 text-[13px] text-cream/70">
+                    Our technicians are standing by to help.
+                  </p>
+                  <Link
+                    href="/book-appointment"
+                    className="mt-4 flex items-center justify-center gap-2 rounded-card bg-cream px-4 py-2.5 font-heading text-[10px] font-semibold uppercase tracking-label text-ink transition-colors hover:bg-white"
+                  >
+                    <Calendar className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    Schedule service
+                  </Link>
+                  <a
+                    href={`tel:${siteConfig.contact.phoneClean}`}
+                    className="mt-2 flex items-center justify-center gap-2 rounded-card border border-cream/30 px-4 py-2.5 font-heading text-[10px] font-semibold uppercase tracking-label text-cream transition-colors hover:bg-cream/10"
+                  >
+                    <Phone className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    {siteConfig.contact.phone}
+                  </a>
+                  <p className="mt-4 text-[11px] leading-snug text-cream/60">
+                    Same-day service available · Upfront, honest pricing
+                  </p>
+                </div>
+              </div>
+            </aside>
+          </div>
+
           {/* The ask, in the words the mockup uses and at the width of the
               piece. The site's full-bleed banner sat outside the column and
               read as the end of the page rather than the end of the article. */}
-          <div className="mt-12 rounded-card bg-ink px-6 py-8 text-center">
+          <div className="mt-12 max-w-2xl rounded-card bg-ink px-6 py-8 text-center lg:hidden">
             <h2 className="font-heading text-lg font-bold uppercase tracking-label text-cream sm:text-xl">
               Having a similar issue?
             </h2>
