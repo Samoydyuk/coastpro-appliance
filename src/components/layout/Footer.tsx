@@ -23,12 +23,17 @@ export function Footer() {
           <div>
             {/* The light cut of the same file: on this ground the dark half of
                 the wordmark would simply be missing. */}
+            {/* Same height as the header, so the brand is one size on the
+                site — and nudged down four pixels, which is the offset a
+                heading's line box gives its capitals. Without it the mark sits
+                four pixels above the three column heads beside it, on a row
+                the eye reads as one line. */}
             <Image
               src="/images/coastpro-logo-light.png"
               alt="CoastPro.us"
               width={2264}
               height={321}
-              className="h-8 w-auto"
+              className="mt-1 h-7 w-auto"
             />
             <div className="h-px w-16 bg-primary-500/50 my-6" />
             <p className="leading-relaxed">

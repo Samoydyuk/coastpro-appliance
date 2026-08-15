@@ -38,7 +38,7 @@ const navigation = [
 // phone number and a button do not fit, and the labels were breaking mid-name
 // ("SERVICE / AREAS") long before this file gained an eighth item.
 const navLinkClass =
-  'px-2 xl:px-3 py-2 font-heading text-[11px] font-semibold uppercase tracking-label text-primary-600 hover:text-ink transition-colors flex items-center gap-1 whitespace-nowrap';
+  'px-1.5 xl:px-3 py-2 font-heading text-[11px] font-semibold uppercase tracking-label text-primary-600 hover:text-ink transition-colors flex items-center gap-1 whitespace-nowrap';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -82,7 +82,7 @@ export function Header() {
                 width={2264}
                 height={321}
                 priority
-                className="h-7 w-auto sm:h-8"
+                className="h-7 w-auto"
               />
             </Link>
 
