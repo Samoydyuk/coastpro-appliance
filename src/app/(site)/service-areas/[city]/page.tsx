@@ -5,6 +5,7 @@ import { MapPin, Phone, Check, ArrowRight } from 'lucide-react';
 import { Button, Badge } from '@/components/ui';
 import { CTABanner, ServicesGrid, StatsBand } from '@/components/sections';
 import { serviceAreas, getServiceAreaBySlug, getNeighboringAreas } from '@/data/service-areas';
+import { cityLocal } from '@/data/city-local';
 import { siteConfig } from '@/data/site-config';
 import { breadcrumbSchema } from '@/lib/schema';
 
@@ -31,7 +32,6 @@ export async function generateMetadata({ params }: CityPageProps): Promise<Metad
   return {
     title: area.seo.title,
     description: area.seo.description,
-    keywords: area.seo.keywords,
     openGraph: {
       title: area.seo.title,
       description: area.seo.description,
@@ -48,6 +48,7 @@ export default async function CityPage({ params }: CityPageProps) {
   }
 
   const neighboringAreas = getNeighboringAreas(city);
+  const local = cityLocal[area.slug];
 
   // JSON-LD for Local Business in this city
   const localBusinessSchema = {
@@ -78,6 +79,22 @@ export default async function CityPage({ params }: CityPageProps) {
     },
   };
 
+  // The city's own questions, marked up as questions. Only emitted where the
+  // answers are actually on the page — structured data that describes content a
+  // reader cannot find is the kind Google penalises rather than rewards.
+  const faqSchema = local?.faq.length
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        '@id': `${siteConfig.seo.siteUrl}/service-areas/${area.slug}#faq`,
+        mainEntity: local.faq.map((item) => ({
+          '@type': 'Question',
+          name: item.q,
+          acceptedAnswer: { '@type': 'Answer', text: item.a },
+        })),
+      }
+    : null;
+
   return (
     <>
       <script
@@ -96,6 +113,13 @@ export default async function CityPage({ params }: CityPageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
       />
+
+      {faqSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
+      )}
 
       {/* Hero Section */}
       <section className="bg-cream border-b border-primary-500/20 py-16 lg:py-20">
@@ -169,16 +193,41 @@ export default async function CityPage({ params }: CityPageProps) {
             </h2>
             <div className="space-y-5 text-lg leading-relaxed text-gray-600 max-w-prose">
               <p>{area.description}</p>
-              <p>
-                Our experienced technicians are familiar with {area.name} and can quickly reach
-                any neighborhood. We understand that a broken appliance can disrupt your daily
-                routine, which is why we offer same-day service and flexible appointment times.
-              </p>
+              {local ? (
+                <>
+                  <p>{local.housing}</p>
+                  <p>{local.conditions}</p>
+                  <p>{local.driveTime}</p>
+                </>
+              ) : (
+                <p>
+                  Our experienced technicians are familiar with {area.name} and can quickly reach
+                  any neighborhood. We understand that a broken appliance can disrupt your daily
+                  routine, which is why we offer same-day service and flexible appointment times.
+                </p>
+              )}
             </div>
+
+            {/* What we actually open here. A brand list is only worth printing
+                when it differs by city — and it does: Newport is Sub-Zero and
+                Wolf, Santa Ana is Kenmore and Frigidaire. */}
+            {local && local.brands.length > 0 && (
+              <div className="mt-12">
+                <div className="eyebrow mb-4">02 — Brands</div>
+                <h3 className="headline text-xl mb-4">
+                  Brands we most often service in {area.name}
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {local.brands.map((brand) => (
+                    <Badge key={brand}>{brand}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Why Choose Us */}
             <div className="mt-12">
-              <div className="eyebrow mb-4">02 — Why Us</div>
+              <div className="eyebrow mb-4">03 — Why Us</div>
               <h3 className="headline text-2xl mb-8">
                 Why {area.name} residents choose us
               </h3>
@@ -200,9 +249,9 @@ export default async function CityPage({ params }: CityPageProps) {
             </div>
 
             {/* Landmarks */}
-            {area.landmarks && area.landmarks.length > 0 && (
+            {((area.landmarks?.length ?? 0) > 0 || (local?.neighborhoods.length ?? 0) > 0) && (
               <div className="mt-12">
-                <div className="eyebrow mb-4">03 — Neighborhoods</div>
+                <div className="eyebrow mb-4">04 — Neighborhoods</div>
                 <h3 className="headline text-xl mb-4">
                   Areas we serve in {area.name}
                 </h3>
@@ -210,9 +259,9 @@ export default async function CityPage({ params }: CityPageProps) {
                   We provide appliance repair near all major {area.name} landmarks and neighborhoods, including:
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {area.landmarks.map((landmark) => (
-                    <Badge key={landmark}>
-                      {landmark}
+                  {[...(local?.neighborhoods ?? []), ...(area.landmarks ?? [])].map((place) => (
+                    <Badge key={place}>
+                      {place}
                     </Badge>
                   ))}
                 </div>
@@ -224,16 +273,41 @@ export default async function CityPage({ params }: CityPageProps) {
 
       {/* Services */}
       <ServicesGrid
-        eyebrow="04 — Services"
+        eyebrow="05 — Services"
         title={`Appliance services in ${area.name}`}
         subtitle="We repair all major household appliances"
       />
+
+      {/* Written out rather than folded into an accordion. Collapsed answers
+          that only enter the DOM on click are answers a crawler does not read,
+          and the FAQPage markup above would then be describing text that is not
+          on the page. */}
+      {local && local.faq.length > 0 && (
+        <section className="py-20 bg-cream border-t border-primary-500/20">
+          <div className="container mx-auto px-4">
+            <div className="max-w-4xl">
+              <div className="eyebrow mb-4">06 — Questions</div>
+              <h2 className="headline text-2xl sm:text-3xl mb-10">
+                Appliance repair in {area.name}, answered
+              </h2>
+              <dl className="space-y-8">
+                {local.faq.map((item) => (
+                  <div key={item.q} className="border-b border-primary-500/20 pb-8 last:border-b-0">
+                    <dt className="font-heading text-lg font-semibold text-ink mb-3">{item.q}</dt>
+                    <dd className="text-lg leading-relaxed text-gray-600 max-w-prose">{item.a}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Neighboring Areas */}
       {neighboringAreas.length > 0 && (
         <section className="py-20 bg-cream-light border-t border-primary-500/20">
           <div className="container mx-auto px-4">
-            <div className="eyebrow mb-4">05 — Nearby</div>
+            <div className="eyebrow mb-4">07 — Nearby</div>
             <h2 className="headline text-2xl mb-8">Also serving nearby cities</h2>
             <div className="flex flex-wrap gap-4">
               {neighboringAreas.map((neighbor) => (
