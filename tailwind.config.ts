@@ -32,6 +32,12 @@ const config: Config = {
          * accent the brand actually has, and it is a colour rather than a ramp
          * because there is exactly one of it in the wordmark.
          */
+        /**
+         * The scrim colour behind text on a photograph. Warm black rather than
+         * pure — pure black over a kitchen photograph reads as a hole in it.
+         * Kept in step with tokens.color.graphite.
+         */
+        graphite: '#1c1a18',
         brand: {
           DEFAULT: '#d67114',
           50: '#fdf5ec',

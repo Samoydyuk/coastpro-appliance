@@ -46,6 +46,9 @@ export interface MarketingPhotoRow {
   /** A crop and any marks drawn on it — kept so an edit can be reopened. */
   edit_recipe: { crop?: { x: number; y: number; w: number; h: number }; marks?: unknown[] } | null;
   edited_rev: string | null;
+  /** How the Field Journal proposes to dress it, and whether that was agreed. */
+  treatment: import('@/lib/marketing/treatment').Treatment | null;
+  approved_at: Date | null;
 }
 
 export interface MarketingContentRow {

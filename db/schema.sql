@@ -552,7 +552,29 @@ create table if not exists marketing_photo (
   edit_recipe  jsonb,
   edited_image bytea,
   edited_rev   text,
-  edited_at    timestamptz
+  edited_at    timestamptz,
+
+  -- How this photograph is dressed for publication: what it is of, where its
+  -- subject sits in the frame, which of the six layouts it gets, and the words
+  -- that go on it. One column rather than twenty because the shape is a
+  -- recommendation that a person then edits, and a recommendation that grows a
+  -- field should not need a migration.
+  --
+  -- Everything in it is either observed in the picture or taken from the job
+  -- sheet. Nothing here may assert a diagnosis the technician did not make.
+  treatment       jsonb,
+  treatment_rev   text,
+
+  -- The corrected copy: exposure, white balance and tone brought to the house
+  -- style. Made on a canvas in the browser, like the edited copy above, and for
+  -- the same reason — the original is never rewritten and never leaves the
+  -- proxy.
+  processed_image bytea,
+  processed_rev   text,
+
+  -- Treatment is a suggestion until somebody says otherwise (§29).
+  approved_by     text,
+  approved_at     timestamptz
 );
 
 create index if not exists marketing_photo_job_idx on marketing_photo (job_id, sort_order);
@@ -656,6 +678,15 @@ create index if not exists marketing_publication_content_idx
 -- ---------------------------------------------------------------------------
 alter table marketing_job add column if not exists released boolean not null default true;
 alter table marketing_content add column if not exists flags jsonb not null default '[]';
+
+-- The Field Journal treatment: what a photograph is of, how it is dressed, and
+-- the corrected copy that goes out. The original is untouched by all of it.
+alter table marketing_photo add column if not exists treatment       jsonb;
+alter table marketing_photo add column if not exists treatment_rev   text;
+alter table marketing_photo add column if not exists processed_image bytea;
+alter table marketing_photo add column if not exists processed_rev   text;
+alter table marketing_photo add column if not exists approved_by     text;
+alter table marketing_photo add column if not exists approved_at     timestamptz;
 
 -- The booking form carries more than the contact form does.
 alter table leads add column if not exists brand             text;

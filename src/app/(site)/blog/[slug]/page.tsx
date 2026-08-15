@@ -6,6 +6,7 @@ import { Phone, Calendar, ShieldCheck } from 'lucide-react';
 import { getPublishedArticle, listPublishedArticles, photoUrl } from '@/lib/marketing/published';
 import { renderMarkdown } from '@/lib/marketing/markdown';
 import { splitArticle, readingMinutes } from '@/lib/marketing/sections';
+import { PhotoTreatment } from '@/components/marketing/PhotoTreatment';
 import { siteConfig } from '@/data/site-config';
 import { breadcrumbSchema } from '@/lib/schema';
 import { articleTitle } from '@/lib/seo';
@@ -185,15 +186,19 @@ export default async function ArticlePage({ params }: Props) {
           )}
 
           {lead && (
-            <figure className="mt-8">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+            <div className="mt-8">
+              {/* Restrained: the headline is already above it in HTML, so the
+                  frame carries the wordmark and its place in the sequence and
+                  nothing that would be said twice (§26). */}
+              <PhotoTreatment
                 src={photoUrl(lead)}
                 alt={lead.alt || `${subject} repair`}
-                loading="eager"
-                className="w-full rounded-card border border-primary-500/20 object-cover"
+                treatment={lead.treatment}
+                aspect={16 / 9}
+                priority
+                restrained
               />
-            </figure>
+            </div>
           )}
 
           {issueCard && <div className="mt-8 lg:hidden">{issueCard}</div>}
@@ -286,29 +291,15 @@ export default async function ArticlePage({ params }: Props) {
           {rest.length > 0 && (
             <div className="mt-12">
               <div className="grid gap-3 sm:grid-cols-2">
-                {rest.map((photo) => {
-                  const label = photo.category?.toLowerCase().includes('before')
-                    ? 'Before'
-                    : photo.category?.toLowerCase().includes('after')
-                      ? 'After'
-                      : null;
-                  return (
-                    <figure key={photo.id} className="relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={photoUrl(photo)}
-                        alt={photo.alt || `${subject} repair`}
-                        loading="lazy"
-                        className="w-full rounded-card border border-primary-500/20 object-cover"
-                      />
-                      {label && (
-                        <figcaption className="absolute left-2 top-2 rounded-card bg-ink/90 px-2 py-0.5 font-heading text-[9px] font-semibold uppercase tracking-label text-cream">
-                          {label}
-                        </figcaption>
-                      )}
-                    </figure>
-                  );
-                })}
+                {rest.map((photo) => (
+                  <PhotoTreatment
+                    key={photo.id}
+                    src={photoUrl(photo)}
+                    alt={photo.alt || `${subject} repair`}
+                    treatment={photo.treatment}
+                    aspect={4 / 3}
+                  />
+                ))}
               </div>
               {restCaption && (
                 <p className="mt-3 text-center text-[13px] text-gray-500">{restCaption}</p>

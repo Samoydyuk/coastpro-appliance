@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PhotoEditor, type EditRecipe } from '@/components/admin/PhotoEditor';
+import { PhotoTreatmentEditor } from '@/components/admin/PhotoTreatmentEditor';
+import type { Treatment } from '@/lib/marketing/treatment';
 
 /**
  * Choosing which photos go out with a piece, and in what order.
@@ -23,6 +25,9 @@ export interface PhotoChoice {
    *  started again. */
   editRecipe?: EditRecipe | null;
   editedRev?: string | null;
+  /** How the Field Journal proposes to dress it, and whether that was agreed. */
+  treatment?: Treatment | null;
+  approved?: boolean;
 }
 
 export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: PhotoChoice[] }) {
@@ -39,6 +44,65 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
   const [describing, setDescribing] = useState(false);
   const [describeNote, setDescribeNote] = useState<string | null>(null);
   const [alts, setAlts] = useState<Record<string, string>>({});
+  const [treatments, setTreatments] = useState<Record<string, Treatment>>(() =>
+    Object.fromEntries(
+      photos.filter((photo) => photo.treatment).map((photo) => [photo.id, photo.treatment as Treatment])
+    )
+  );
+  const [approvals, setApprovals] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(photos.map((photo) => [photo.id, Boolean(photo.approved)]))
+  );
+  const [dressing, setDressing] = useState(false);
+  const [dressNote, setDressNote] = useState<string | null>(null);
+
+  /** Ask the model to look at the chosen photographs and propose a treatment. */
+  const dress = async () => {
+    setDressing(true);
+    setDressNote(null);
+    try {
+      const response = await fetch('/api/admin/marketing/treatment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        analysed?: number; error?: string;
+      };
+      setDressNote(
+        response.ok
+          ? `Looked at ${payload.analysed ?? 0} photograph${payload.analysed === 1 ? '' : 's'}. Nothing is live until you approve it.`
+          : payload.error ?? 'Could not read the photographs.'
+      );
+      if (response.ok) router.refresh();
+    } finally {
+      setDressing(false);
+    }
+  };
+
+  /** Save the treatments and which of them were agreed to. */
+  const saveTreatments = async () => {
+    setBusy(true);
+    try {
+      const response = await fetch('/api/admin/marketing/treatment', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId,
+          photos: chosen.map((id) => ({
+            photoId: id,
+            treatment: treatments[id] ?? null,
+            approved: Boolean(approvals[id] && treatments[id]),
+          })),
+        }),
+      });
+      if (response.ok) {
+        setDressNote('Saved.');
+        router.refresh();
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const toggle = (id: string) => {
     setSaved(false);
@@ -243,6 +307,60 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
       </div>
 
       {describeNote && <p className="text-xs text-gray-500">{describeNote}</p>}
+
+      {/* The series as it will be read, in order, each with what the model
+          proposes to put on it. Reviewed here rather than on the published
+          page, which is the only place it could be seen before. */}
+      {chosen.length > 0 && (
+        <div className="space-y-3 border-t border-primary-500/15 pt-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={dress}
+              disabled={dressing}
+              className="h-8 rounded-card border border-ink/20 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-ink disabled:opacity-40"
+            >
+              {dressing ? 'Looking…' : 'Dress the series'}
+            </button>
+            <button
+              type="button"
+              onClick={saveTreatments}
+              disabled={busy || Object.keys(treatments).length === 0}
+              className="h-8 rounded-card bg-ink px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-cream disabled:opacity-40"
+            >
+              Save treatment
+            </button>
+            <span className="text-xs text-gray-500">
+              A suggestion until it is approved. Anything left unapproved goes out as the plain
+              photograph.
+            </span>
+          </div>
+
+          {dressNote && <p className="text-xs text-gray-500">{dressNote}</p>}
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            {chosen.map((id, index) => {
+              const treatment = treatments[id];
+              if (!treatment) return null;
+              return (
+                <div key={id} className="space-y-1">
+                  <div className="font-heading text-[10px] font-semibold uppercase tracking-label text-gray-500">
+                    {String(index + 1).padStart(2, '0')} / {String(chosen.length).padStart(2, '0')}
+                  </div>
+                  <PhotoTreatmentEditor
+                    photoId={id}
+                    src={`/api/admin/marketing/photo/${id}`}
+                    treatment={treatment}
+                    approved={Boolean(approvals[id])}
+                    onChange={(next) => setTreatments({ ...treatments, [id]: next })}
+                    onApprovedChange={(next) => setApprovals({ ...approvals, [id]: next })}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {editing && (
         <PhotoEditor

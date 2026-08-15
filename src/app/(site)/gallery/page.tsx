@@ -5,6 +5,8 @@ import { Camera, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { CTABanner, PageHeader, StatsBand } from '@/components/sections';
 import { getWorkPhotos } from '@/lib/work-photos';
+import { listJournalPhotos, photoUrl } from '@/lib/marketing/published';
+import { PhotoTreatment } from '@/components/marketing/PhotoTreatment';
 import { siteConfig } from '@/data/site-config';
 
 export const metadata: Metadata = {
@@ -17,8 +19,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function GalleryPage() {
+export default async function GalleryPage() {
   const photos = getWorkPhotos();
+  // The repairs that have been written up, in the same visual language as the
+  // articles they came from. Each leads back to its piece.
+  const journal = await listJournalPhotos(12);
 
   return (
     <>
@@ -79,6 +84,31 @@ export default function GalleryPage() {
               <a href={`tel:${siteConfig.contact.phoneClean}`}>
                 <Button>{siteConfig.contact.phone}</Button>
               </a>
+            </div>
+          )}
+
+          {/* The repairs that have been written up, in the same visual language
+              as the pieces they came from — real jobs rather than a folder of
+              files, each one leading back to its article. */}
+          {journal.length > 0 && (
+            <div className="mt-20">
+              <div className="eyebrow mb-8">Service Journal</div>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {journal.map((photo) => (
+                  <Link key={photo.id} href={`/blog/${photo.slug}`} className="group block">
+                    <PhotoTreatment
+                      src={photoUrl(photo)}
+                      alt={photo.alt || photo.title}
+                      treatment={photo.treatment}
+                      aspect={4 / 5}
+                      className="transition-opacity group-hover:opacity-95"
+                    />
+                    <p className="mt-4 font-heading text-sm font-bold uppercase leading-snug tracking-label text-ink group-hover:text-brand">
+                      {photo.title}
+                    </p>
+                  </Link>
+                ))}
+              </div>
             </div>
           )}
 

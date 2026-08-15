@@ -5,6 +5,8 @@ import { dateTime } from '@/lib/admin/format';
 import { Empty, Hint, Panel, SetupNotice, Warning } from '@/components/admin/ui';
 import { MarketingContent } from '@/components/admin/MarketingContent';
 import { MarketingPhotos } from '@/components/admin/MarketingPhotos';
+import type { EditRecipe } from '@/components/admin/PhotoEditor';
+import type { Treatment } from '@/lib/marketing/treatment';
 import { CHANNELS } from '@/lib/marketing/prompts';
 
 export const dynamic = 'force-dynamic';
@@ -203,6 +205,10 @@ export default async function MarketingJobPage({ params }: { params: { jobId: st
                   selected: photo.selected,
                   sortOrder: photo.sort_order,
                   altText: photo.alt_text,
+                  editRecipe: (photo as { edit_recipe?: EditRecipe | null }).edit_recipe ?? null,
+                  editedRev: (photo as { edited_rev?: string | null }).edited_rev ?? null,
+                  treatment: (photo as { treatment?: Treatment | null }).treatment ?? null,
+                  approved: Boolean((photo as { approved_at?: unknown }).approved_at),
                 }))}
               />
             )}

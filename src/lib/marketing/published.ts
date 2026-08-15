@@ -1,5 +1,6 @@
 import { unstable_cache, revalidateTag } from 'next/cache';
 import { db } from '@/lib/db';
+import type { Treatment } from '@/lib/marketing/treatment';
 
 /**
  * What the public site is allowed to read.
@@ -46,7 +47,14 @@ export interface PublishedArticle {
 
   /** `rev` versions the URL: an edit changes it, which is what gets past the
    *  day-long immutable cache on the image itself. */
-  photos: Array<{ id: string; alt: string | null; rev: string | null; category: string | null }>;
+  photos: Array<{
+    id: string;
+    alt: string | null;
+    rev: string | null;
+    category: string | null;
+    /** How it is dressed. Null, or unapproved, means the photograph as it is. */
+    treatment: Treatment | null;
+  }>;
 
   /**
    * The job sheet's own words, for the summary card at the top.
@@ -92,7 +100,7 @@ function iso(value: unknown): string | null {
 
 function shape(
   row: Record<string, unknown>,
-  photos: Array<{ id: string; alt: string | null; rev: string | null; category: string | null }>
+  photos: PublishedArticle['photos']
 ): PublishedArticle {
   return {
     slug: String(row.slug),
@@ -141,6 +149,53 @@ const cache = <A extends unknown[], R>(key: string, work: (...args: A) => Promis
   unstable_cache(work, [key], { tags: [ARTICLES_TAG], revalidate: 3600 });
 
 /**
+ * Every dressed photograph from every published piece, newest first.
+ *
+ * The gallery has always shown files dropped into a folder. These are the same
+ * repairs the articles are about, already redacted, already captioned, and each
+ * one leads back to the piece it came from — which is what turns a grid of
+ * pictures into a service journal.
+ */
+export interface JournalPhoto {
+  id: string;
+  alt: string | null;
+  rev: string | null;
+  treatment: Treatment | null;
+  slug: string;
+  title: string;
+}
+
+export const listJournalPhotos = cache(
+  'marketing-journal-photos',
+  async (limit: number = 24): Promise<JournalPhoto[]> => {
+      const sql = db();
+      if (!sql) return [];
+      try {
+        const rows = (await sql`
+          select p.photo_id, p.alt_text, p.edited_rev, c.slug, c.title,
+                 case when p.approved_at is not null then p.treatment else null end as treatment
+          from marketing_photo p
+          join marketing_content c on c.job_id = p.job_id
+          where p.selected and c.status = 'published' and c.channel = 'article' and c.slug is not null
+          order by c.approved_at desc nulls last, p.sort_order
+          limit ${Number(limit)}
+        `) as unknown as Array<Record<string, unknown>>;
+        return rows.map((row) => ({
+          id: String(row.photo_id),
+          alt: (row.alt_text as string) ?? null,
+          rev: (row.edited_rev as string) ?? null,
+          treatment: (row.treatment as Treatment) ?? null,
+          slug: String(row.slug),
+          title: String(row.title ?? ''),
+        }));
+      } catch {
+        return [];
+      }
+  }
+);
+
+
+/**
  * The query itself, uncached. The sitemap uses this one: it renders per
  * request, so a cache in front of it would only add a second thing that has
  * to be invalidated correctly.
@@ -156,7 +211,9 @@ export async function readPublishedArticles(): Promise<PublishedArticle[]> {
         -- order, which is the same frame the article opens with.
         (
           select json_build_object('id', p.photo_id, 'alt', p.alt_text, 'rev', p.edited_rev,
-                                   'category', p.category)
+                                   'category', p.category,
+                                   'treatment',
+                                   case when p.approved_at is not null then p.treatment else null end)
           from marketing_photo p
           where p.job_id = c.job_id and p.selected
           order by p.sort_order, p.photo_id
@@ -169,12 +226,19 @@ export async function readPublishedArticles(): Promise<PublishedArticle[]> {
     `) as unknown as Record<string, unknown>[];
     return rows.map((row) => {
       const lead = row.lead_photo as {
-        id?: string; alt?: string | null; rev?: string | null; category?: string | null;
+        id?: string; alt?: string | null; rev?: string | null;
+        category?: string | null; treatment?: Treatment | null;
       } | null;
       return shape(
         row,
         lead?.id
-          ? [{ id: lead.id, alt: lead.alt ?? null, rev: lead.rev ?? null, category: lead.category ?? null }]
+          ? [{
+              id: lead.id,
+              alt: lead.alt ?? null,
+              rev: lead.rev ?? null,
+              category: lead.category ?? null,
+              treatment: lead.treatment ?? null,
+            }]
           : []
       );
     });
@@ -202,11 +266,16 @@ export const getPublishedArticle = cache('article', async function getPublishedA
     if (!row) return null;
 
     const photos = (await sql`
-      select photo_id, alt_text, edited_rev, category from marketing_photo
+      -- Treatment only counts once somebody has approved it: a suggestion the
+      -- console has not shown anyone must never reach a reader (§29).
+      select photo_id, alt_text, edited_rev, category,
+             case when approved_at is not null then treatment else null end as treatment
+      from marketing_photo
       where job_id = ${String(row.job_id)} and selected
       order by sort_order, photo_id
     `) as unknown as Array<{
-      photo_id: string; alt_text: string | null; edited_rev: string | null; category: string | null;
+      photo_id: string; alt_text: string | null; edited_rev: string | null;
+      category: string | null; treatment: Treatment | null;
     }>;
 
     return shape(
@@ -216,6 +285,7 @@ export const getPublishedArticle = cache('article', async function getPublishedA
         alt: photo.alt_text,
         rev: photo.edited_rev,
         category: photo.category,
+        treatment: photo.treatment ?? null,
       }))
     );
   } catch {
