@@ -7,4 +7,6 @@ export { CTABanner } from './CTABanner';
 export { PageHeader } from './PageHeader';
 export { StatsBand } from './StatsBand';
 export { ProcessSteps } from './ProcessSteps';
+export { BrandsServiced } from './BrandsServiced';
+export { ServiceCallExplained } from './ServiceCallExplained';
 export { LegalSection } from './LegalSection';
