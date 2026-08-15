@@ -541,10 +541,41 @@ export async function getGeo(range: DateRange) {
     limit 40
   `) as unknown as Record<string, number | string>[];
 
+  // The same visits again, but keyed by where they actually were rather than
+  // by what the town is called. Two rows for one town — the edge sometimes
+  // resolves a neighbouring suburb — would be two dots a millimetre apart, so
+  // they are grouped by name and given the coordinates of the largest.
+  const points = (await sql`
+    select
+      coalesce(nullif(s.city, ''), 'Unknown')  as city,
+      coalesce(s.region, '')                   as region,
+      coalesce(s.country, '')                  as country,
+      avg(s.latitude)::float                   as lat,
+      avg(s.longitude)::float                  as lng,
+      count(*)::int                            as sessions,
+      count(*) filter (where s.converted)::int as conversions
+    from sessions s
+    where s.started_at >= ${range.from} and s.started_at < ${range.to}
+      and coalesce(s.is_bot, false) = false
+      and s.latitude is not null and s.longitude is not null
+    group by 1, 2, 3
+    order by sessions desc
+    limit 300
+  `) as unknown as Record<string, number | string>[];
+
   return {
     cities: cities.map((row) => ({
       city: String(row.city),
       region: String(row.region),
+      sessions: Number(row.sessions),
+      conversions: Number(row.conversions),
+    })),
+    points: points.map((row) => ({
+      city: String(row.city),
+      region: String(row.region),
+      country: String(row.country),
+      lat: Number(row.lat),
+      lng: Number(row.lng),
       sessions: Number(row.sessions),
       conversions: Number(row.conversions),
     })),

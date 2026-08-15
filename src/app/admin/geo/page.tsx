@@ -4,6 +4,7 @@ import { count, money, percent } from '@/lib/admin/format';
 import { serviceAreas } from '@/data/service-areas';
 import { Empty, Hint, Panel, SetupNotice, Table, Td, Th, Warning } from '@/components/admin/ui';
 import { RankedBars } from '@/components/admin/charts';
+import { UsMap } from '@/components/admin/UsMap';
 import { SERIES } from '@/components/admin/palette';
 
 export const dynamic = 'force-dynamic';
@@ -20,7 +21,7 @@ export default async function GeoPage({
   });
 
   try {
-    const { cities, zips } = await getGeo(range);
+    const { cities, zips, points } = await getGeo(range);
 
     const served = new Set(serviceAreas.map((area) => area.name.toLowerCase()));
     const outside = cities.filter(
@@ -49,6 +50,22 @@ export default async function GeoPage({
             covered.
           </Warning>
         )}
+
+        <Panel
+          title="Where the visits were"
+          subtitle="Every located visit, on one map. Area is the number of visits."
+        >
+          {points.length === 0 ? (
+            <Empty>No located visits in this window.</Empty>
+          ) : (
+            <UsMap points={points} />
+          )}
+          <Hint>
+            The shape matters more than any single dot. A cluster around the HQ mark is demand
+            somebody can drive to; a scatter across the country is traffic that can never become
+            a job, and on a paid campaign it is money leaving.
+          </Hint>
+        </Panel>
 
         <div className="grid gap-4 lg:grid-cols-2">
           <Panel title="Visits by town" subtitle="Resolved from the visitor's address at the edge">
