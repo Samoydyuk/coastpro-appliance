@@ -150,7 +150,10 @@ export function buildPrompt(
   spec: ChannelSpec,
   voice: BrandVoice,
   /** The photographs chosen for this piece, in the order they will appear. */
-  photos: Array<{ category: string | null; caption: string | null }> = []
+  photos: Array<{ category: string | null; caption: string | null }> = [],
+  /// How many of them are attached to the message as images. The rest, if any,
+  /// were too large or failed to load and can only be described from the job.
+  attached = 0
 ): string {
   const missing = absent(job);
 
@@ -174,11 +177,16 @@ export function buildPrompt(
     ...(photos.length
       ? [
           '## The photographs',
-          'These will appear with the piece, in this order. You have not seen them — what is',
-          'known about each is below. Write one description per photograph for photoAlts.',
+          attached > 0
+            ? `The ${attached === photos.length ? '' : 'first '}${attached} photograph${attached === 1 ? '' : 's'} above ${attached === 1 ? 'is' : 'are'} the ones that will appear with the piece, in that order.`
+            : 'These will appear with the piece, in this order.',
+          'Write one description per photograph for photoAlts.',
+          attached > 0
+            ? 'Describe only what you can actually see in the frame. If a photograph shows frost, say frost; do not name a part that is not visible, and do not describe the repair the article is about unless the picture shows it. A wrong description is published as fact and read by people who cannot see the image.'
+            : 'Say what is in the frame from what is known below — never invent detail.',
           ...photos.map((photo, index) => {
             const what = [photo.category, photo.caption].filter(Boolean).join(' — ');
-            return `${index + 1}. ${what || 'a photograph from the job'}`;
+            return `${index + 1}. ${what || (index < attached ? 'see the photograph above' : 'a photograph from the job')}`;
           }),
           '',
         ]

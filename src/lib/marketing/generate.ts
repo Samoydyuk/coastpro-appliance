@@ -66,14 +66,16 @@ function draftTool(fields: readonly string[], photoCount: number) {
   const required = [...fields];
   if (photoCount > 0) {
     // Every picture needs a line describing it — for the reader who cannot see
-    // it and for the search engine that cannot either. The model has not seen
-    // the photograph, so it is told what each one is of and writes from that.
+    // it and for the search engine that cannot either. The photographs are
+    // attached to the message, so this is written from the picture rather than
+    // from the job sheet.
     properties.photoAlts = {
       type: 'array',
       description:
-        `One short description per photograph, ${photoCount} in all, in the order listed. ` +
-        'Say what is in the frame — "lint packed around the dryer blower housing" — not ' +
-        '"photo of a repair". No customer, no room, no address.',
+        `One short description per photograph, ${photoCount} in all, in the order shown. ` +
+        'Say what is visible in that frame — "lint packed around the dryer blower housing", ' +
+        '"frost across the freezer floor" — never the repair in general and never a part ' +
+        'you cannot see. No customer, no room, no address.',
       items: { type: 'string' },
     };
     required.push('photoAlts');
@@ -94,7 +96,107 @@ const FIELD_DESCRIPTIONS: Record<string, string> = {
 };
 
 /** The SDK is one fetch call; a dependency for it would be the larger cost. */
-async function ask(prompt: string, fields: readonly string[], photoCount = 0): Promise<string> {
+/**
+ * The photographs themselves, small enough to send.
+ *
+ * A phone camera file is three or four megabytes and the API takes base64, so
+ * anything not resized would triple in transit for no gain — a description
+ * needs to recognise a part, not read a serial number. Nothing here resizes,
+ * though: the project has nine dependencies and none of them decode JPEG. The
+ * cap is a refusal instead, and a photograph too large to send simply does not
+ * get described rather than getting described wrongly.
+ */
+const MAX_PHOTO_BYTES = 3_500_000;
+
+async function loadPhotos(photoIds: string[]): Promise<PhotoImage[]> {
+  const { fetchMarketingPhoto } = await import('@/lib/marketing/client');
+  const out: PhotoImage[] = [];
+
+  for (const photoId of photoIds) {
+    try {
+      const res = await fetchMarketingPhoto(photoId);
+      if (!res) continue;
+      const buffer = Buffer.from(await res.arrayBuffer());
+      if (buffer.length === 0 || buffer.length > MAX_PHOTO_BYTES) continue;
+      const type = res.headers.get('content-type') ?? 'image/jpeg';
+      if (!type.startsWith('image/')) continue;
+      out.push({ media_type: type.split(';')[0], data: buffer.toString('base64') });
+    } catch {
+      // A photograph that will not load is one the piece describes from the
+      // job sheet instead. Never a reason to fail the whole draft.
+    }
+  }
+  return out;
+}
+
+/**
+ * Re-describe the photographs on a job, and nothing else.
+ *
+ * Every article published before the model was shown its own pictures carries
+ * invented descriptions — a frosted freezer floor captioned "evaporator fan
+ * motor being installed" (owner report). Regenerating the whole piece would
+ * also rewrite body text that has already been read and approved, so this
+ * touches alt text alone.
+ */
+export async function describePhotos(jobId: string): Promise<{ described: number }> {
+  const detail = await getMarketingJob(jobId);
+  if (!detail) throw new GenerationError('That job is not in the marketing table.');
+
+  const chosen = detail.photos
+    .filter((photo) => photo.selected)
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  if (chosen.length === 0) return { described: 0 };
+
+  const images = await loadPhotos(chosen.map((photo) => photo.photo_id));
+  if (images.length === 0) {
+    throw new GenerationError('None of the photographs could be loaded, so none were described.');
+  }
+
+  const prompt = [
+    'Write one short description per photograph, in order, for the photoAlts list.',
+    '',
+    'Describe only what is actually in the frame. Name the part if it is identifiable;',
+    'say "frost across the freezer floor" if that is what it is. Do not describe the repair,',
+    'do not name a component that is not visible, and do not guess. These are read aloud to',
+    'people who cannot see the picture and are indexed as fact.',
+    '',
+    'No customer, no room, no address, no part numbers.',
+  ].join('\n');
+
+  const reply = await ask(prompt, [], images.length, images);
+  const parsed = parse(reply);
+  const alts = Array.isArray(parsed.photoAlts)
+    ? (parsed.photoAlts as unknown[]).map((alt) => str(alt))
+    : [];
+
+  const sql = requireDb();
+  let described = 0;
+  await Promise.all(
+    chosen.slice(0, images.length).map((photo, index) => {
+      const alt = alts[index];
+      if (!alt) return null;
+      described += 1;
+      return sql`
+        update marketing_photo set alt_text = ${alt}
+        where job_id = ${jobId} and photo_id = ${photo.photo_id}
+      `;
+    }).filter(Boolean) as Promise<unknown>[]
+  );
+
+  return { described };
+}
+
+interface PhotoImage {
+  media_type: string;
+  data: string;
+}
+
+async function ask(
+  prompt: string,
+  fields: readonly string[],
+  photoCount = 0,
+  images: PhotoImage[] = []
+): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new GenerationError(
@@ -113,7 +215,23 @@ async function ask(prompt: string, fields: readonly string[], photoCount = 0): P
     body: JSON.stringify({
       model: MODEL,
       max_tokens: MAX_TOKENS,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [
+        {
+          role: 'user',
+          // The photographs go in the same turn, in the order they will appear,
+          // each announced by its number. The model used to be told "you have
+          // not seen them" and asked to describe them anyway — which produced
+          // "evaporator fan motor being installed" under a picture of a frosted
+          // freezer floor, published on the public site (owner report).
+          content: [
+            ...images.flatMap((image, index) => ([
+              { type: 'text', text: `Photograph ${index + 1}:` },
+              { type: 'image', source: { type: 'base64', media_type: image.media_type, data: image.data } },
+            ])),
+            { type: 'text', text: prompt },
+          ],
+        },
+      ],
       tools: [draftTool(fields, photoCount)],
       // Not "you may use this tool" — this tool, this turn.
       tool_choice: { type: 'tool', name: 'draft' },
@@ -219,10 +337,15 @@ export async function generate(jobId: string, channel: string): Promise<Draft> {
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
   const wantsPhotos = spec.fields.includes('body') && spec.key === 'article' && chosen.length > 0;
 
+  // Only the photographs that will actually be published are loaded, and only
+  // when the piece has room for them.
+  const images = wantsPhotos ? await loadPhotos(chosen.map((photo) => photo.photo_id)) : [];
+
   const reply = await ask(
-    buildPrompt(job, spec, voice, wantsPhotos ? chosen : []),
+    buildPrompt(job, spec, voice, wantsPhotos ? chosen : [], images.length),
     spec.fields,
-    wantsPhotos ? chosen.length : 0
+    wantsPhotos ? chosen.length : 0,
+    images
   );
   const parsed = parse(reply);
 

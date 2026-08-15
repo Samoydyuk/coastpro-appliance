@@ -36,6 +36,8 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
   );
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [describing, setDescribing] = useState(false);
+  const [describeNote, setDescribeNote] = useState<string | null>(null);
 
   const toggle = (id: string) => {
     setSaved(false);
@@ -74,6 +76,27 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
       }
     } finally {
       setBusy(false);
+    }
+  };
+
+  const describe = async () => {
+    setDescribing(true);
+    setDescribeNote(null);
+    try {
+      const response = await fetch('/api/admin/marketing/describe-photos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { described?: number; error?: string };
+      setDescribeNote(
+        response.ok
+          ? `Described ${payload.described ?? 0} photograph${payload.described === 1 ? '' : 's'} from the pictures themselves.`
+          : payload.error ?? 'Could not describe the photographs.'
+      );
+      if (response.ok) router.refresh();
+    } finally {
+      setDescribing(false);
     }
   };
 
@@ -178,6 +201,18 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
         >
           {busy ? 'Saving…' : 'Save selection'}
         </button>
+        {/* Written from the pictures, not from the story. Every article
+            published before the model was shown its own photographs carries
+            descriptions it invented — worth being able to put right without
+            rewriting text that has already been approved. */}
+        <button
+          type="button"
+          onClick={describe}
+          disabled={describing || chosen.length === 0}
+          className="h-8 rounded-card border border-ink/20 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-ink disabled:opacity-40"
+        >
+          {describing ? 'Looking…' : 'Describe from the photos'}
+        </button>
         <span className="text-xs text-gray-500">
           {chosen.length === 0
             ? 'None chosen — the article goes out without pictures.'
@@ -185,6 +220,8 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
         </span>
         {saved && !dirty && <span className="ml-auto text-xs text-gray-500">Saved</span>}
       </div>
+
+      {describeNote && <p className="text-xs text-gray-500">{describeNote}</p>}
 
       {editing && (
         <PhotoEditor
