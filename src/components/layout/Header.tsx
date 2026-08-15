@@ -37,8 +37,12 @@ const navigation = [
 // row: at 1024 — the width the desktop nav first appears at — eight items, a
 // phone number and a button do not fit, and the labels were breaking mid-name
 // ("SERVICE / AREAS") long before this file gained an eighth item.
+// The wordmark's own orange. The palette's "primary" is the mocha taupe the
+// creatives are built on, so the navigation was brown — close enough to read as
+// a mistake next to the logo it sits beside (owner: the items should be the
+// orange from the logo).
 const navLinkClass =
-  'px-1.5 xl:px-3 py-2 font-heading text-[11px] font-semibold uppercase tracking-label text-primary-600 hover:text-ink transition-colors flex items-center gap-1 whitespace-nowrap';
+  'px-1.5 xl:px-3 py-2 font-heading text-[11px] font-semibold uppercase tracking-label text-brand hover:text-ink transition-colors flex items-center gap-1 whitespace-nowrap';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -106,7 +110,7 @@ export function Header() {
                         <Link
                           key={child.name}
                           href={child.href}
-                          className="block px-4 py-2.5 text-sm text-gray-600 hover:text-ink hover:bg-cream-dark/50 transition-colors"
+                          className="block px-4 py-2.5 text-sm text-gray-600 hover:text-brand hover:bg-cream-dark/50 transition-colors"
                         >
                           {child.name}
                         </Link>
@@ -161,7 +165,7 @@ export function Header() {
                 <div key={item.name}>
                   <Link
                     href={item.href}
-                    className="block py-3 font-heading text-xs font-semibold uppercase tracking-label text-ink border-b border-primary-500/15"
+                    className="block py-3 font-heading text-xs font-semibold uppercase tracking-label text-brand border-b border-primary-500/15"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {item.name}
@@ -172,7 +176,7 @@ export function Header() {
                         <Link
                           key={child.name}
                           href={child.href}
-                          className="block py-2.5 text-sm text-gray-600 hover:text-ink border-b border-primary-500/10"
+                          className="block py-2.5 text-sm text-gray-600 hover:text-brand border-b border-primary-500/10"
                           onClick={() => setMobileMenuOpen(false)}
                         >
                           {child.name}

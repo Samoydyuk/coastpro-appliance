@@ -24,6 +24,27 @@ const config: Config = {
           900: '#3a3430',
           950: '#241f1c',
         },
+        /**
+         * The logo's orange, sampled from the wordmark itself (#d67114).
+         *
+         * The palette is a taupe ramp, so "primary" is a mocha brown — which is
+         * why anything meant to look like the logo did not. This is the one
+         * accent the brand actually has, and it is a colour rather than a ramp
+         * because there is exactly one of it in the wordmark.
+         */
+        brand: {
+          DEFAULT: '#d67114',
+          50: '#fdf5ec',
+          100: '#f9e3ca',
+          200: '#f2c493',
+          300: '#e9a25b',
+          400: '#e0882f',
+          500: '#d67114',
+          600: '#b85d0f',
+          700: '#93490c',
+          800: '#6d360a',
+          900: '#472306',
+        },
         // Deep espresso — used for dark surfaces and secondary emphasis.
         accent: {
           50: '#f7f4f1',

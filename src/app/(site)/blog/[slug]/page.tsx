@@ -211,10 +211,10 @@ export default async function ArticlePage({ params }: Props) {
             {sections.map((section, index) => (
               <section key={section.heading} className="flex gap-4 sm:gap-6">
                 <div className="flex shrink-0 items-start gap-2 pt-0.5 sm:gap-3">
-                  <span className="font-heading text-lg font-extrabold tabular-nums text-primary-600">
+                  <span className="font-heading text-lg font-extrabold tabular-nums text-brand">
                     {String(index + 1).padStart(2, '0')}
                   </span>
-                  <span className="mt-3 hidden h-px w-4 bg-primary-500/40 sm:block" />
+                  <span className="mt-3 hidden h-px w-4 bg-brand/40 sm:block" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <h2 className="font-heading text-base font-bold uppercase tracking-label text-ink">
