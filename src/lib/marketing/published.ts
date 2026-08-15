@@ -68,6 +68,21 @@ const SELECT = `
   j.diagnosis, j.repair_performed, j.replaced_parts
 `;
 
+/**
+ * Part numbers, out of a description meant to be read.
+ *
+ * Deliberately conservative: a run of letters and digits long enough to be a
+ * catalogue number, and the known number for this part if it happens to be
+ * spelled differently. An ordinary word survives it.
+ */
+function stripPartNumbers(text: string): string {
+  return text
+    .replace(/\b(?=[A-Z0-9-]{6,})(?=[A-Z-]*\d)[A-Z0-9-]+\b/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([,.])/g, '$1')
+    .trim();
+}
+
 /** A timestamp from the driver, or from the cache, as one thing. */
 function iso(value: unknown): string | null {
   if (value instanceof Date) return value.toISOString();
@@ -101,7 +116,12 @@ function shape(
     parts: Array.isArray(row.replaced_parts)
       ? (row.replaced_parts as Array<{ description?: unknown; partNumber?: unknown }>)
           .map((part) => ({
-            description: String(part?.description ?? '').trim(),
+            // The number is stripped, not merely left unrendered: it is often
+            // inside the description itself — "Evaporator Fan Motor
+            // WR60X26866" — and the rule is that a part number never appears
+            // in public copy, because it is an invitation to order the wrong
+            // thing (owner's instruction).
+            description: stripPartNumbers(String(part?.description ?? '')),
             partNumber: part?.partNumber ? String(part.partNumber) : null,
           }))
           .filter((part) => part.description.length > 0)

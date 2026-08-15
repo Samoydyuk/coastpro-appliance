@@ -108,8 +108,8 @@ export function checkClaims(text: string, job: MarketingJobRow, voice: BrandVoic
     const token = match[0].toUpperCase();
     // A part number is never published, not even the right one. It is a
     // shopping list for somebody else's van, and the part is named by what it
-    // is — "the drain pump" (owner's rule). The model number stays: it is what
-    // people search for, and it identifies the machine rather than the fix.
+    // is — "the drain pump" (owner's rule). The model number stays: the owner
+    // confirmed the machine may be named, only its parts may not be numbered.
     if (knownParts.has(token)) {
       add('a part number — we do not publish these', match[0]);
       continue;

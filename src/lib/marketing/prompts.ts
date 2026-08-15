@@ -127,6 +127,13 @@ function outline(job: MarketingJobRow): string[] {
   if (job.replaced_parts.length) sections.push('Name the parts that were replaced, by what they are — never by part number.');
   if (job.technician_notes) sections.push("A short section built on the technician's note.");
   if (job.city) sections.push('One mention of the town, in passing. Not a paragraph about the area.');
+  // Written as a list on purpose: the page renders this section as a ticked
+  // checklist, and a reader deciding whether they have the same fault scans it
+  // rather than reading it. Prose here loses the ticks and the scanning.
+  sections.push(
+    'A section headed "What to Expect": three or four bullet points, each one sign somebody ' +
+      'with this fault would notice. Bullets only — no paragraph before or after them.'
+  );
   sections.push('Close with the call to action, once.');
 
   return sections;
@@ -202,14 +209,17 @@ export function buildPrompt(
     '   refer to it, work around it, or guess what it was. Write as if that clause is not there.',
     '3. Facts about the business may only be the following, verbatim in substance:',
     ...voice.facts.map((fact) => `   - ${fact}`),
-    '4. Never write any of these:',
+    '4. A part is named by what it is — "the evaporator fan motor", "the defrost heater" — and ' +
+      'never by its number. Not in the text, not in a heading, not in a list. The machine\'s own ' +
+      'model may be written; its parts may not be numbered (owner\'s rule).',
+    '5. Never write any of these:',
     ...voice.forbidden.map((rule) => `   - ${rule}`),
-    '5. No customer is ever mentioned, described, quoted or alluded to. The subject is the',
+    '6. No customer is ever mentioned, described, quoted or alluded to. The subject is the',
     '   appliance and the fault, not the household.',
-    '6. The headline obeys rule 1 like every other sentence. A fault that is not in the list',
+    '7. The headline obeys rule 1 like every other sentence. A fault that is not in the list',
     '   above must not appear in it, as a question or otherwise — "Not heating?" on a job that',
     '   never mentioned heat is an invented fact with a question mark on it.',
-    '7. General knowledge about how this kind of appliance works is allowed and useful, as long',
+    '8. General knowledge about how this kind of appliance works is allowed and useful, as long',
     '   as it is clearly general and is not presented as something found on this job.',
     '',
     '## Output',

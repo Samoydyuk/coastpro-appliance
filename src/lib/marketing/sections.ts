@@ -72,6 +72,17 @@ function echoesTitle(heading: string, title: string): boolean {
   return shared / a.size >= 0.6;
 }
 
+/**
+ * The opening heading, whatever it was called.
+ *
+ * It is not always a restatement of the title — "Ice Maker Not Working on a GE
+ * CYE22TSHKSS" under "GE Ice Maker Not Cooling Enough" shares one word — but it
+ * is always the symptom, because that is what the outline asks for first.
+ */
+function isOpener(heading: string): boolean {
+  return /\b(not|won'?t|stopped|no|failing|leaking|noisy)\b/i.test(heading);
+}
+
 export function splitArticle(body: string, title: string): SplitArticle {
   const lines = body.split('\n');
   const sections: ArticleSection[] = [];
@@ -81,8 +92,11 @@ export function splitArticle(body: string, title: string): SplitArticle {
   const flush = () => {
     if (!current) return;
     const text = current.lines.join('\n').trim();
-    if (echoesTitle(current.heading, title) && sections.length === 0) {
-      // The opening restatement: keep its prose, drop its heading.
+    // The first heading is the symptom restated — the outline the piece is
+    // written to opens with it every time, and the page has already said it in
+    // the headline and again in the summary card. Printing it as section 01
+    // reads like the article starts twice.
+    if (sections.length === 0 && (echoesTitle(current.heading, title) || isOpener(current.heading))) {
       intro = intro.concat(text ? [text] : []);
     } else {
       sections.push({

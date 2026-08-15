@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Clock, FileText, Check } from 'lucide-react';
-import { CTABanner } from '@/components/sections';
+import { Phone, Calendar, ShieldCheck } from 'lucide-react';
 import { getPublishedArticle, listPublishedArticles, photoUrl } from '@/lib/marketing/published';
 import { renderMarkdown } from '@/lib/marketing/markdown';
 import { splitArticle, readingMinutes } from '@/lib/marketing/sections';
@@ -300,10 +300,40 @@ export default async function ArticlePage({ params }: Props) {
               )}
             </div>
           )}
+
+          {/* The ask, in the words the mockup uses and at the width of the
+              piece. The site's full-bleed banner sat outside the column and
+              read as the end of the page rather than the end of the article. */}
+          <div className="mt-12 rounded-card bg-ink px-6 py-8 text-center">
+            <h2 className="font-heading text-lg font-bold uppercase tracking-label text-cream sm:text-xl">
+              Having a similar issue?
+            </h2>
+            <p className="mt-2 text-[15px] text-cream/70">
+              Our technicians are standing by to help.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/book-appointment"
+                className="flex flex-1 items-center justify-center gap-2 rounded-card bg-cream px-5 py-3 font-heading text-[11px] font-semibold uppercase tracking-label text-ink transition-colors hover:bg-white"
+              >
+                <Calendar className="h-4 w-4" strokeWidth={1.5} />
+                Schedule service
+              </Link>
+              <a
+                href={`tel:${siteConfig.contact.phoneClean}`}
+                className="flex flex-1 items-center justify-center gap-2 rounded-card border border-cream/30 px-5 py-3 font-heading text-[11px] font-semibold uppercase tracking-label text-cream transition-colors hover:bg-cream/10"
+              >
+                <Phone className="h-4 w-4" strokeWidth={1.5} />
+                {siteConfig.contact.phone}
+              </a>
+            </div>
+            <p className="mt-5 flex items-center justify-center gap-2 text-[12px] text-cream/60">
+              <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.5} />
+              Same-day service available · Upfront, honest pricing
+            </p>
+          </div>
         </div>
       </article>
-
-      <CTABanner />
     </>
   );
 }
