@@ -25,14 +25,13 @@ const archivo = Archivo({
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.seo.siteUrl),
-  title: {
-    default: 'Appliance Repair in Orange County, CA | CoastPro',
-    // Just the shop name, not the full legal one. The suffix is appended to
-    // every page title, so its length is spent twenty-four times over: at 28
-    // characters it pushed every service and city page past the point a result
-    // gets truncated, no matter how short the page's own title was.
-    template: '%s | CoastPro',
-  },
+  // A plain string, and deliberately no `template`. The `(site)` group defines
+  // the marketing title — default and template both — and a template here was
+  // applied to that default on the way up, so the home page went out as
+  // "… | CoastPro | CoastPro". Only one segment may own the suffix; it is the
+  // one whose pages actually carry it. This value is the fallback for routes in
+  // neither group, which is the root `not-found` and nothing else.
+  title: 'CoastPro Appliance Repair',
   description: siteConfig.description,
 };
 

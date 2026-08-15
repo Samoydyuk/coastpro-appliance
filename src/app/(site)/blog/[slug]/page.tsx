@@ -7,6 +7,7 @@ import { getPublishedArticle, listPublishedArticles, photoUrl } from '@/lib/mark
 import { renderMarkdown } from '@/lib/marketing/markdown';
 import { siteConfig } from '@/data/site-config';
 import { breadcrumbSchema } from '@/lib/schema';
+import { articleTitle } from '@/lib/seo';
 
 export const revalidate = 3600;
 /**
@@ -29,12 +30,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const article = await getPublishedArticle(slug);
   if (!article) return { title: 'Not found' };
 
+  const headline = article.metaTitle || article.title;
+
   return {
-    title: article.metaTitle || article.title,
+    title: articleTitle(headline),
     description: article.metaDesc ?? undefined,
     alternates: { canonical: './' },
     openGraph: {
-      title: article.metaTitle || article.title,
+      title: headline,
       description: article.metaDesc ?? undefined,
       type: 'article',
       publishedTime: article.publishedAt ?? undefined,

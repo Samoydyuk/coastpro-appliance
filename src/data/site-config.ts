@@ -39,6 +39,21 @@ export const siteConfig = {
     twitterHandle: "@coastproappliance",
   },
 
+  /**
+   * Where else this business exists, as `sameAs` in the structured data.
+   *
+   * This is the line Google follows from the site to the Business Profile, and
+   * the profile is what puts a local trade into the map pack — which is where
+   * most of this trade's customers actually start. Until a profile exists there
+   * is nothing to point at, so the list is empty and the property is omitted
+   * rather than sent blank.
+   *
+   * Fill each in as it goes live. Same name, same phone, same everything as
+   * `contact` above — a citation that disagrees with the site is worse than no
+   * citation, and the old (949) 449-1008 number is still out there.
+   */
+  profiles: [] as string[],
+
   pricing: {
     // The published range covers most jobs; premium brands and awkward
     // faults legitimately run past it, so never present it as a ceiling.

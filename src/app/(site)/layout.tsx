@@ -17,18 +17,9 @@ export const metadata: Metadata = {
     template: '%s | CoastPro',
   },
   description: siteConfig.description,
-  keywords: [
-    'appliance repair orange county',
-    'refrigerator repair',
-    'washer repair',
-    'dryer repair',
-    'dishwasher repair',
-    'oven repair',
-    'appliance repair near me',
-    'same day appliance repair',
-    'irvine appliance repair',
-    'newport beach appliance repair',
-  ],
+  // No `keywords`. Google dropped the meta keywords tag as a signal in 2009 and
+  // Bing treats it as a spam indicator; the only thing it still does reliably is
+  // hand a competitor the target list.
   authors: [{ name: siteConfig.name }],
   creator: siteConfig.name,
   openGraph: {
@@ -124,6 +115,11 @@ const jsonLd = {
   priceRange: '$$',
   image: `${siteConfig.seo.siteUrl}/images/logo.png`,
   logo: `${siteConfig.seo.siteUrl}/images/logo.png`,
+  // The link from this site to the same business elsewhere — Business Profile
+  // first, then the directories. Omitted entirely while the list is empty: an
+  // empty array is a claim to have no presence anywhere, which is a different
+  // statement from saying nothing.
+  ...(siteConfig.profiles.length ? { sameAs: siteConfig.profiles } : {}),
 };
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {

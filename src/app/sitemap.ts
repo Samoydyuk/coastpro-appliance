@@ -2,6 +2,12 @@ import { MetadataRoute } from 'next';
 import { services } from '@/data/services';
 import { serviceAreas } from '@/data/service-areas';
 import { siteConfig } from '@/data/site-config';
+import {
+  CITY_CONTENT_UPDATED,
+  pageUpdated,
+  serviceUpdated,
+  updatedAt,
+} from '@/data/content-dates';
 import { readPublishedArticles } from '@/lib/marketing/published';
 
 const BASE_URL = siteConfig.seo.siteUrl;
@@ -14,94 +20,47 @@ const BASE_URL = siteConfig.seo.siteUrl;
  * tells a crawler what exists, and nothing about it looks broken when it is
  * wrong. The cost is one query per fetch of a file crawlers ask for a handful
  * of times a day.
+ *
+ * What is *not* per-request is `lastmod` — see `data/content-dates`. Generating
+ * it here from the clock made every entry claim a change that had not happened.
  */
 export const dynamic = 'force-dynamic';
 
+/** Path (no leading slash), change frequency, priority. */
+const STATIC_ROUTES: Array<[string, MetadataRoute.Sitemap[number]['changeFrequency'], number]> = [
+  ['', 'weekly', 1],
+  ['services', 'weekly', 0.9],
+  ['service-areas', 'monthly', 0.8],
+  ['book-appointment', 'monthly', 0.9],
+  ['contact', 'monthly', 0.8],
+  ['about', 'monthly', 0.7],
+  ['blog', 'weekly', 0.6],
+  ['faq', 'monthly', 0.6],
+  ['gallery', 'weekly', 0.5],
+  ['privacy', 'yearly', 0.2],
+  ['terms', 'yearly', 0.2],
+];
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const currentDate = new Date();
+  const staticPages: MetadataRoute.Sitemap = STATIC_ROUTES.map(
+    ([path, changeFrequency, priority]) => ({
+      url: path ? `${BASE_URL}/${path}` : BASE_URL,
+      lastModified: updatedAt(pageUpdated[path]),
+      changeFrequency,
+      priority,
+    })
+  );
 
-  // Static pages
-  const staticPages: MetadataRoute.Sitemap = [
-    {
-      url: BASE_URL,
-      lastModified: currentDate,
-      changeFrequency: 'weekly',
-      priority: 1,
-    },
-    {
-      url: `${BASE_URL}/services`,
-      lastModified: currentDate,
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    {
-      url: `${BASE_URL}/about`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/contact`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${BASE_URL}/faq`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${BASE_URL}/service-areas`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${BASE_URL}/gallery`,
-      lastModified: currentDate,
-      changeFrequency: 'weekly',
-      priority: 0.5,
-    },
-    {
-      url: `${BASE_URL}/book-appointment`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.9,
-    },
-    {
-      url: `${BASE_URL}/blog`,
-      lastModified: currentDate,
-      changeFrequency: 'weekly',
-      priority: 0.6,
-    },
-    {
-      url: `${BASE_URL}/privacy`,
-      lastModified: currentDate,
-      changeFrequency: 'yearly',
-      priority: 0.2,
-    },
-    {
-      url: `${BASE_URL}/terms`,
-      lastModified: currentDate,
-      changeFrequency: 'yearly',
-      priority: 0.2,
-    },
-  ];
-
-  // Service pages
   const servicePages: MetadataRoute.Sitemap = services.map((service) => ({
     url: `${BASE_URL}/services/${service.slug}`,
-    lastModified: currentDate,
+    lastModified: updatedAt(serviceUpdated[service.slug]),
     changeFrequency: 'monthly' as const,
     priority: 0.8,
   }));
 
-  // City/Service Area pages
   const cityPages: MetadataRoute.Sitemap = serviceAreas.map((area) => ({
     url: `${BASE_URL}/service-areas/${area.slug}`,
-    lastModified: currentDate,
+    lastModified: updatedAt(CITY_CONTENT_UPDATED),
     changeFrequency: 'monthly' as const,
     priority: 0.7,
   }));
@@ -109,13 +68,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Published write-ups. Read from the database, and an empty list when there
   // is none to reach — a sitemap short a few pages is a far smaller problem
   // than a sitemap that 500s and takes the whole file out of the index.
+  //
+  // These carry a genuine timestamp, so they use it. An article somehow missing
+  // both dates still gets listed — being in the sitemap on a stale date beats
+  // not being in it at all.
   const articles = await readPublishedArticles();
-  const articlePages: MetadataRoute.Sitemap = articles.map((article) => ({
-    url: `${BASE_URL}/blog/${article.slug}`,
-    lastModified: article.updatedAt ? new Date(article.updatedAt) : currentDate,
-    changeFrequency: 'yearly' as const,
-    priority: 0.5,
-  }));
+  const articlePages: MetadataRoute.Sitemap = articles.map((article) => {
+    const stamp = article.updatedAt ?? article.publishedAt;
+    return {
+      url: `${BASE_URL}/blog/${article.slug}`,
+      lastModified: stamp ? new Date(stamp) : updatedAt(undefined),
+      changeFrequency: 'yearly' as const,
+      priority: 0.5,
+    };
+  });
 
   return [...staticPages, ...servicePages, ...cityPages, ...articlePages];
 }
