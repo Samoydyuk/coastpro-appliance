@@ -73,21 +73,17 @@ export function Header() {
           <div className="flex items-center justify-between h-20">
             {/* Wordmark */}
             <Link href="/" className="flex items-center">
-              <div>
-                {/* The real mark, not a font pretending to be one. Priority
-                    because it is the largest thing above the fold on every
-                    page and the one element whose late arrival moves the
-                    layout. */}
-                <Image
-                  src="/images/coastpro-logo.png"
-                  alt="CoastPro.us"
-                  width={2264}
-                  height={321}
-                  priority
-                  className="h-6 w-auto sm:h-7"
-                />
-                <div className="eyebrow mt-1.5 hidden sm:block">Appliance Repair</div>
-              </div>
+              {/* The real mark, not a font pretending to be one. Priority
+                  because it is the largest thing above the fold on every page
+                  and the one element whose late arrival moves the layout. */}
+              <Image
+                src="/images/coastpro-logo.png"
+                alt="CoastPro.us"
+                width={2264}
+                height={321}
+                priority
+                className="h-7 w-auto sm:h-8"
+              />
             </Link>
 
             {/* Desktop Navigation */}

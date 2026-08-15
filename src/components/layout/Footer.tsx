@@ -28,11 +28,8 @@ export function Footer() {
               alt="CoastPro.us"
               width={2264}
               height={321}
-              className="h-7 w-auto"
+              className="h-8 w-auto"
             />
-            <div className="font-heading text-[11px] font-semibold uppercase tracking-label text-primary-400 mt-3">
-              Appliance Repair
-            </div>
             <div className="h-px w-16 bg-primary-500/50 my-6" />
             <p className="leading-relaxed">
               {siteConfig.tagline}. Professional appliance repair throughout Orange County.
