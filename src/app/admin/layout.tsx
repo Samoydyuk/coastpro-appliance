@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { AdminNav } from '@/components/admin/AdminNav';
 
 export const metadata = {
@@ -15,8 +16,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="flex min-h-screen flex-col bg-[#f2f0eb]">
       <header className="border-b border-primary-500/20 bg-[#fcfcfb]">
         <div className="mx-auto flex max-w-[1400px] items-center gap-6 px-5 py-3">
-          <Link href="/admin" className="font-heading text-sm font-bold uppercase tracking-brand text-ink">
-            CoastPro
+          <Link href="/admin" className="flex items-center">
+            <Image
+              src="/images/coastpro-logo.png"
+              alt="CoastPro.us"
+              width={2264}
+              height={321}
+              className="h-4 w-auto"
+            />
           </Link>
           <span className="font-heading text-[10px] uppercase tracking-label text-gray-500">
             Marketing console

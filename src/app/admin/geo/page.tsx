@@ -58,7 +58,7 @@ export default async function GeoPage({
           {points.length === 0 ? (
             <Empty>No located visits in this window.</Empty>
           ) : (
-            <UsMap points={points} />
+            <UsMap points={points} initialView={searchParams.view === 'oc' ? 'oc' : 'us'} />
           )}
           <Hint>
             The shape matters more than any single dot. A cluster around the HQ mark is demand

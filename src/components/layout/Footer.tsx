@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Phone, Mail, MapPin, Clock } from 'lucide-react';
 import { siteConfig } from '@/data/site-config';
 import { services } from '@/data/services';
@@ -20,8 +21,16 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Company */}
           <div>
-            <div className="wordmark text-base text-cream leading-none">CoastPro</div>
-            <div className="font-heading text-[11px] font-semibold uppercase tracking-label text-primary-400 mt-2">
+            {/* The light cut of the same file: on this ground the dark half of
+                the wordmark would simply be missing. */}
+            <Image
+              src="/images/coastpro-logo-light.png"
+              alt="CoastPro.us"
+              width={2264}
+              height={321}
+              className="h-7 w-auto"
+            />
+            <div className="font-heading text-[11px] font-semibold uppercase tracking-label text-primary-400 mt-3">
               Appliance Repair
             </div>
             <div className="h-px w-16 bg-primary-500/50 my-6" />

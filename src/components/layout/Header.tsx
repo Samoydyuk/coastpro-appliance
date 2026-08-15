@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Menu, X, Phone, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { siteConfig } from '@/data/site-config';
@@ -73,7 +74,18 @@ export function Header() {
             {/* Wordmark */}
             <Link href="/" className="flex items-center">
               <div>
-                <div className="wordmark text-base text-ink leading-none">CoastPro</div>
+                {/* The real mark, not a font pretending to be one. Priority
+                    because it is the largest thing above the fold on every
+                    page and the one element whose late arrival moves the
+                    layout. */}
+                <Image
+                  src="/images/coastpro-logo.png"
+                  alt="CoastPro.us"
+                  width={2264}
+                  height={321}
+                  priority
+                  className="h-6 w-auto sm:h-7"
+                />
                 <div className="eyebrow mt-1.5 hidden sm:block">Appliance Repair</div>
               </div>
             </Link>
