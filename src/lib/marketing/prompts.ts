@@ -123,6 +123,16 @@ function outline(job: MarketingJobRow): string[] {
   sections.push(`Open with ${symptom} on a ${[job.manufacturer, job.appliance_type].filter(Boolean).join(' ') || 'appliance'}.`);
 
   if (job.diagnosis) sections.push('A section on what the fault turned out to be, from "what the technician found".');
+  // The mockup the owner drew has this between the finding and the repair, and
+  // it is the paragraph a reader actually wants: not what broke, but why that
+  // produces the symptom they are living with. Rule 8 already allows general
+  // mechanism, and this is where it belongs.
+  if (job.diagnosis) {
+    sections.push(
+      'A section headed "Why It Happened": how that fault produces this symptom, in general ' +
+        'terms. Nothing specific to this machine beyond what is above.'
+    );
+  }
   if (job.repair_performed) sections.push('A section on the repair itself, from "what the technician did".');
   if (job.replaced_parts.length) sections.push('Name the parts that were replaced, by what they are — never by part number.');
   if (job.technician_notes) sections.push("A short section built on the technician's note.");
