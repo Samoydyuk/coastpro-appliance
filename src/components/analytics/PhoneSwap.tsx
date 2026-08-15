@@ -44,7 +44,22 @@ export function PhoneSwap() {
       // Visible text is replaced separately: plenty of visitors read the number
       // off the screen and dial it by hand, and if the printed number is not
       // the tracked one, those calls go missing.
-      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      //
+      // Visible text, though, and nothing else. A TreeWalker over SHOW_TEXT
+      // descends into <script> as readily as into a paragraph, and the JSON-LD
+      // block sits in the body carrying `telephone` — so this loop was quietly
+      // rewriting the business number inside the structured data to whichever
+      // tracking number the channel had been given. Googlebot runs JavaScript;
+      // what it recorded as the company's phone number was an attribution
+      // number that appears in no directory and on no invoice. That is exactly
+      // the NAP mismatch the tracking is not supposed to cost us.
+      const SKIP = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE']);
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+        acceptNode: (node) =>
+          SKIP.has(node.parentElement?.tagName ?? '')
+            ? NodeFilter.FILTER_REJECT
+            : NodeFilter.FILTER_ACCEPT,
+      });
       const patterns = [
         defaultDisplay,
         defaultDisplay.replace(/[()\s]/g, '').replace(/^(\d{3})(\d{3})/, '$1-$2'),
