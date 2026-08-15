@@ -52,8 +52,13 @@ export function ContactForm() {
     // Basic validation
     const newErrors: Record<string, string> = {};
     if (!data.name.trim()) newErrors.name = 'Name is required';
-    if (!data.email.trim()) newErrors.email = 'Email is required';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) newErrors.email = 'Invalid email address';
+    // Optional, like it is on the booking form. We answer by phone; asking for
+    // an address somebody does not want to give is a field they abandon the
+    // form on. Still checked when they do fill it in, because a typo'd address
+    // is worse than a blank one — it looks like a way to reach them.
+    if (data.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      newErrors.email = 'Invalid email address';
+    }
     if (!data.phone.trim()) newErrors.phone = 'Phone is required';
     if (!data.service) newErrors.service = 'Please select a service';
     if (!data.message.trim()) newErrors.message = 'Message is required';
@@ -128,10 +133,9 @@ export function ContactForm() {
         />
         <Input
           name="email"
-          label="Email Address"
+          label="Email Address (optional)"
           type="email"
           placeholder="john@example.com"
-          required
           error={errors.email}
         />
       </div>

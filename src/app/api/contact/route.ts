@@ -44,12 +44,15 @@ export async function POST(request: NextRequest) {
     const data = await request.json();
     const { name, email, phone, service, message } = data;
 
-    if (!name || !email || !phone || !service || !message) {
-      return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
+    // Email is optional here, as it is on the booking form: the phone is how
+    // this shop answers, and a required address is a field people abandon the
+    // form on rather than fill in.
+    if (!name || !phone || !service || !message) {
+      return NextResponse.json({ error: 'Name, phone, service and message are required' }, { status: 400 });
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (email && !emailRegex.test(email)) {
       return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
     }
 
@@ -59,7 +62,10 @@ export async function POST(request: NextRequest) {
     const leadId = await recordLead(request, {
       sourceForm: 'contact',
       name,
-      email,
+      // Empty string rather than absent is how a blank optional field arrives
+      // from a form, and it would be stored as one — a lead that looks like it
+      // has an address until somebody tries to use it.
+      email: email?.trim() || null,
       phone,
       appliance: service,
       message,
@@ -83,12 +89,15 @@ export async function POST(request: NextRequest) {
         const { error } = await resend.emails.send({
           from: FROM,
           to: [TO],
-          replyTo: email,
+          // Only when there is one. An empty replyTo is a malformed header,
+          // and Resend rejects the whole message rather than ignoring it —
+          // which would lose the enquiry over an optional field.
+          ...(email ? { replyTo: email } : {}),
           subject: `New service request: ${service} — ${name}`,
           html: `
             <h2>New contact form submission</h2>
             <p><strong>Name:</strong> ${escapeHtml(name)}</p>
-            <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+            <p><strong>Email:</strong> ${email ? escapeHtml(email) : 'not given'}</p>
             <p><strong>Phone:</strong> ${escapeHtml(phone)}</p>
             <p><strong>Service:</strong> ${escapeHtml(service)}</p>
             <p><strong>Message:</strong></p>
