@@ -142,9 +142,11 @@ function drawFieldNote(ctx: CanvasRenderingContext2D, treatment: Treatment): voi
   }
 
   if (treatment.headline) {
-    y += scale(tokens.type.headline, WIDTH) * 1.05;
+    // Same rule as the page: with no code to shout, the headline is the shout.
+    const size = treatment.main ? tokens.type.headline : tokens.type.headline * 1.5;
+    y += scale(size, WIDTH) * 1.05;
     ctx.fillStyle = tokens.color.white;
-    ctx.font = heading(800, scale(tokens.type.headline, WIDTH));
+    ctx.font = heading(800, scale(size, WIDTH));
     ctx.fillText(treatment.headline.toUpperCase(), left, y);
   }
 

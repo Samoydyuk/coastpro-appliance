@@ -317,10 +317,17 @@ function FieldNote({ treatment }: { treatment: Treatment }) {
           </div>
         )}
 
+        {/* Without a code the headline takes the loud slot. A note whose type
+            block is one small line is not the design — it is a caption that
+            happened to be at the top. */}
         {treatment.headline && (
           <div
             className="font-heading font-extrabold uppercase leading-[0.9] tracking-tight text-white"
-            style={{ fontSize: 'clamp(1.5rem, 8vw, 3.2rem)' }}
+            style={{
+              fontSize: treatment.main
+                ? 'clamp(1.5rem, 8vw, 3.2rem)'
+                : 'clamp(2.2rem, 12vw, 4.6rem)',
+            }}
           >
             {treatment.headline}
           </div>

@@ -259,7 +259,10 @@ function layoutFor(type: PhotoType, hasMain: boolean, confidence: number): Layou
   if (confidence < tokens.confidenceFloor) return 'clean';
   switch (type) {
     case 'error_code':
-      return hasMain ? 'field_note' : 'detail';
+      // A code on a display is the clearest case for the full note, but not the
+      // only one — see applyRhythm, which gives the lead photograph the note
+      // whether or not there is a number to shout.
+      return 'field_note';
     case 'failed_part':
     case 'damage':
     case 'model_serial':
@@ -334,6 +337,17 @@ function shape(
  */
 export function applyRhythm(treatments: Treatment[]): Treatment[] {
   const total = treatments.length;
+
+  // The photograph that opens a piece carries the full note. It is the frame
+  // people see first and the one the house style is recognised by — leaving it
+  // plain because the machine had no error code on its display was reading the
+  // rule for the design rather than the design (owner report: the lead came out
+  // as a bare photograph with a wordmark on it).
+  const lead = treatments[0];
+  if (lead && lead.confidence >= tokens.confidenceFloor && lead.headline) {
+    lead.layout = 'field_note';
+    lead.label = LABELS.field_note;
+  }
   const bestFieldNote = treatments
     .map((treatment, index) => ({ treatment, index }))
     .filter(({ treatment }) => treatment.layout === 'field_note')
@@ -351,7 +365,8 @@ export function applyRhythm(treatments: Treatment[]): Treatment[] {
     };
 
     if (numbered.layout === 'field_note') {
-      const isChosen = bestFieldNote?.index === index && heavyUsed < heavyAllowed;
+      const isChosen =
+        index === 0 || (bestFieldNote?.index === index && heavyUsed < heavyAllowed);
       if (isChosen) {
         heavyUsed += 1;
         return numbered;
