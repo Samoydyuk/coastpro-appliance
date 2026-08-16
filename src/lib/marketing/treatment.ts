@@ -48,8 +48,21 @@ export interface Treatment {
   main: string | null;
   headline: string | null;
   secondary: string | null;
-  annotation: { text: string; x: number; y: number } | null;
+  /**
+   * Where the dot goes, and — once somebody has moved it — where its label
+   * goes. The two are separate because the thing being named is rarely in a
+   * good place for the words naming it.
+   */
+  annotation: { text: string; x: number; y: number; labelX?: number; labelY?: number } | null;
   footer: string | null;
+  /**
+   * Where the block of type sits, as a fraction of the frame.
+   *
+   * Absent means "wherever the layout puts it" — the corner the model judged
+   * emptiest. Present means a person dragged it there, and nothing moves it
+   * back.
+   */
+  textPos?: { x: number; y: number };
 
   /** "02 / 05" — which photograph of this piece it is. */
   index?: string;

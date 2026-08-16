@@ -5,6 +5,7 @@ import type { LayoutName, PhotoType, Treatment } from '@/lib/marketing/treatment
 import { tokens } from '@/lib/marketing/treatment-tokens';
 import { downloadSocialCard } from '@/lib/marketing/compose';
 import { PhotoTreatment } from '@/components/marketing/PhotoTreatment';
+import { PhotoStudio } from '@/components/admin/PhotoStudio';
 
 /**
  * What the model proposed for one photograph, and the means to disagree with it.
@@ -53,6 +54,7 @@ export function PhotoTreatmentEditor({
 }: Props) {
   const frameRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
+  const [studio, setStudio] = useState(false);
 
   const set = <K extends keyof Treatment>(key: K, value: Treatment[K]) => {
     onChange({ ...treatment, [key]: value });
@@ -154,7 +156,23 @@ export function PhotoTreatmentEditor({
             }}
           />
         )}
+        <button
+          type="button"
+          onClick={() => setStudio(true)}
+          className="absolute bottom-2 right-2 rounded-card bg-ink/80 px-2 py-1 font-heading text-[9px] font-semibold uppercase tracking-label text-cream hover:bg-ink"
+        >
+          Open big
+        </button>
       </div>
+
+      {studio && (
+        <PhotoStudio
+          src={src}
+          treatment={treatment}
+          onChange={onChange}
+          onClose={() => setStudio(false)}
+        />
+      )}
 
       <div className="space-y-3">
       {low && (

@@ -193,7 +193,16 @@ export function PhotoTreatment({
           )}
 
           <div
-            className={`absolute flex w-[64%] flex-col gap-1 p-4 sm:p-5 ${CORNER[corner]}`}
+            className={
+              treatment.textPos
+                ? 'absolute flex w-[64%] flex-col gap-1 p-4 sm:p-5 items-start text-left'
+                : `absolute flex w-[64%] flex-col gap-1 p-4 sm:p-5 ${CORNER[corner]}`
+            }
+            style={
+              treatment.textPos
+                ? { left: `${treatment.textPos.x * 100}%`, top: `${treatment.textPos.y * 100}%` }
+                : undefined
+            }
           >
             {treatment.label && (
               <span
@@ -280,7 +289,8 @@ function FieldNote({ treatment }: { treatment: Treatment }) {
   // The type block owns the top of the frame. Nothing else may start inside
   // it, whatever the model thought was the emptiest corner.
   const TYPE_BLOCK_BOTTOM = 0.46;
-  const labelY = dot ? Math.max(TYPE_BLOCK_BOTTOM, dot.y - 0.16) : 0.5;
+  const labelY = dot?.labelY ?? (dot ? Math.max(TYPE_BLOCK_BOTTOM, dot.y - 0.16) : 0.5);
+  const labelX = dot?.labelX ?? 0.08;
   const bendX = dot ? Math.min(0.55, Math.max(0.2, dot.x)) : 0.4;
 
   return (
@@ -298,7 +308,7 @@ function FieldNote({ treatment }: { treatment: Treatment }) {
           aria-hidden
         >
           <polyline
-            points={`8,${labelY * 100 + 2} ${bendX * 100},${labelY * 100 + 2} ${bendX * 100},${dot.y * 100}`}
+            points={`${labelX * 100},${labelY * 100 + 2} ${bendX * 100},${labelY * 100 + 2} ${bendX * 100},${dot.y * 100}`}
             fill="none"
             stroke={tokens.color.orange}
             strokeWidth="0.35"
@@ -322,7 +332,14 @@ function FieldNote({ treatment }: { treatment: Treatment }) {
         />
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 top-0 p-[6%]">
+      <div
+        className="pointer-events-none absolute p-[6%]"
+        style={
+          treatment.textPos
+            ? { left: `${treatment.textPos.x * 100}%`, top: `${treatment.textPos.y * 100}%`, right: 'auto', maxWidth: '86%' }
+            : { left: 0, right: 0, top: 0 }
+        }
+      >
         <div
           className="font-heading font-semibold uppercase tracking-[0.25em] text-white/85"
           style={{ fontSize: 'clamp(6px, 2.4cqw, 12px)' }}
@@ -368,8 +385,12 @@ function FieldNote({ treatment }: { treatment: Treatment }) {
 
       {dot && showLabel && (
         <div
-          className="pointer-events-none absolute left-[8%] right-[8%]"
-          style={{ top: `${labelY * 100 - 7}%` }}
+          className="pointer-events-none absolute"
+          style={
+            dot.labelX != null && dot.labelY != null
+              ? { left: `${dot.labelX * 100}%`, top: `${dot.labelY * 100}%`, maxWidth: '70%' }
+              : { left: '8%', right: '8%', top: `${labelY * 100 - 7}%` }
+          }
         >
           <div
             className="font-heading font-bold uppercase tracking-label text-white"
