@@ -144,19 +144,21 @@ export function PhotoTreatment({
         style={{ objectPosition: objectPosition(treatment) }}
       />
 
-      {/* The wordmark, quietly, on everything that is not a full Field Note —
-          that one signs itself, top left, with a rule under it. */}
-      {effective !== 'field_note' && (
+      {/* Only the frame that opens a piece. Everything after it is inside an
+          article on coastpro.us, where saying so again is noise. */}
+      {effective !== 'field_note' && treatment?.isHero && (
         <>
           <span className="absolute right-3 top-3 font-heading text-[9px] font-semibold uppercase tracking-[0.25em] text-white/75 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
             CoastPro.us
           </span>
-          {treatment?.index && (
-            <span className="absolute left-3 top-3 font-heading text-[9px] font-semibold tabular-nums tracking-label text-white/60 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
-              {treatment.index}
-            </span>
-          )}
+
         </>
+      )}
+
+      {treatment?.index && (
+        <span className="absolute bottom-2 right-3 font-heading text-[9px] font-semibold tabular-nums tracking-label text-white/55 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
+          {treatment.index}
+        </span>
       )}
 
       {treatment && effective === 'field_note' && <FieldNote treatment={treatment} />}
@@ -283,9 +285,10 @@ function FieldNote({ treatment }: { treatment: Treatment }) {
 
   return (
     <>
-      {/* Not a box: the graphite is opaque at the top and gone by the middle,
-          which is what leaves the photograph looking like a photograph. */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-graphite via-graphite/70 to-transparent" />
+      {/* Only the band the words sit in, and gone well before the middle. The
+          photograph is the evidence — a poster-black top half hid the very
+          crack the piece is about (owner report). */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[52%] bg-gradient-to-b from-graphite/90 via-graphite/45 to-transparent" />
 
       {dot && (
         <svg

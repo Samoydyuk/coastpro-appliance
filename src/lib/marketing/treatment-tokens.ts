@@ -73,9 +73,26 @@ export const tokens = {
 
   /**
    * Below this the model is guessing, and a guess becomes a clean photograph
-   * rather than a confident caption (§41).
+   * rather than a confident caption.
    */
   confidenceFloor: 0.55,
+
+  /**
+   * An annotation points at a component. It is either on the component or it is
+   * worse than nothing — a dot beside the roller reads as "this bracket", which
+   * is a technical claim nobody made. Below this the dot is dropped and the
+   * console is told to look.
+   */
+  annotationFloor: 0.9,
+
+  /**
+   * How dark the scrim may get, by where it falls.
+   *
+   * The photograph is the evidence; the graphics explain it. Over the thing the
+   * picture was taken for, the overlay is barely there.
+   */
+  scrimOverSubject: 0.1,
+  scrimOverText: 0.45,
 } as const;
 
 /** A size from the table above, at whatever width the thing is really drawn. */

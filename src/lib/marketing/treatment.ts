@@ -51,8 +51,12 @@ export interface Treatment {
   annotation: { text: string; x: number; y: number } | null;
   footer: string | null;
 
-  /** "02 / 05" — which photograph of this piece it is (§10, variant B). */
+  /** "02 / 05" — which photograph of this piece it is. */
   index?: string;
+  /** The model wanted to point at something and was not sure enough. */
+  needsReview?: boolean;
+  /** Only the frame that opens a piece carries the wordmark and the town. */
+  isHero?: boolean;
   templateVersion: string;
   /** Set when a person has looked at it. */
   approved?: boolean;
@@ -345,10 +349,14 @@ function shape(
     main: layout === 'field_note' ? main : null,
     headline: layout === 'clean' ? null : str(answer.headline),
     secondary: layout === 'clean' ? null : str(answer.secondary),
+    // A dot beside the roller reads as "this bracket". Either it is on the
+    // component or it is not drawn, and the console says which photographs
+    // want a human eye.
     annotation:
-      annotationText && layout !== 'clean'
+      annotationText && layout !== 'clean' && confidence >= tokens.annotationFloor
         ? { text: annotationText, x: frac(point.x, 0.5), y: frac(point.y, 0.5) }
         : null,
+    needsReview: Boolean(annotationText) && confidence < tokens.annotationFloor,
     footer,
     templateVersion: TREATMENT_VERSION,
     altText: str(answer.altText),
@@ -361,21 +369,85 @@ function shape(
  * At most one photograph carries the full Field Note; the rest step down to a
  * line or to nothing. Which one keeps it is the one the model was surest of.
  */
-export function applyRhythm(treatments: Treatment[]): Treatment[] {
+export function applyRhythm<T extends { photoId: string; treatment: Treatment }>(
+  entries: T[]
+): T[] {
+  // Paired with their photographs throughout, because this reorders them: a
+  // treatment that drifts onto the wrong picture is worse than no treatment.
+  const treatments = entries.map((entry) => entry.treatment);
   const total = treatments.length;
 
+  // One name for one thing, across the whole piece.
+  //
+  // The series came back saying WORN ROLLER on one frame, SUPPORT ROLLER on the
+  // next and DESTROYED ROLLER on a third, for the same component — which reads
+  // as three findings rather than one (owner report). The most confident
+  // wording wins and the rest adopt it.
+  const canonical = new Map<string, string>();
+  const key = (text: string) =>
+    text.toLowerCase().replace(/[^a-z ]/g, '').split(' ').filter((w) => w.length > 3).sort().join(' ');
+  for (const t of [...entries.map((e) => e.treatment)].sort((a, b) => b.confidence - a.confidence)) {
+    if (!t.headline) continue;
+    const k = key(t.headline);
+    if (k && !canonical.has(k)) canonical.set(k, t.headline);
+  }
+  for (const t of entries.map((e) => e.treatment)) {
+    if (!t.headline) continue;
+    const agreed = canonical.get(key(t.headline));
+    if (agreed) t.headline = agreed;
+    if (t.annotation) {
+      const annotated = canonical.get(key(t.annotation.text));
+      if (annotated) t.annotation = { ...t.annotation, text: annotated };
+    }
+  }
+
+  // The same finding said twice in a series is the series saying it once too
+  // often. The first frame carries the words; a later frame showing the same
+  // thing keeps its dot and goes quiet.
+  const said = new Set<string>();
+  for (const t of entries.map((e) => e.treatment)) {
+    if (!t.headline) continue;
+    const k = key(t.headline);
+    if (said.has(k)) {
+      t.layout = 'clean';
+      t.label = null;
+      t.main = null;
+      t.headline = null;
+      t.secondary = null;
+    } else if (k) {
+      said.add(k);
+    }
+  }
+
+  // What opens the piece is the failure, not the front of the machine.
+  //
+  // A repair note is a documented case, not a catalogue page: the frame worth
+  // seeing first is the cracked drum, and the exterior belongs at the end as
+  // context (owner's instruction). Ordered by what a photograph is of, then by
+  // how sure the model was of it.
+  const ROLE_ORDER: PhotoType[] = [
+    'damage', 'failed_part', 'error_code', 'diagnostic_area', 'repair_process',
+    'completed_repair', 'maintenance', 'model_serial', 'before', 'after',
+    'appliance_overview', 'other',
+  ];
+  const rank = (t: Treatment) => {
+    const position = ROLE_ORDER.indexOf(t.photoType);
+    return position < 0 ? ROLE_ORDER.length : position;
+  };
+  entries.sort(
+    (a, b) =>
+      rank(a.treatment) - rank(b.treatment) || b.treatment.confidence - a.treatment.confidence
+  );
+
   // The photograph that opens a piece carries the full note. It is the frame
-  // people see first and the one the house style is recognised by — leaving it
-  // plain because the machine had no error code on its display was reading the
-  // rule for the design rather than the design (owner report: the lead came out
-  // as a bare photograph with a wordmark on it).
-  const lead = treatments[0];
+  // people see first and the one the house style is recognised by.
+  const lead = entries[0]?.treatment;
   if (lead && lead.confidence >= tokens.confidenceFloor && lead.headline) {
     lead.layout = 'field_note';
     lead.label = LABELS.field_note;
   }
-  const bestFieldNote = treatments
-    .map((treatment, index) => ({ treatment, index }))
+  const bestFieldNote = entries
+    .map((entry, index) => ({ treatment: entry.treatment, index }))
     .filter(({ treatment }) => treatment.layout === 'field_note')
     .sort((a, b) => b.treatment.confidence - a.treatment.confidence)[0];
 
@@ -384,10 +456,16 @@ export function applyRhythm(treatments: Treatment[]): Treatment[] {
   const heavyAllowed = Math.max(1, Math.min(2, Math.round(total * 0.2)));
   let heavyUsed = 0;
 
-  return treatments.map((treatment, index) => {
+  return entries.map((entry, index) => {
+    const treatment = entry.treatment;
     const numbered = {
       ...treatment,
       index: `${String(index + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`,
+      // The reader is already on CoastPro and already knows the town by the
+      // second photograph. Signing and placing every frame is what makes a
+      // series look like five separate posters.
+      isHero: index === 0,
+      footer: index === 0 ? treatment.footer : null,
     };
 
     if (numbered.layout === 'field_note') {
@@ -395,12 +473,15 @@ export function applyRhythm(treatments: Treatment[]): Treatment[] {
         index === 0 || (bestFieldNote?.index === index && heavyUsed < heavyAllowed);
       if (isChosen) {
         heavyUsed += 1;
-        return numbered;
+        return { ...entry, treatment: numbered };
       }
       // Demoted, but not silenced: it keeps its headline as a plain detail line.
-      return { ...numbered, layout: 'detail' as LayoutName, label: null, main: null };
+      return {
+        ...entry,
+        treatment: { ...numbered, layout: 'detail' as LayoutName, label: null, main: null },
+      };
     }
-    return numbered;
+    return { ...entry, treatment: numbered };
   });
 }
 
@@ -481,16 +562,19 @@ export async function analysePhotos(
     throw new TreatmentError('None of the photographs could be read, so none were dressed.');
   }
 
-  const withRhythm = applyRhythm(usable.map((entry) => entry.treatment));
+  const ordered = applyRhythm(usable);
 
   const sql = requireDb();
   const rev = Date.now().toString(36);
   await Promise.all(
-    usable.map((entry, index) =>
+    ordered.map((entry, index) =>
       sql`
         update marketing_photo set
-          treatment     = ${sql.json(withRhythm[index] as never)},
+          treatment     = ${sql.json(entry.treatment as never)},
           treatment_rev = ${rev},
+          -- The story order, written down: the failure opens the piece and the
+          -- exterior closes it, and the article reads them in this order.
+          sort_order    = ${index},
           alt_text      = coalesce(${entry.altText}, alt_text),
           approved_at   = ${autoApprove ? new Date() : null},
           approved_by   = ${autoApprove ? 'auto' : null}
