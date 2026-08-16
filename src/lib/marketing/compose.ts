@@ -156,11 +156,20 @@ function drawFieldNote(ctx: CanvasRenderingContext2D, treatment: Treatment): voi
     const dotY = treatment.annotation.y * HEIGHT;
     const labelY = Math.max(y + scale(tokens.type.annotation, WIDTH) * 2, dotY - HEIGHT * 0.16);
 
-    ctx.fillStyle = tokens.color.white;
-    ctx.font = heading(700, scale(tokens.type.annotation, WIDTH));
-    ctx.fillText(treatment.annotation.text.toUpperCase(), left * 1.4, labelY);
+    // Repeating the headline puts the same words twice, one over the other.
+    const echoes = (a: string, b: string | null) =>
+      Boolean(b && a.trim().toLowerCase() === b.trim().toLowerCase());
+    const showLabel =
+      !echoes(treatment.annotation.text, treatment.headline) &&
+      !echoes(treatment.annotation.text, treatment.main);
 
-    if (treatment.secondary) {
+    if (showLabel) {
+      ctx.fillStyle = tokens.color.white;
+      ctx.font = heading(700, scale(tokens.type.annotation, WIDTH));
+      ctx.fillText(treatment.annotation.text.toUpperCase(), left * 1.4, labelY);
+    }
+
+    if (treatment.secondary && showLabel) {
       ctx.fillStyle = tokens.color.muted;
       ctx.font = heading(400, scale(tokens.type.secondary, WIDTH));
       ctx.fillText(treatment.secondary, left * 1.4, labelY + scale(tokens.type.secondary, WIDTH) * 1.3);

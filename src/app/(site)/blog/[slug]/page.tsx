@@ -100,7 +100,9 @@ export default async function ArticlePage({ params }: Props) {
             The issue
           </span>
         </div>
-        <dl className="grid flex-1 gap-2 border-t border-primary-500/15 pt-4 text-[14px] sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0 lg:border-l-0 lg:border-t lg:pl-0 lg:pt-4">
+        {/* content-start: the card matches the photograph's height beside it,
+            and without this the three rows spread themselves down all of it. */}
+        <dl className="grid flex-1 content-start gap-3 border-t border-primary-500/15 pt-4 text-[14px] sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0 lg:border-l-0 lg:border-t lg:pl-0 lg:pt-4">
           {article.metaDesc && (
             <div className="flex gap-3">
               <dt className="w-20 shrink-0 font-heading text-[11px] font-semibold uppercase tracking-label text-ink">

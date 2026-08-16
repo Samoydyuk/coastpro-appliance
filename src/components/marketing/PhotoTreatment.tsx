@@ -264,9 +264,21 @@ export function PhotoTreatment({
  * at a phone's width and at a poster's.
  */
 function FieldNote({ treatment }: { treatment: Treatment }) {
+  // An annotation that repeats the headline is the same words twice, one set
+  // on top of the other — which is exactly how it looked (owner report). The
+  // dot still marks the spot; only the label is dropped.
+  const echoes = (a: string | null, b: string | null) =>
+    Boolean(a && b && a.trim().toLowerCase() === b.trim().toLowerCase());
   const dot = treatment.annotation;
-  // The label sits above the thing it names, and the line drops to it.
-  const labelY = dot ? Math.max(0.32, dot.y - 0.16) : 0.5;
+  const showLabel =
+    Boolean(dot) &&
+    !echoes(dot?.text ?? null, treatment.headline) &&
+    !echoes(dot?.text ?? null, treatment.main);
+
+  // The type block owns the top of the frame. Nothing else may start inside
+  // it, whatever the model thought was the emptiest corner.
+  const TYPE_BLOCK_BOTTOM = 0.46;
+  const labelY = dot ? Math.max(TYPE_BLOCK_BOTTOM, dot.y - 0.16) : 0.5;
   const bendX = dot ? Math.min(0.55, Math.max(0.2, dot.x)) : 0.4;
 
   return (
@@ -283,7 +295,7 @@ function FieldNote({ treatment }: { treatment: Treatment }) {
           aria-hidden
         >
           <polyline
-            points={`8,${labelY * 100 + 3} ${bendX * 100},${labelY * 100 + 3} ${bendX * 100},${dot.y * 100}`}
+            points={`8,${labelY * 100 + 2} ${bendX * 100},${labelY * 100 + 2} ${bendX * 100},${dot.y * 100}`}
             fill="none"
             stroke={tokens.color.orange}
             strokeWidth="0.35"
@@ -351,10 +363,10 @@ function FieldNote({ treatment }: { treatment: Treatment }) {
         )}
       </div>
 
-      {dot && (
+      {dot && showLabel && (
         <div
           className="pointer-events-none absolute left-[8%] right-[8%]"
-          style={{ top: `${labelY * 100 - 8}%` }}
+          style={{ top: `${labelY * 100 - 7}%` }}
         >
           <div
             className="font-heading font-bold uppercase tracking-label text-white"
