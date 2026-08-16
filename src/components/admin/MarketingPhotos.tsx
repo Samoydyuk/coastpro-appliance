@@ -370,6 +370,17 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
             </button>
             <button
               type="button"
+              onClick={() => {
+                const all = Object.fromEntries(chosen.map((id) => [id, Boolean(treatments[id])]));
+                setApprovals({ ...approvals, ...all });
+              }}
+              disabled={Object.keys(treatments).length === 0}
+              className="h-8 rounded-card border border-ink/20 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-ink disabled:opacity-40"
+            >
+              Approve all
+            </button>
+            <button
+              type="button"
               onClick={correctAll}
               disabled={correcting}
               className="h-8 rounded-card border border-ink/20 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-ink disabled:opacity-40"
@@ -385,8 +396,8 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
               Save treatment
             </button>
             <span className="text-xs text-gray-500">
-              A suggestion until it is approved. Anything left unapproved goes out as the plain
-              photograph.
+              Prepared automatically when the piece was written. Nothing publishes until these
+              have been looked over and saved.
             </span>
           </div>
 

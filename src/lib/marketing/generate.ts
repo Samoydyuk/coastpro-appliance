@@ -369,6 +369,20 @@ export async function generate(jobId: string, channel: string): Promise<Draft> {
     );
   }
 
+  // Dressed now rather than at publication, so the series is already there to
+  // be looked at while the draft is being read. Proposed, never applied: the
+  // owner sees it before a reader does.
+  if (wantsPhotos) {
+    void (async () => {
+      try {
+        const { analysePhotos } = await import('@/lib/marketing/treatment');
+        await analysePhotos(jobId);
+      } catch (error) {
+        console.warn('[generate] photo treatment skipped:', (error as Error).message);
+      }
+    })();
+  }
+
   const title = spec.fields.includes('title') ? str(parsed.title) : null;
   const slug = spec.fields.includes('slug')
     ? await freeSlug(str(parsed.slug) || title || `${job.appliance_type ?? 'repair'}-${jobId}`, jobId)

@@ -65,31 +65,55 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+
+      // Nothing goes out with photographs nobody has looked at.
+      //
+      // They are dressed automatically — that part is not the owner's job — but
+      // the words on them are written by a model reading a photograph, and the
+      // last thing that should happen unseen is a caption on a picture of
+      // somebody's kitchen. Undressed photographs are dressed here so there is
+      // something to look at; unreviewed ones stop the publication with a
+      // sentence saying so.
+      const [pending] = (await sql`
+        select
+          count(*) filter (where treatment is null)::int as undressed,
+          count(*) filter (where treatment is not null and approved_at is null)::int as unreviewed
+        from marketing_photo
+        where job_id = ${body.jobId} and selected
+      `) as unknown as { undressed: number; unreviewed: number }[];
+
+      if ((pending?.undressed ?? 0) > 0) {
+        try {
+          const { analysePhotos } = await import('@/lib/marketing/treatment');
+          await analysePhotos(body.jobId);
+        } catch (error) {
+          console.warn('[publish] photo treatment failed:', (error as Error).message);
+        }
+        return NextResponse.json(
+          {
+            error:
+              'The photographs have been prepared. Look them over in Photos and approve them, ' +
+              'then publish.',
+          },
+          { status: 409 }
+        );
+      }
+
+      if ((pending?.unreviewed ?? 0) > 0) {
+        return NextResponse.json(
+          {
+            error: `${pending.unreviewed} photograph${pending.unreviewed === 1 ? '' : 's'} ` +
+              'still need looking over in Photos before this can go up.',
+          },
+          { status: 409 }
+        );
+      }
       await sql`
         update marketing_content set
           status = 'published', approved_at = coalesce(approved_at, now()), updated_at = now()
         where id = ${piece.id}
       `;
 
-      // Dress the photographs on the way out, if nobody has yet.
-      //
-      // The owner's instruction is that this happens by itself: a piece should
-      // not go up as a set of raw snapshots because somebody forgot to press a
-      // button. Anything already dressed — by hand or by an earlier run — is
-      // left exactly as it is, and a failure here never blocks a publication
-      // that is otherwise ready.
-      try {
-        const [undressed] = (await sql`
-          select count(*)::int as n from marketing_photo
-          where job_id = ${body.jobId} and selected and treatment is null
-        `) as unknown as { n: number }[];
-        if ((undressed?.n ?? 0) > 0) {
-          const { analysePhotos } = await import('@/lib/marketing/treatment');
-          await analysePhotos(body.jobId, true);
-        }
-      } catch (error) {
-        console.warn('[publish] photo treatment skipped:', (error as Error).message);
-      }
       // One open publication at a time: re-publishing after an unpublish opens
       // a new row rather than reviving the old one, so the history reads as a
       // sequence of periods it was live.
