@@ -35,6 +35,8 @@ interface Props {
   photoId: string;
   src: string;
   treatment: Treatment;
+  /** What to put in the headline when a plain photograph is promoted. */
+  fallbackHeadline?: string;
   approved: boolean;
   onChange: (treatment: Treatment) => void;
   onApprovedChange: (approved: boolean) => void;
@@ -44,6 +46,7 @@ export function PhotoTreatmentEditor({
   photoId,
   src,
   treatment,
+  fallbackHeadline = '',
   approved,
   onChange,
   onApprovedChange,
@@ -135,6 +138,7 @@ export function PhotoTreatmentEditor({
           treatment={treatment}
           aspect={treatment.layout === 'field_note' ? 4 / 5 : 4 / 3}
           sizes="480px"
+          unoptimized
         />
         {treatment.annotation && (
           <span
@@ -159,7 +163,7 @@ export function PhotoTreatmentEditor({
         </p>
       )}
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid gap-2 sm:grid-cols-2">
         <label className="block">
           <span className="font-heading text-[9px] font-semibold uppercase tracking-label text-gray-500">
             Layout
@@ -190,6 +194,29 @@ export function PhotoTreatmentEditor({
           </select>
         </label>
       </div>
+
+      {treatment.layout === 'clean' && (
+        <div className="rounded-card bg-cream-dark/40 p-3">
+          <p className="text-[12px] text-gray-600">
+            This one goes out as the photograph, with nothing on it but the wordmark. That is
+            often right — a series where every frame shouts reads as a template.
+          </p>
+          <button
+            type="button"
+            onClick={() =>
+              onChange({
+                ...treatment,
+                layout: 'field_note',
+                label: 'Field Note',
+                headline: treatment.headline ?? fallbackHeadline,
+              })
+            }
+            className="mt-2 h-7 rounded-card border border-ink/20 px-2.5 font-heading text-[9px] font-semibold uppercase tracking-label text-ink"
+          >
+            Make it a note
+          </button>
+        </div>
+      )}
 
       {treatment.layout !== 'clean' && (
         <div className="space-y-2">

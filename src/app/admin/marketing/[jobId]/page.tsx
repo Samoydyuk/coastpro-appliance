@@ -199,6 +199,11 @@ export default async function MarketingJobPage({ params }: { params: { jobId: st
             ) : (
               <MarketingPhotos
                 jobId={job.job_id}
+                fallbackHeadline={(job.diagnosis ?? job.repair_performed ?? '')
+                  .split(/[.;]/)[0]
+                  .trim()
+                  .slice(0, 28)
+                  .toUpperCase()}
                 photos={photos.map((photo) => ({
                   id: photo.photo_id,
                   caption: photo.caption,

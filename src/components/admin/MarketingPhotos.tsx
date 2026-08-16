@@ -31,7 +31,16 @@ export interface PhotoChoice {
   approved?: boolean;
 }
 
-export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: PhotoChoice[] }) {
+export function MarketingPhotos({
+  jobId,
+  photos,
+  /** The fault in a couple of words, for promoting a plain photograph. */
+  fallbackHeadline = '',
+}: {
+  jobId: string;
+  photos: PhotoChoice[];
+  fallbackHeadline?: string;
+}) {
   const [editing, setEditing] = useState<PhotoChoice | null>(null);
   const router = useRouter();
   const [chosen, setChosen] = useState<string[]>(
@@ -390,6 +399,7 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
                     photoId={id}
                     src={`/api/admin/marketing/photo/${id}`}
                     treatment={treatment}
+                    fallbackHeadline={fallbackHeadline}
                     approved={Boolean(approvals[id])}
                     onChange={(next) => setTreatments({ ...treatments, [id]: next })}
                     onApprovedChange={(next) => setApprovals({ ...approvals, [id]: next })}

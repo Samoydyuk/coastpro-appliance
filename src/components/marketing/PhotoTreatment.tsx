@@ -26,6 +26,15 @@ interface Props {
   restrained?: boolean;
   /** What width this will actually be drawn at, so the right file is fetched. */
   sizes?: string;
+  /**
+   * Skip the optimiser.
+   *
+   * next/image fetches the source from the server, and a server-side fetch
+   * carries none of the browser's cookies — so a photograph behind the console
+   * sign-in comes back unauthorised and renders as a broken icon (owner
+   * report). The console passes this; the public site does not.
+   */
+  unoptimized?: boolean;
   className?: string;
 }
 
@@ -102,6 +111,7 @@ export function PhotoTreatment({
   priority = false,
   restrained = false,
   sizes = '(min-width: 1024px) 720px, 100vw',
+  unoptimized = false,
   className = '',
 }: Props) {
   const layout: LayoutName = treatment?.layout ?? 'clean';
@@ -126,6 +136,7 @@ export function PhotoTreatment({
         sizes={sizes}
         priority={priority}
         quality={84}
+        unoptimized={unoptimized}
         className="object-cover"
         style={{ objectPosition: objectPosition(treatment) }}
       />
