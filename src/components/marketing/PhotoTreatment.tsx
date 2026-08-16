@@ -123,7 +123,10 @@ export function PhotoTreatment({
   return (
     <figure
       className={`relative overflow-hidden rounded-card border border-primary-500/20 ${className}`}
-      style={{ aspectRatio: String(aspect) }}
+      // The type is sized against this frame rather than the window: `vw` in a
+      // 150px preview produces a headline three times the width of the picture,
+      // which is exactly what the console showed (owner report).
+      style={{ aspectRatio: String(aspect), containerType: 'inline-size' }}
     >
       {/* Through next/image: the same file comes back as AVIF or WebP at the
           width it is actually drawn, which on a phone is a quarter of the bytes
@@ -305,15 +308,18 @@ function FieldNote({ treatment }: { treatment: Treatment }) {
       )}
 
       <div className="pointer-events-none absolute inset-x-0 top-0 p-[6%]">
-        <div className="font-heading text-[9px] font-semibold uppercase tracking-[0.25em] text-white/85 sm:text-[11px]">
+        <div
+          className="font-heading font-semibold uppercase tracking-[0.25em] text-white/85"
+          style={{ fontSize: 'clamp(6px, 2.4cqw, 12px)' }}
+        >
           CoastPro.us
         </div>
         <div className="mt-1.5 h-px w-16" style={{ backgroundColor: tokens.color.orange }} />
 
         {treatment.label && (
           <div
-            className="mt-[6%] font-heading text-[10px] font-semibold uppercase tracking-[0.3em] sm:text-xs"
-            style={{ color: tokens.color.orange }}
+            className="mt-[6%] font-heading font-semibold uppercase tracking-[0.3em]"
+            style={{ color: tokens.color.orange, fontSize: 'clamp(6px, 2.6cqw, 13px)' }}
           >
             {treatment.label}
           </div>
@@ -322,7 +328,7 @@ function FieldNote({ treatment }: { treatment: Treatment }) {
         {treatment.main && (
           <div
             className="font-heading font-extrabold uppercase leading-[0.85] tracking-tight text-white"
-            style={{ fontSize: 'clamp(3rem, 17vw, 7rem)' }}
+            style={{ fontSize: 'clamp(1.6rem, 19cqw, 7rem)' }}
           >
             {treatment.main}
           </div>
@@ -336,8 +342,8 @@ function FieldNote({ treatment }: { treatment: Treatment }) {
             className="font-heading font-extrabold uppercase leading-[0.9] tracking-tight text-white"
             style={{
               fontSize: treatment.main
-                ? 'clamp(1.5rem, 8vw, 3.2rem)'
-                : 'clamp(2.2rem, 12vw, 4.6rem)',
+                ? 'clamp(0.9rem, 9cqw, 3.2rem)'
+                : 'clamp(1.1rem, 13cqw, 4.6rem)',
             }}
           >
             {treatment.headline}
@@ -350,11 +356,17 @@ function FieldNote({ treatment }: { treatment: Treatment }) {
           className="pointer-events-none absolute left-[8%] right-[8%]"
           style={{ top: `${labelY * 100 - 8}%` }}
         >
-          <div className="font-heading text-[11px] font-bold uppercase tracking-label text-white sm:text-sm">
+          <div
+            className="font-heading font-bold uppercase tracking-label text-white"
+            style={{ fontSize: 'clamp(7px, 3.2cqw, 15px)' }}
+          >
             {dot.text}
           </div>
           {treatment.secondary && (
-            <div className="text-[11px] leading-snug text-white/85 sm:text-[13px]">
+            <div
+              className="leading-snug text-white/85"
+              style={{ fontSize: 'clamp(6px, 2.8cqw, 13px)' }}
+            >
               {treatment.secondary}
             </div>
           )}
@@ -365,11 +377,13 @@ function FieldNote({ treatment }: { treatment: Treatment }) {
       <div className="pointer-events-none absolute inset-x-[6%] bottom-[5%]">
         <div className="h-px w-full" style={{ backgroundColor: tokens.color.orange }} />
         <div className="mt-2 flex items-baseline justify-between gap-3">
-          <span className="text-[11px] text-white/85 sm:text-[13px]">{treatment.footer}</span>
+          <span className="text-white/85" style={{ fontSize: 'clamp(6px, 2.6cqw, 13px)' }}>
+            {treatment.footer}
+          </span>
           {treatment.index && (
             <span
-              className="font-heading text-[11px] font-semibold tabular-nums sm:text-[13px]"
-              style={{ color: tokens.color.orange }}
+              className="font-heading font-semibold tabular-nums"
+              style={{ color: tokens.color.orange, fontSize: 'clamp(6px, 2.6cqw, 13px)' }}
             >
               {treatment.index.split(' / ')[0]}
             </span>
