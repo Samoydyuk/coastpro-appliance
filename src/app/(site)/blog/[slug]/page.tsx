@@ -150,7 +150,7 @@ export default async function ArticlePage({ params }: Props) {
             is still a line — the rail that used to be here moved the summary
             card out of the reading order, which is the one thing the drawing
             puts under the photograph. */}
-        <div className="mx-auto max-w-[46rem]">
+        <div className="mx-auto max-w-[58rem]">
           <Link
             href="/blog"
             className="inline-flex items-center gap-2 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-500 hover:text-ink"
@@ -172,7 +172,7 @@ export default async function ArticlePage({ params }: Props) {
             </div>
           </div>
 
-          <h1 className="headline mt-6 text-[1.7rem] sm:text-3xl md:text-4xl lg:text-[2.7rem]">{article.title}</h1>
+          <h1 className="headline mt-6 text-[1.7rem] sm:text-3xl md:text-4xl lg:text-[3.1rem]">{article.title}</h1>
           <p className="mt-3 text-[15px] text-gray-600">
             What our technician found — and why it matters.
           </p>
@@ -203,7 +203,7 @@ export default async function ArticlePage({ params }: Props) {
 
           {intro && (
             <div
-              className="mt-8 space-y-4 text-[15px] leading-relaxed text-gray-700 lg:text-base"
+              className="mt-8 space-y-4 text-[15px] leading-relaxed text-gray-700 lg:text-[17px] lg:leading-[1.75]"
               dangerouslySetInnerHTML={{ __html: renderMarkdown(intro) }}
             />
           )}
@@ -214,13 +214,13 @@ export default async function ArticlePage({ params }: Props) {
             {sections.map((section, index) => (
               <section key={section.heading} className="flex gap-4 sm:gap-6">
                 <div className="flex shrink-0 items-start gap-2 pt-0.5 sm:gap-3">
-                  <span className="font-heading text-lg font-extrabold tabular-nums text-brand">
+                  <span className="font-heading text-lg font-extrabold tabular-nums text-brand lg:text-2xl">
                     {String(index + 1).padStart(2, '0')}
                   </span>
                   <span className="mt-3 hidden h-px w-4 bg-brand/40 sm:block" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h2 className="font-heading text-base font-bold uppercase tracking-label text-ink">
+                  <h2 className="font-heading text-base font-bold uppercase tracking-label text-ink lg:text-lg">
                     {section.heading}
                   </h2>
 
@@ -273,7 +273,7 @@ export default async function ArticlePage({ params }: Props) {
                     </>
                   ) : (
                     <div
-                      className="mt-3 space-y-4 text-[15px] leading-relaxed text-gray-700 [&>ul]:list-disc [&>ul]:space-y-2 [&>ul]:pl-5 [&_strong]:font-semibold [&_strong]:text-ink"
+                      className="mt-3 space-y-4 text-[15px] leading-relaxed text-gray-700 lg:text-[17px] lg:leading-[1.75] [&>ul]:list-disc [&>ul]:space-y-2 [&>ul]:pl-5 [&_strong]:font-semibold [&_strong]:text-ink"
                       dangerouslySetInnerHTML={{ __html: renderMarkdown(section.body) }}
                     />
                   )}
