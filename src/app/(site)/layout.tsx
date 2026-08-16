@@ -139,6 +139,18 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
           gtag('config', 'G-W9Q0EMD7Q5');
+          // Second GA4 property, running alongside the first rather than
+          // replacing it. Cutting straight over would leave a seam in the
+          // reporting — the old property keeps its history but stops at the
+          // switch, and nothing joins the two halves. Both collect until the
+          // new one has been checked against the old for long enough to trust
+          // it; then this line stays and the one above goes.
+          //
+          // No extra gtag.js request: the library is already loaded, and each
+          // config call routes to its own property. Events fired through
+          // lib/gtag reach both automatically — window.gtag('event', …) goes
+          // to every configured property, so no call sites change.
+          gtag('config', 'G-YHP77HZFZ8');
           gtag('config', 'AW-17933522484');
           gtag('config', 'AW-17933522484/6jxqCNLHq4EcELSsr-dC', {
             'phone_conversion_number': '(949) 749-0006'

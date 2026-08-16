@@ -7,7 +7,17 @@
 
 import { track } from '@/lib/analytics';
 
+/**
+ * The GA4 properties this site reports to. Both are live: the second was added
+ * without retiring the first, so the changeover leaves no gap in the reporting.
+ *
+ * Nothing here routes events — `window.gtag('event', …)` delivers to every
+ * property configured in the layout, which is why the helpers below name no
+ * property at all. These are for reference and for anything that needs to
+ * address a property directly.
+ */
 export const GA_MEASUREMENT_ID = 'G-W9Q0EMD7Q5';
+export const GA_MEASUREMENT_ID_2 = 'G-YHP77HZFZ8';
 
 // Track custom events in Google Analytics
 export const trackEvent = (action: string, category: string, label?: string, value?: number) => {
