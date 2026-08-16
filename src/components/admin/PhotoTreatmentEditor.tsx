@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import type { LayoutName, PhotoType, Treatment } from '@/lib/marketing/treatment';
 import { tokens } from '@/lib/marketing/treatment-tokens';
+import { downloadSocialCard } from '@/lib/marketing/compose';
 
 /**
  * What the model proposed for one photograph, and the means to disagree with it.
@@ -276,6 +277,18 @@ export function PhotoTreatmentEditor({
           className="h-7 rounded-card border border-ink/20 px-2.5 font-heading text-[9px] font-semibold uppercase tracking-label text-ink"
         >
           Regenerate design
+        </button>
+        {/* The same composition as a file: for a post, where HTML over a
+            photograph is no use. Drawn from the same tokens, so the two cannot
+            drift into different designs. */}
+        <button
+          type="button"
+          onClick={() =>
+            downloadSocialCard(src, treatment, `coastpro-${photoId.slice(0, 8)}.jpg`).catch(() => {})
+          }
+          className="h-7 rounded-card border border-ink/20 px-2.5 font-heading text-[9px] font-semibold uppercase tracking-label text-ink"
+        >
+          Download 4:5
         </button>
         <button
           type="button"
