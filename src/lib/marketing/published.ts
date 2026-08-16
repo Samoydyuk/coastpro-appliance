@@ -3,6 +3,28 @@ import { db } from '@/lib/db';
 import type { Treatment } from '@/lib/marketing/treatment';
 
 /**
+ * A treatment, whatever shape the row is in.
+ *
+ * Rows written before the encoding was fixed hold the object as a JSON *string*
+ * inside the jsonb column, which reads back as a string and quietly renders as
+ * no treatment at all — the article looked untouched and the console showed
+ * empty fields (owner report). One line here rather than a migration nobody can
+ * run twice.
+ */
+function asTreatment(value: unknown): Treatment | null {
+  if (!value) return null;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === 'object' ? (parsed as Treatment) : null;
+    } catch {
+      return null;
+    }
+  }
+  return typeof value === 'object' ? (value as Treatment) : null;
+}
+
+/**
  * What the public site is allowed to read.
  *
  * Cached by tag rather than by path. Publishing changes two kinds of route at
@@ -188,7 +210,7 @@ export const listJournalPhotos = cache(
           alt: (row.alt_text as string) ?? null,
           rev: (row.edited_rev as string) ?? null,
           processedRev: (row.processed_rev as string) ?? null,
-          treatment: (row.treatment as Treatment) ?? null,
+          treatment: asTreatment(row.treatment),
           slug: String(row.slug),
           title: String(row.title ?? ''),
         }));
@@ -243,7 +265,7 @@ export async function readPublishedArticles(): Promise<PublishedArticle[]> {
               rev: lead.rev ?? null,
               category: lead.category ?? null,
               processedRev: lead.processedRev ?? null,
-              treatment: lead.treatment ?? null,
+              treatment: asTreatment(lead.treatment),
             }]
           : []
       );
@@ -292,7 +314,7 @@ export const getPublishedArticle = cache('article', async function getPublishedA
         rev: photo.edited_rev,
         category: photo.category,
         processedRev: photo.processed_rev ?? null,
-        treatment: photo.treatment ?? null,
+        treatment: asTreatment(photo.treatment),
       }))
     );
   } catch {

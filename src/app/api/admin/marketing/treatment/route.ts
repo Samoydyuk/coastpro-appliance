@@ -66,7 +66,7 @@ export async function PATCH(request: Request) {
       // possible for every picture (§28).
       await sql`
         update marketing_photo set
-          treatment     = ${entry.treatment ? JSON.stringify(entry.treatment) : null}::jsonb,
+          treatment     = ${entry.treatment ? sql.json(entry.treatment as never) : null},
           treatment_rev = ${entry.treatment ? rev : null},
           approved_at   = ${entry.approved ? new Date() : null},
           approved_by   = ${entry.approved ? 'admin' : null}

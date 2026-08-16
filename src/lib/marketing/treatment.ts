@@ -148,17 +148,28 @@ const analysisTool = {
  * is a symptom, not a verdict, and a caption that names a failed part when the
  * technician only wrote down a code is a fabrication published as fact.
  */
-function context(job: {
-  manufacturer: string | null;
-  appliance_type: string | null;
-  model: string | null;
-  error_codes: string[];
-  diagnosis: string | null;
-  repair_performed: string | null;
-  replaced_parts: Array<{ description: string; partNumber: string | null }>;
-  city: string | null;
-  state: string | null;
-}): string {
+function context(
+  job: {
+    manufacturer: string | null;
+    appliance_type: string | null;
+    model: string | null;
+    error_codes: string[];
+    diagnosis: string | null;
+    repair_performed: string | null;
+    replaced_parts: Array<{ description: string; partNumber: string | null }>;
+    city: string | null;
+    state: string | null;
+  },
+  /**
+   * The piece these photographs will appear in.
+   *
+   * Given because a caption belongs to the article it sits in: the words on a
+   * photograph should be the words the reader has just read, in the same terms,
+   * rather than a second description of the same repair invented separately
+   * (owner's instruction).
+   */
+  article: { title: string | null; body: string | null } | null
+): string {
   const known: string[] = [];
   const appliance = [job.manufacturer, job.appliance_type].filter(Boolean).join(' ');
   if (appliance) known.push(`Appliance: ${appliance}`);
@@ -177,6 +188,21 @@ function context(job: {
     '## What is known about this job',
     ...(known.length ? known.map((line) => `- ${line}`) : ['- Nothing beyond the picture itself.']),
     '',
+    ...(article?.body
+      ? [
+          '## The article these photographs illustrate',
+          article.title ? `Title: ${article.title}` : '',
+          '',
+          // Trimmed: the opening carries the symptom and the finding, which is
+          // everything a caption needs. A whole piece would crowd out the job
+          // facts above it.
+          article.body.slice(0, 1800),
+          '',
+          'Use its wording. A photograph in this piece should be captioned in the same terms the',
+          'reader has just met — the same name for the fault, the same name for the part.',
+          '',
+        ]
+      : []),
     '## Rules',
     '1. Describe only what is in the frame. If you cannot make out what a photograph shows, say',
     '   so with a low confidence rather than guessing — it will simply be published clean.',
@@ -420,7 +446,12 @@ export async function analysePhotos(
   if (chosen.length === 0) return { analysed: 0 };
 
   const { fetchMarketingPhoto } = await import('@/lib/marketing/client');
-  const prompt = context(detail.job);
+  // The article, if one has been written. Photographs are usually dressed
+  // straight after it is, so in practice there is one.
+  const piece = detail.content.find((row) => row.channel === 'article') ?? null;
+  const prompt = context(detail.job, piece
+    ? { title: piece.title, body: piece.edited_body ?? piece.generated_body }
+    : null);
   const footer = footerFor(detail.job);
 
   const results: Array<{ photoId: string; treatment: Treatment; altText: string | null } | null> = [];
@@ -458,7 +489,7 @@ export async function analysePhotos(
     usable.map((entry, index) =>
       sql`
         update marketing_photo set
-          treatment     = ${JSON.stringify(withRhythm[index])}::jsonb,
+          treatment     = ${sql.json(withRhythm[index] as never)},
           treatment_rev = ${rev},
           alt_text      = coalesce(${entry.altText}, alt_text),
           approved_at   = ${autoApprove ? new Date() : null},

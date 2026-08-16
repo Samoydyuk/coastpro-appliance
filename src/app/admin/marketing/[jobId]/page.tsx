@@ -212,7 +212,20 @@ export default async function MarketingJobPage({ params }: { params: { jobId: st
                   altText: photo.alt_text,
                   editRecipe: (photo as { edit_recipe?: EditRecipe | null }).edit_recipe ?? null,
                   editedRev: (photo as { edited_rev?: string | null }).edited_rev ?? null,
-                  treatment: (photo as { treatment?: Treatment | null }).treatment ?? null,
+                  treatment: ((): Treatment | null => {
+                    // Same caution as the public read: a row written before the
+                    // encoding was fixed holds a JSON string here.
+                    const raw = (photo as { treatment?: unknown }).treatment;
+                    if (!raw) return null;
+                    if (typeof raw === 'string') {
+                      try {
+                        return JSON.parse(raw) as Treatment;
+                      } catch {
+                        return null;
+                      }
+                    }
+                    return raw as Treatment;
+                  })(),
                   approved: Boolean((photo as { approved_at?: unknown }).approved_at),
                 }))}
               />
