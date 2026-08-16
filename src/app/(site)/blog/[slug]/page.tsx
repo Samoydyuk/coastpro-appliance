@@ -175,9 +175,6 @@ export default async function ArticlePage({ params }: Props) {
           </div>
 
           <h1 className="headline mt-6 text-[1.7rem] sm:text-3xl md:text-4xl lg:text-[3.1rem]">{article.title}</h1>
-          <p className="mt-3 text-[15px] text-gray-600">
-            What our technician found — and why it matters.
-          </p>
 
           {article.errorCodes.length > 0 && (
             <p className="mt-4 font-mono text-xs text-primary-600">
