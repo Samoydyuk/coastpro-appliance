@@ -121,7 +121,7 @@ export function PhotoTreatmentEditor({
   };
 
   return (
-    <div className="space-y-3 rounded-card border border-primary-500/20 p-3">
+    <div className="grid gap-4 rounded-card border border-primary-500/20 p-3 lg:grid-cols-[minmax(0,1fr)_18rem]">
       {/* The published article's own component, not a sketch of it. A preview
           that is merely similar is how something gets approved and then looks
           different in public. The dot is draggable on top of it. */}
@@ -156,6 +156,7 @@ export function PhotoTreatmentEditor({
         )}
       </div>
 
+      <div className="space-y-3">
       {low && (
         <p className="text-[11px] text-gray-500">
           The model was unsure what this shows ({Math.round(treatment.confidence * 100)}%), so it
@@ -220,11 +221,12 @@ export function PhotoTreatmentEditor({
 
       {treatment.layout !== 'clean' && (
         <div className="space-y-2">
-          {field('Label', treatment.label, 'label')}
-          {field('Main', treatment.main, 'main')}
+          {/* Only what this layout draws. A Detail has no code to shout and no
+              label above it, so asking for both is asking for nothing. */}
+          {treatment.layout === 'field_note' && field('Label', treatment.label, 'label')}
+          {treatment.layout === 'field_note' && field('Code, if one is visible', treatment.main, 'main')}
           {field('Headline', treatment.headline, 'headline')}
-          {field('Secondary', treatment.secondary, 'secondary')}
-          {field('Location line', treatment.footer, 'footer')}
+          {field('Second line', treatment.secondary, 'secondary')}
 
           <label className="block">
             <span className="font-heading text-[9px] font-semibold uppercase tracking-label text-gray-500">
@@ -248,6 +250,8 @@ export function PhotoTreatmentEditor({
               className="mt-0.5 w-full rounded-card border border-primary-500/20 bg-cream px-2 py-1 text-[12px] text-ink focus:border-ink focus:outline-none"
             />
           </label>
+
+          {field('Location line', treatment.footer, 'footer')}
 
           <label className="block">
             <span className="font-heading text-[9px] font-semibold uppercase tracking-label text-gray-500">
@@ -306,6 +310,7 @@ export function PhotoTreatmentEditor({
       </label>
 
       <p className="text-[10px] text-gray-400">{photoId.slice(0, 8)} · {treatment.templateVersion}</p>
+      </div>
     </div>
   );
 }

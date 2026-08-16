@@ -63,6 +63,8 @@ export function MarketingPhotos({
   const [dressing, setDressing] = useState(false);
   const [dressNote, setDressNote] = useState<string | null>(null);
   const [correcting, setCorrecting] = useState(false);
+  /** Which photograph the editor is showing. */
+  const [current, setCurrent] = useState<string | null>(null);
 
   /**
    * Bring the chosen photographs to the house tone.
@@ -386,28 +388,61 @@ export function MarketingPhotos({
 
           {dressNote && <p className="text-xs text-gray-500">{dressNote}</p>}
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          {/* One at a time. A grid of five identical forms is a database
+              screen; what somebody wants here is to look at a picture and
+              change the two things that are wrong with it. */}
+          <div className="flex gap-2 overflow-x-auto pb-1">
             {chosen.map((id, index) => {
-              const treatment = treatments[id];
-              if (!treatment) return null;
+              const isCurrent = (current ?? chosen[0]) === id;
               return (
-                <div key={id} className="space-y-1">
-                  <div className="font-heading text-[10px] font-semibold uppercase tracking-label text-gray-500">
-                    {String(index + 1).padStart(2, '0')} / {String(chosen.length).padStart(2, '0')}
-                  </div>
-                  <PhotoTreatmentEditor
-                    photoId={id}
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setCurrent(id)}
+                  className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-card border transition-opacity ${
+                    isCurrent ? 'border-ink' : 'border-primary-500/20 opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
                     src={`/api/admin/marketing/photo/${id}`}
-                    treatment={treatment}
-                    fallbackHeadline={fallbackHeadline}
-                    approved={Boolean(approvals[id])}
-                    onChange={(next) => setTreatments({ ...treatments, [id]: next })}
-                    onApprovedChange={(next) => setApprovals({ ...approvals, [id]: next })}
+                    alt=""
+                    className="h-full w-full object-cover"
                   />
-                </div>
+                  <span className="absolute left-1 top-1 rounded bg-ink/80 px-1 font-heading text-[8px] font-semibold text-cream">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  {approvals[id] && treatments[id] && (
+                    <span className="absolute bottom-1 right-1 h-2 w-2 rounded-full bg-brand" />
+                  )}
+                </button>
               );
             })}
           </div>
+
+          {(() => {
+            const id = current ?? chosen[0];
+            const treatment = id ? treatments[id] : null;
+            if (!id || !treatment) {
+              return (
+                <p className="text-xs text-gray-500">
+                  Nothing prepared for this one yet — press Prepare again.
+                </p>
+              );
+            }
+            return (
+              <PhotoTreatmentEditor
+                key={id}
+                photoId={id}
+                src={`/api/admin/marketing/photo/${id}`}
+                treatment={treatment}
+                fallbackHeadline={fallbackHeadline}
+                approved={Boolean(approvals[id])}
+                onChange={(next) => setTreatments({ ...treatments, [id]: next })}
+                onApprovedChange={(next) => setApprovals({ ...approvals, [id]: next })}
+              />
+            );
+          })()}
         </div>
       )}
 
