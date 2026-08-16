@@ -23,10 +23,16 @@ interface Props {
   src: string;
   treatment: Treatment;
   onChange: (treatment: Treatment) => void;
-  onClose: () => void;
+  /** Handed the final arrangement, so closing is what saves it. */
+  onClose: (final?: Treatment) => void;
 }
 
 export function PhotoStudio({ src, treatment, onChange, onClose }: Props) {
+  // What is on screen right now, for the moment of closing: reading the prop
+  // there hands back whatever React rendered last rather than the last thing
+  // dragged.
+  const latest = useRef(treatment);
+  latest.current = treatment;
   const frameRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<Handle | null>(null);
   const [hint, setHint] = useState<string | null>('Drag the words, the label or the dot.');
@@ -78,7 +84,7 @@ export function PhotoStudio({ src, treatment, onChange, onClose }: Props) {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') onClose(latest.current);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -124,10 +130,10 @@ export function PhotoStudio({ src, treatment, onChange, onClose }: Props) {
         </div>
         <button
           type="button"
-          onClick={onClose}
+          onClick={() => onClose(latest.current)}
           className="h-8 rounded-card bg-cream px-4 font-heading text-[10px] font-semibold uppercase tracking-label text-ink"
         >
-          Done
+          Save &amp; close
         </button>
       </div>
 
@@ -154,7 +160,7 @@ export function PhotoStudio({ src, treatment, onChange, onClose }: Props) {
       </div>
 
       <p className="mt-3 text-center text-[11px] text-cream/50">
-        Moving things here never changes the photograph — only where the words sit.
+        Moving things here never changes the photograph — only where the words sit. Closing saves.
       </p>
     </div>
   );

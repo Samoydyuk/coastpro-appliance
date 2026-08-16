@@ -40,6 +40,8 @@ interface Props {
   fallbackHeadline?: string;
   approved: boolean;
   onChange: (treatment: Treatment) => void;
+  /** Persist this one photograph now — what closing the studio means. */
+  onSave?: (treatment: Treatment) => void | Promise<void>;
   onApprovedChange: (approved: boolean) => void;
 }
 
@@ -50,6 +52,7 @@ export function PhotoTreatmentEditor({
   fallbackHeadline = '',
   approved,
   onChange,
+  onSave,
   onApprovedChange,
 }: Props) {
   const frameRef = useRef<HTMLDivElement>(null);
@@ -170,7 +173,10 @@ export function PhotoTreatmentEditor({
           src={src}
           treatment={treatment}
           onChange={onChange}
-          onClose={() => setStudio(false)}
+          onClose={async (final) => {
+            setStudio(false);
+            if (final && onSave) await onSave(final);
+          }}
         />
       )}
 

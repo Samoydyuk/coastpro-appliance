@@ -160,6 +160,32 @@ export function MarketingPhotos({
     }
   };
 
+  /**
+   * One photograph, saved on the spot.
+   *
+   * The studio is a place people move things and then close — expecting, quite
+   * reasonably, that closing keeps them. It kept them only in memory until the
+   * approve button was pressed, so anything done there and not followed by that
+   * press was lost (owner report).
+   */
+  const saveOne = async (photoId: string, next: Treatment) => {
+    setTreatments((current) => ({ ...current, [photoId]: next }));
+    setBusy(true);
+    try {
+      await fetch('/api/admin/marketing/treatment', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId,
+          photos: [{ photoId, treatment: next, approved: Boolean(approvals[photoId]) }],
+        }),
+      });
+      setDressNote('Saved.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   /** Save the treatments and which of them were agreed to. */
   const saveTreatments = async (approvedOverride?: Record<string, boolean>) => {
     setBusy(true);
@@ -439,6 +465,7 @@ export function MarketingPhotos({
                 fallbackHeadline={fallbackHeadline}
                 approved={Boolean(approvals[id])}
                 onChange={(next) => setTreatments({ ...treatments, [id]: next })}
+                onSave={(next) => saveOne(id, next)}
                 onApprovedChange={(next) => setApprovals({ ...approvals, [id]: next })}
               />
             );
