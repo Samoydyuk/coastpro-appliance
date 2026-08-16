@@ -52,6 +52,8 @@ export interface PublishedArticle {
     alt: string | null;
     rev: string | null;
     category: string | null;
+    /** Versions the URL when the corrected copy is remade. */
+    processedRev: string | null;
     /** How it is dressed. Null, or unapproved, means the photograph as it is. */
     treatment: Treatment | null;
   }>;
@@ -160,6 +162,7 @@ export interface JournalPhoto {
   id: string;
   alt: string | null;
   rev: string | null;
+  processedRev: string | null;
   treatment: Treatment | null;
   slug: string;
   title: string;
@@ -172,7 +175,7 @@ export const listJournalPhotos = cache(
       if (!sql) return [];
       try {
         const rows = (await sql`
-          select p.photo_id, p.alt_text, p.edited_rev, c.slug, c.title,
+          select p.photo_id, p.alt_text, p.edited_rev, p.processed_rev, c.slug, c.title,
                  case when p.approved_at is not null then p.treatment else null end as treatment
           from marketing_photo p
           join marketing_content c on c.job_id = p.job_id
@@ -184,6 +187,7 @@ export const listJournalPhotos = cache(
           id: String(row.photo_id),
           alt: (row.alt_text as string) ?? null,
           rev: (row.edited_rev as string) ?? null,
+          processedRev: (row.processed_rev as string) ?? null,
           treatment: (row.treatment as Treatment) ?? null,
           slug: String(row.slug),
           title: String(row.title ?? ''),
@@ -212,6 +216,7 @@ export async function readPublishedArticles(): Promise<PublishedArticle[]> {
         (
           select json_build_object('id', p.photo_id, 'alt', p.alt_text, 'rev', p.edited_rev,
                                    'category', p.category,
+                                   'processedRev', p.processed_rev,
                                    'treatment',
                                    case when p.approved_at is not null then p.treatment else null end)
           from marketing_photo p
@@ -227,7 +232,7 @@ export async function readPublishedArticles(): Promise<PublishedArticle[]> {
     return rows.map((row) => {
       const lead = row.lead_photo as {
         id?: string; alt?: string | null; rev?: string | null;
-        category?: string | null; treatment?: Treatment | null;
+        category?: string | null; processedRev?: string | null; treatment?: Treatment | null;
       } | null;
       return shape(
         row,
@@ -237,6 +242,7 @@ export async function readPublishedArticles(): Promise<PublishedArticle[]> {
               alt: lead.alt ?? null,
               rev: lead.rev ?? null,
               category: lead.category ?? null,
+              processedRev: lead.processedRev ?? null,
               treatment: lead.treatment ?? null,
             }]
           : []
@@ -268,14 +274,14 @@ export const getPublishedArticle = cache('article', async function getPublishedA
     const photos = (await sql`
       -- Treatment only counts once somebody has approved it: a suggestion the
       -- console has not shown anyone must never reach a reader (§29).
-      select photo_id, alt_text, edited_rev, category,
+      select photo_id, alt_text, edited_rev, category, processed_rev,
              case when approved_at is not null then treatment else null end as treatment
       from marketing_photo
       where job_id = ${String(row.job_id)} and selected
       order by sort_order, photo_id
     `) as unknown as Array<{
       photo_id: string; alt_text: string | null; edited_rev: string | null;
-      category: string | null; treatment: Treatment | null;
+      category: string | null; processed_rev: string | null; treatment: Treatment | null;
     }>;
 
     return shape(
@@ -285,6 +291,7 @@ export const getPublishedArticle = cache('article', async function getPublishedA
         alt: photo.alt_text,
         rev: photo.edited_rev,
         category: photo.category,
+        processedRev: photo.processed_rev ?? null,
         treatment: photo.treatment ?? null,
       }))
     );
@@ -304,15 +311,19 @@ export async function editedPhoto(photoId: string): Promise<Buffer | null> {
   const sql = db();
   if (!sql) return null;
   try {
+    // Corrected first, then edited, then nothing — the corrected copy is made
+    // from the original and is what the house tone means, while an edit is a
+    // crop or a mark somebody drew before any of this existed.
     const [row] = (await sql`
-      select p.edited_image from marketing_photo p
+      select coalesce(p.processed_image, p.edited_image) as bytes
+      from marketing_photo p
       join marketing_content c on c.job_id = p.job_id
       where p.photo_id = ${photoId} and p.selected
-        and p.edited_image is not null
+        and coalesce(p.processed_image, p.edited_image) is not null
         and c.status = 'published' and c.channel = 'article'
       limit 1
-    `) as unknown as Array<{ edited_image: Buffer | null }>;
-    return row?.edited_image ?? null;
+    `) as unknown as Array<{ bytes: Buffer | null }>;
+    return row?.bytes ?? null;
   } catch {
     return null;
   }
@@ -350,8 +361,10 @@ export const photoIsPublic = cache('photo', async function photoIsPublic(
  * because an edit changes this URL. Every place that renders a repair photo
  * goes through here so none of them can forget.
  */
-export function photoUrl(photo: { id: string; rev?: string | null }): string {
-  return photo.rev
-    ? `/api/repair-photo/${photo.id}?v=${photo.rev}`
-    : `/api/repair-photo/${photo.id}`;
+export function photoUrl(photo: { id: string; rev?: string | null; processedRev?: string | null }): string {
+  // Whichever copy is newest gives the address its version. Without this the
+  // immutable cache would keep serving the picture as it was before it was
+  // corrected.
+  const rev = photo.processedRev ?? photo.rev;
+  return rev ? `/api/repair-photo/${photo.id}?v=${rev}` : `/api/repair-photo/${photo.id}`;
 }

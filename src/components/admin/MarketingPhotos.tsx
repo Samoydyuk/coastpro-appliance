@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { PhotoEditor, type EditRecipe } from '@/components/admin/PhotoEditor';
 import { PhotoTreatmentEditor } from '@/components/admin/PhotoTreatmentEditor';
 import type { Treatment } from '@/lib/marketing/treatment';
+import { correctToDataUrl, HOUSE_CORRECTION } from '@/lib/marketing/correct';
 
 /**
  * Choosing which photos go out with a piece, and in what order.
@@ -54,6 +55,51 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
   );
   const [dressing, setDressing] = useState(false);
   const [dressNote, setDressNote] = useState<string | null>(null);
+  const [correcting, setCorrecting] = useState(false);
+
+  /**
+   * Bring the chosen photographs to the house tone.
+   *
+   * Done here rather than on a server because there is no raster library on
+   * the server and there does not need to be — the browser has a canvas, and
+   * the original is never what gets written to.
+   */
+  const correctAll = async () => {
+    setCorrecting(true);
+    setDressNote(null);
+    let done = 0;
+    try {
+      for (const id of chosen) {
+        const image = new Image();
+        image.crossOrigin = 'anonymous';
+        image.src = `/api/admin/marketing/photo/${id}?raw=1`;
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise<void>((resolve, reject) => {
+          image.onload = () => resolve();
+          image.onerror = () => reject(new Error('could not load'));
+        }).catch(() => undefined);
+        if (!image.naturalWidth) continue;
+
+        // eslint-disable-next-line no-await-in-loop
+        const dataUrl = await correctToDataUrl(image, HOUSE_CORRECTION);
+        // eslint-disable-next-line no-await-in-loop
+        const response = await fetch('/api/admin/marketing/processed', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId, photoId: id, image: dataUrl }),
+        });
+        if (response.ok) done += 1;
+      }
+      setDressNote(
+        done > 0
+          ? `Corrected ${done} photograph${done === 1 ? '' : 's'}. The originals are untouched.`
+          : 'Nothing could be corrected — the photographs would not load.'
+      );
+      router.refresh();
+    } finally {
+      setCorrecting(false);
+    }
+  };
 
   /** Ask the model to look at the chosen photographs and propose a treatment. */
   const dress = async () => {
@@ -321,6 +367,14 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
               className="h-8 rounded-card border border-ink/20 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-ink disabled:opacity-40"
             >
               {dressing ? 'Looking…' : 'Dress the series'}
+            </button>
+            <button
+              type="button"
+              onClick={correctAll}
+              disabled={correcting}
+              className="h-8 rounded-card border border-ink/20 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-ink disabled:opacity-40"
+            >
+              {correcting ? 'Correcting…' : 'Correct the tone'}
             </button>
             <button
               type="button"

@@ -78,6 +78,43 @@ export function PhotoTreatmentEditor({
 
   const low = treatment.confidence < tokens.confidenceFloor;
 
+  /**
+   * A different arrangement of the same facts.
+   *
+   * Never the photograph and never the words — this moves where they sit and
+   * how loud they are, which is the whole of what "regenerate design" should
+   * mean (§31). Somebody who dislikes a layout presses it instead of arguing
+   * with a model.
+   */
+  const regenerate = () => {
+    const order: Treatment['overlay'][] = ['bottom_left', 'bottom_right', 'top_left', 'top_right'];
+    const nextCorner = order[(order.indexOf(treatment.overlay) + 1) % order.length];
+
+    // The hierarchy steps down and around: a full note becomes a line, a line
+    // becomes a note again if there is something worth shouting.
+    const nextLayout: LayoutName =
+      treatment.layout === 'field_note'
+        ? 'detail'
+        : treatment.main
+          ? 'field_note'
+          : treatment.layout;
+
+    onChange({
+      ...treatment,
+      overlay: nextCorner,
+      layout: nextLayout,
+      // Back onto the middle of whatever the picture is of, which is where an
+      // annotation belongs before anybody drags it.
+      annotation: treatment.annotation && treatment.subject
+        ? {
+            ...treatment.annotation,
+            x: treatment.subject.x + treatment.subject.w / 2,
+            y: treatment.subject.y + treatment.subject.h / 2,
+          }
+        : treatment.annotation,
+    });
+  };
+
   return (
     <div className="space-y-3 rounded-card border border-primary-500/20 p-3">
       {/* The picture with the words on it, at the size it will be read. */}
@@ -231,6 +268,23 @@ export function PhotoTreatmentEditor({
           </label>
         </div>
       )}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={regenerate}
+          className="h-7 rounded-card border border-ink/20 px-2.5 font-heading text-[9px] font-semibold uppercase tracking-label text-ink"
+        >
+          Regenerate design
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange({ ...treatment, layout: 'clean', label: null, main: null, headline: null, secondary: null, annotation: null })}
+          className="h-7 rounded-card border border-ink/20 px-2.5 font-heading text-[9px] font-semibold uppercase tracking-label text-gray-500"
+        >
+          Use original
+        </button>
+      </div>
 
       <label className="flex items-center gap-2 text-[12px] text-ink">
         <input

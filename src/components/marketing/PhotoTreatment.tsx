@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import type { LayoutName, OverlayCorner, Treatment } from '@/lib/marketing/treatment';
 import { tokens } from '@/lib/marketing/treatment-tokens';
 
@@ -23,6 +24,8 @@ interface Props {
   priority?: boolean;
   /** The hero already has the article's headline above it (§26). */
   restrained?: boolean;
+  /** What width this will actually be drawn at, so the right file is fetched. */
+  sizes?: string;
   className?: string;
 }
 
@@ -98,6 +101,7 @@ export function PhotoTreatment({
   aspect = 4 / 3,
   priority = false,
   restrained = false,
+  sizes = '(min-width: 1024px) 720px, 100vw',
   className = '',
 }: Props) {
   const layout: LayoutName = treatment?.layout ?? 'clean';
@@ -111,12 +115,18 @@ export function PhotoTreatment({
       className={`relative overflow-hidden rounded-card border border-primary-500/20 ${className}`}
       style={{ aspectRatio: String(aspect) }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      {/* Through next/image: the same file comes back as AVIF or WebP at the
+          width it is actually drawn, which on a phone is a quarter of the bytes
+          for the same picture. The proxy is same-origin, so no host has to be
+          allowed for it. */}
+      <Image
         src={src}
         alt={alt}
-        loading={priority ? 'eager' : 'lazy'}
-        className="h-full w-full object-cover"
+        fill
+        sizes={sizes}
+        priority={priority}
+        quality={84}
+        className="object-cover"
         style={{ objectPosition: objectPosition(treatment) }}
       />
 
