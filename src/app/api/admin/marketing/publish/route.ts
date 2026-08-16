@@ -70,6 +70,26 @@ export async function POST(request: NextRequest) {
           status = 'published', approved_at = coalesce(approved_at, now()), updated_at = now()
         where id = ${piece.id}
       `;
+
+      // Dress the photographs on the way out, if nobody has yet.
+      //
+      // The owner's instruction is that this happens by itself: a piece should
+      // not go up as a set of raw snapshots because somebody forgot to press a
+      // button. Anything already dressed — by hand or by an earlier run — is
+      // left exactly as it is, and a failure here never blocks a publication
+      // that is otherwise ready.
+      try {
+        const [undressed] = (await sql`
+          select count(*)::int as n from marketing_photo
+          where job_id = ${body.jobId} and selected and treatment is null
+        `) as unknown as { n: number }[];
+        if ((undressed?.n ?? 0) > 0) {
+          const { analysePhotos } = await import('@/lib/marketing/treatment');
+          await analysePhotos(body.jobId, true);
+        }
+      } catch (error) {
+        console.warn('[publish] photo treatment skipped:', (error as Error).message);
+      }
       // One open publication at a time: re-publishing after an unpublish opens
       // a new row rather than reviving the old one, so the history reads as a
       // sequence of periods it was live.

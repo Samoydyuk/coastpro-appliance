@@ -11,8 +11,10 @@ import { TREATMENT_VERSION, tokens } from '@/lib/marketing/treatment-tokens';
  * "DRAINAGE FAULT" because that is what the code means, and "FAILED DRAIN PUMP"
  * only if a technician wrote that down.
  *
- * Everything here is a recommendation. Nothing reaches a reader until somebody
- * has looked at it and said yes.
+ * Prepared automatically, corrected by hand. A piece must not go up as a set of
+ * raw snapshots because nobody pressed a button — so publishing dresses
+ * anything undressed — and everything it decides can be overruled in the
+ * console afterwards.
  */
 
 export type PhotoType =
@@ -381,7 +383,19 @@ function footerFor(job: {
  * published. Alt text is refreshed at the same time — it comes from the same
  * look at the same picture, so having two passes disagree would be silly.
  */
-export async function analysePhotos(jobId: string): Promise<{ analysed: number }> {
+export async function analysePhotos(
+  jobId: string,
+  /**
+   * Applied straight away rather than held for review.
+   *
+   * The owner's instruction: photographs are prepared automatically and
+   * corrected afterwards if they are wrong, rather than waiting on somebody to
+   * agree with each one. What makes that safe is upstream — the model may only
+   * use the job's own facts, and anything it is unsure of becomes a plain
+   * photograph rather than a confident caption.
+   */
+  autoApprove = false
+): Promise<{ analysed: number }> {
   const detail = await getMarketingJob(jobId);
   if (!detail) throw new TreatmentError('That job is not in the marketing table.');
 
@@ -432,8 +446,8 @@ export async function analysePhotos(jobId: string): Promise<{ analysed: number }
           treatment     = ${JSON.stringify(withRhythm[index])}::jsonb,
           treatment_rev = ${rev},
           alt_text      = coalesce(${entry.altText}, alt_text),
-          approved_at   = null,
-          approved_by   = null
+          approved_at   = ${autoApprove ? new Date() : null},
+          approved_by   = ${autoApprove ? 'auto' : null}
         where job_id = ${jobId} and photo_id = ${entry.photoId}
       `
     )

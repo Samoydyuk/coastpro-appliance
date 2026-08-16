@@ -134,7 +134,7 @@ export function PhotoTreatment({
           that one signs itself, top left, with a rule under it. */}
       {effective !== 'field_note' && (
         <>
-          <span className="absolute right-3 top-3 font-heading text-[9px] font-semibold uppercase tracking-label text-white/70 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
+          <span className="absolute right-3 top-3 font-heading text-[9px] font-semibold uppercase tracking-[0.25em] text-white/75 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
             CoastPro.us
           </span>
           {treatment?.index && (
@@ -177,7 +177,7 @@ export function PhotoTreatment({
           )}
 
           <div
-            className={`absolute flex max-w-[78%] flex-col gap-1 p-4 sm:p-5 ${CORNER[corner]}`}
+            className={`absolute flex w-[64%] flex-col gap-1 p-4 sm:p-5 ${CORNER[corner]}`}
           >
             {treatment.label && (
               <span
@@ -209,13 +209,26 @@ export function PhotoTreatment({
               </span>
             )}
 
+            {/* The foot is the family resemblance: the same hairline and the
+                same two facts as the full note, at a whisper. Without it a
+                Detail and a Field Note look like two designs. */}
             {treatment.footer && (
-              <span className="mt-1 flex items-center gap-2 text-[10px] uppercase tracking-label text-white/60 sm:text-[11px]">
+              <span className="mt-1.5 flex w-full flex-col gap-1">
                 <span
-                  className="block h-px w-4"
-                  style={{ backgroundColor: tokens.color.orange }}
+                  className="block h-px w-full"
+                  style={{ backgroundColor: tokens.color.orange, opacity: 0.9 }}
                 />
-                {treatment.footer}
+                <span className="flex items-baseline justify-between gap-3 text-[10px] text-white/75 sm:text-[11px]">
+                  {treatment.footer}
+                  {treatment.index && (
+                    <span
+                      className="font-heading font-semibold tabular-nums"
+                      style={{ color: tokens.color.orange }}
+                    >
+                      {treatment.index.split(' / ')[0]}
+                    </span>
+                  )}
+                </span>
               </span>
             )}
           </div>
