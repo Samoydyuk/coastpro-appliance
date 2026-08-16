@@ -91,8 +91,8 @@ export default async function ArticlePage({ params }: Props) {
    */
   const issueCard = (article.diagnosis || article.repairPerformed) ? (
       
-      <div className="flex flex-col gap-4 rounded-card border border-primary-500/20 p-5 sm:flex-row sm:gap-6 lg:flex-col lg:gap-4">
-        <div className="flex shrink-0 flex-row items-center gap-3 sm:w-28 sm:flex-col sm:items-center sm:text-center lg:w-auto lg:flex-row lg:items-center lg:text-left">
+      <div className="flex h-full flex-col gap-4 rounded-card border border-primary-500/20 p-5 sm:flex-row sm:gap-6 lg:flex-col lg:gap-5">
+        <div className="flex shrink-0 flex-row items-center gap-3 sm:w-28 sm:flex-col sm:items-center sm:text-center lg:w-auto lg:flex-row lg:items-center lg:gap-3 lg:text-left">
           <span className="icon-disc h-10 w-10 border-ink bg-ink text-cream">
             <FileText className="h-4 w-4" strokeWidth={1.5} />
           </span>
@@ -183,23 +183,27 @@ export default async function ArticlePage({ params }: Props) {
             </p>
           )}
 
-          {lead && (
-            <div className="mt-8">
-              {/* A Field Note is a page, and it needs the height of one: the
-                  type block lives above the photograph rather than on it, so
-                  the frame goes portrait when there is one and stays wide when
-                  there is not. */}
-              <PhotoTreatment
-                src={photoUrl(lead)}
-                alt={lead.alt || `${subject} repair`}
-                treatment={lead.treatment}
-                aspect={lead.treatment?.layout === 'field_note' ? 4 / 5 : 16 / 9}
-                priority
-              />
+          {/* The photograph and the three lines that summarise the job, side by
+              side where there is room for both. Stacked on a phone, in the
+              order the drawing has them. This is what the width is for — the
+              summary belongs beside the picture, not two screens below it. */}
+          {(lead || issueCard) && (
+            <div className="mt-8 grid gap-6 lg:grid-cols-[1.35fr_1fr] lg:items-start lg:gap-8">
+              {lead && (
+                <PhotoTreatment
+                  src={photoUrl(lead)}
+                  alt={lead.alt || `${subject} repair`}
+                  treatment={lead.treatment}
+                  // A Field Note is a page and needs the height of one; without
+                  // one the frame stays wide.
+                  aspect={lead.treatment?.layout === 'field_note' ? 4 / 5 : 4 / 3}
+                  priority
+                  sizes="(min-width: 1024px) 540px, 100vw"
+                />
+              )}
+              {issueCard}
             </div>
           )}
-
-          {issueCard && <div className="mt-8">{issueCard}</div>}
 
           {intro && (
             <div
