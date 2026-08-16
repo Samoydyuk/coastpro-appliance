@@ -79,28 +79,139 @@ export function composeSocialCard(
 
   drawPhoto(ctx, image, treatment);
 
-  const corner = treatment?.overlay ?? 'bottom_left';
   const dressed = treatment && treatment.layout !== 'clean';
-  if (dressed) drawScrim(ctx, corner);
 
-  // The wordmark, always, small, top right — what makes the picture
-  // recognisable without a logo across the middle of it.
+  if (!dressed || !treatment) {
+    // Even a plain photograph is signed, quietly.
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.font = heading(600, scale(tokens.type.metadata, WIDTH));
+    ctx.textAlign = 'right';
+    ctx.fillText('COASTPRO.US', WIDTH - tokens.space.edge, tokens.space.edge + 10);
+    return canvas.toDataURL('image/jpeg', 0.9);
+  }
+
+  if (treatment.layout === 'field_note') {
+    drawFieldNote(ctx, treatment);
+  } else {
+    drawCaption(ctx, treatment);
+  }
+
+  return canvas.toDataURL('image/jpeg', 0.9);
+}
+
+/**
+ * The full note: type at the top over graphite, the photograph below it, and a
+ * leader that turns a corner down to the thing being named.
+ *
+ * Mirrors the FieldNote component fraction for fraction — same block at the
+ * top, same elbow, same foot — because the file and the page are the same
+ * design and must not become two.
+ */
+function drawFieldNote(ctx: CanvasRenderingContext2D, treatment: Treatment): void {
+  const gradient = ctx.createLinearGradient(0, 0, 0, HEIGHT * 0.62);
+  gradient.addColorStop(0, 'rgba(28,26,24,0.97)');
+  gradient.addColorStop(0.55, 'rgba(28,26,24,0.72)');
+  gradient.addColorStop(1, 'rgba(28,26,24,0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+  const left = WIDTH * 0.06;
+  let y = HEIGHT * 0.06 + scale(tokens.type.metadata, WIDTH);
+
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.font = heading(600, scale(tokens.type.metadata, WIDTH));
+  ctx.fillText('COASTPRO.US', left, y);
+
+  y += tokens.space.gap;
+  ctx.fillStyle = tokens.color.orange;
+  ctx.fillRect(left, y, WIDTH * 0.12, tokens.line.hairline);
+
+  if (treatment.label) {
+    y += scale(tokens.type.label, WIDTH) * 2.2;
+    ctx.fillStyle = tokens.color.orange;
+    ctx.font = heading(600, scale(tokens.type.label, WIDTH));
+    ctx.fillText(treatment.label.toUpperCase(), left, y);
+  }
+
+  if (treatment.main) {
+    y += scale(tokens.type.main, WIDTH) * 0.95;
+    ctx.fillStyle = tokens.color.white;
+    ctx.font = heading(800, scale(tokens.type.main, WIDTH));
+    ctx.fillText(treatment.main, left, y);
+  }
+
+  if (treatment.headline) {
+    y += scale(tokens.type.headline, WIDTH) * 1.05;
+    ctx.fillStyle = tokens.color.white;
+    ctx.font = heading(800, scale(tokens.type.headline, WIDTH));
+    ctx.fillText(treatment.headline.toUpperCase(), left, y);
+  }
+
+  // The annotation, its two lines, and the elbow down to the dot.
+  if (treatment.annotation) {
+    const dotX = treatment.annotation.x * WIDTH;
+    const dotY = treatment.annotation.y * HEIGHT;
+    const labelY = Math.max(y + scale(tokens.type.annotation, WIDTH) * 2, dotY - HEIGHT * 0.16);
+
+    ctx.fillStyle = tokens.color.white;
+    ctx.font = heading(700, scale(tokens.type.annotation, WIDTH));
+    ctx.fillText(treatment.annotation.text.toUpperCase(), left * 1.4, labelY);
+
+    if (treatment.secondary) {
+      ctx.fillStyle = tokens.color.muted;
+      ctx.font = heading(400, scale(tokens.type.secondary, WIDTH));
+      ctx.fillText(treatment.secondary, left * 1.4, labelY + scale(tokens.type.secondary, WIDTH) * 1.3);
+    }
+
+    const bendX = Math.min(WIDTH * 0.55, Math.max(WIDTH * 0.2, dotX));
+    const runY = labelY + scale(tokens.type.secondary, WIDTH) * 2.2;
+    ctx.strokeStyle = tokens.color.orange;
+    ctx.lineWidth = tokens.line.annotation;
+    ctx.beginPath();
+    ctx.moveTo(left * 1.4, runY);
+    ctx.lineTo(bendX, runY);
+    ctx.lineTo(bendX, dotY);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(bendX, dotY, tokens.line.dot * 0.7, 0, Math.PI * 2);
+    ctx.fillStyle = tokens.color.orange;
+    ctx.fill();
+  }
+
+  // The foot.
+  const footY = HEIGHT - tokens.space.edge - scale(tokens.type.metadata, WIDTH);
+  ctx.fillStyle = tokens.color.orange;
+  ctx.fillRect(left, footY, WIDTH - left * 2, tokens.line.hairline);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.font = heading(500, scale(tokens.type.metadata, WIDTH));
+  ctx.textAlign = 'left';
+  if (treatment.footer) {
+    ctx.fillText(treatment.footer, left, footY + scale(tokens.type.metadata, WIDTH) * 1.8);
+  }
+  if (treatment.index) {
+    ctx.textAlign = 'right';
+    ctx.fillStyle = tokens.color.orange;
+    ctx.fillText(
+      treatment.index.split(' / ')[0],
+      WIDTH - left,
+      footY + scale(tokens.type.metadata, WIDTH) * 1.8
+    );
+  }
+}
+
+/** The quieter layouts: a line in a corner, on a gradient. */
+function drawCaption(ctx: CanvasRenderingContext2D, treatment: Treatment): void {
+  const corner = treatment.overlay;
+  drawScrim(ctx, corner);
+
   ctx.fillStyle = 'rgba(255,255,255,0.75)';
   ctx.font = heading(600, scale(tokens.type.metadata, WIDTH));
   ctx.textAlign = 'right';
   ctx.fillText('COASTPRO.US', WIDTH - tokens.space.edge, tokens.space.edge + 10);
 
-  if (treatment?.index) {
-    ctx.textAlign = 'left';
-    ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.fillText(treatment.index, tokens.space.edge, tokens.space.edge + 10);
-  }
-
-  if (!dressed || !treatment) {
-    return canvas.toDataURL('image/jpeg', 0.9);
-  }
-
-  // The annotation: a dot on the thing, and its name beside it.
   if (treatment.annotation) {
     const ax = treatment.annotation.x * WIDTH;
     const ay = treatment.annotation.y * HEIGHT;
@@ -119,70 +230,35 @@ export function composeSocialCard(
     ctx.fillText(treatment.annotation.text.toUpperCase(), ax + offset, ay + 8);
   }
 
-  // The block of words, in the corner the layout chose.
   const right = corner.endsWith('right');
-  const bottom = corner.startsWith('bottom');
   ctx.textAlign = right ? 'right' : 'left';
   const x = right ? WIDTH - tokens.space.edge : tokens.space.edge;
 
-  const lines: Array<{ text: string; size: number; weight: number; color: string; gap: number }> = [];
+  const lines: Array<{ text: string; size: number; weight: number; color: string }> = [];
   if (treatment.label) {
-    lines.push({
-      text: treatment.label.toUpperCase(),
-      size: tokens.type.label,
-      weight: 600,
-      color: tokens.color.orange,
-      gap: tokens.space.gap,
-    });
-  }
-  if (treatment.main) {
-    lines.push({
-      text: treatment.main,
-      size: tokens.type.main,
-      weight: 800,
-      color: tokens.color.white,
-      gap: tokens.space.gap,
-    });
+    lines.push({ text: treatment.label.toUpperCase(), size: tokens.type.label, weight: 600, color: tokens.color.orange });
   }
   if (treatment.headline) {
-    lines.push({
-      text: treatment.headline.toUpperCase(),
-      size: tokens.type.headline,
-      weight: 700,
-      color: tokens.color.white,
-      gap: tokens.space.gap,
-    });
+    lines.push({ text: treatment.headline.toUpperCase(), size: tokens.type.headline, weight: 700, color: tokens.color.white });
   }
   if (treatment.secondary) {
-    lines.push({
-      text: treatment.secondary,
-      size: tokens.type.secondary,
-      weight: 400,
-      color: tokens.color.muted,
-      gap: tokens.space.gap,
-    });
+    lines.push({ text: treatment.secondary, size: tokens.type.secondary, weight: 400, color: tokens.color.muted });
   }
   if (treatment.footer) {
-    lines.push({
-      text: treatment.footer,
-      size: tokens.type.metadata,
-      weight: 500,
-      color: tokens.color.muted,
-      gap: tokens.space.block,
-    });
+    lines.push({ text: treatment.footer, size: tokens.type.metadata, weight: 500, color: tokens.color.muted });
   }
 
-  const blockHeight = lines.reduce((sum, line) => sum + scale(line.size, WIDTH) + line.gap, 0);
-  let y = bottom ? HEIGHT - tokens.space.edge - blockHeight + scale(lines[0]?.size ?? 0, WIDTH) : tokens.space.edge + scale(tokens.type.label, WIDTH) * 2;
+  const blockHeight = lines.reduce((sum, line) => sum + scale(line.size, WIDTH) + tokens.space.gap, 0);
+  let y = corner.startsWith('bottom')
+    ? HEIGHT - tokens.space.edge - blockHeight + scale(lines[0]?.size ?? 0, WIDTH)
+    : tokens.space.edge + scale(tokens.type.label, WIDTH) * 2;
 
   for (const line of lines) {
     ctx.fillStyle = line.color;
     ctx.font = heading(line.weight, scale(line.size, WIDTH));
     ctx.fillText(line.text, x, y);
-    y += scale(line.size, WIDTH) + line.gap;
+    y += scale(line.size, WIDTH) + tokens.space.gap;
   }
-
-  return canvas.toDataURL('image/jpeg', 0.9);
 }
 
 /** Compose and save, which is all the console needs. */

@@ -185,16 +185,16 @@ export default async function ArticlePage({ params }: Props) {
 
           {lead && (
             <div className="mt-8">
-              {/* Restrained: the headline is already above it in HTML, so the
-                  frame carries the wordmark and its place in the sequence and
-                  nothing that would be said twice (§26). */}
+              {/* A Field Note is a page, and it needs the height of one: the
+                  type block lives above the photograph rather than on it, so
+                  the frame goes portrait when there is one and stays wide when
+                  there is not. */}
               <PhotoTreatment
                 src={photoUrl(lead)}
                 alt={lead.alt || `${subject} repair`}
                 treatment={lead.treatment}
-                aspect={16 / 9}
+                aspect={lead.treatment?.layout === 'field_note' ? 4 / 5 : 16 / 9}
                 priority
-                restrained
               />
             </div>
           )}

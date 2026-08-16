@@ -130,19 +130,24 @@ export function PhotoTreatment({
         style={{ objectPosition: objectPosition(treatment) }}
       />
 
-      {/* The wordmark, quietly, on everything. It is what makes a photograph
-          recognisable without a logo across the middle of it (§47). */}
-      <span className="absolute right-3 top-3 font-heading text-[9px] font-semibold uppercase tracking-label text-white/70 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
-        CoastPro.us
-      </span>
-
-      {treatment?.index && (
-        <span className="absolute left-3 top-3 font-heading text-[9px] font-semibold tabular-nums tracking-label text-white/60 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
-          {treatment.index}
-        </span>
+      {/* The wordmark, quietly, on everything that is not a full Field Note —
+          that one signs itself, top left, with a rule under it. */}
+      {effective !== 'field_note' && (
+        <>
+          <span className="absolute right-3 top-3 font-heading text-[9px] font-semibold uppercase tracking-label text-white/70 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
+            CoastPro.us
+          </span>
+          {treatment?.index && (
+            <span className="absolute left-3 top-3 font-heading text-[9px] font-semibold tabular-nums tracking-label text-white/60 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
+              {treatment.index}
+            </span>
+          )}
+        </>
       )}
 
-      {treatment && effective !== 'clean' && (
+      {treatment && effective === 'field_note' && <FieldNote treatment={treatment} />}
+
+      {treatment && effective !== 'clean' && effective !== 'field_note' && (
         <>
           <div className={`pointer-events-none absolute inset-0 ${SCRIM[corner]}`} />
 
@@ -217,5 +222,129 @@ export function PhotoTreatment({
         </>
       )}
     </figure>
+  );
+}
+
+/**
+ * The full Field Note: a page rather than a caption.
+ *
+ * The photograph sits low and the top of the frame is given over to type, so
+ * the code reads from across a room and nothing important is ever behind a
+ * word. The leader turns a corner rather than pointing diagonally — a straight
+ * line across a photograph looks like a scratch on it, an elbow looks drawn.
+ *
+ * Every measurement is a fraction of the frame, so the same composition holds
+ * at a phone's width and at a poster's.
+ */
+function FieldNote({ treatment }: { treatment: Treatment }) {
+  const dot = treatment.annotation;
+  // The label sits above the thing it names, and the line drops to it.
+  const labelY = dot ? Math.max(0.32, dot.y - 0.16) : 0.5;
+  const bendX = dot ? Math.min(0.55, Math.max(0.2, dot.x)) : 0.4;
+
+  return (
+    <>
+      {/* Not a box: the graphite is opaque at the top and gone by the middle,
+          which is what leaves the photograph looking like a photograph. */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-graphite via-graphite/70 to-transparent" />
+
+      {dot && (
+        <svg
+          className="pointer-events-none absolute inset-0 h-full w-full"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden
+        >
+          <polyline
+            points={`8,${labelY * 100 + 3} ${bendX * 100},${labelY * 100 + 3} ${bendX * 100},${dot.y * 100}`}
+            fill="none"
+            stroke={tokens.color.orange}
+            strokeWidth="0.35"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+      )}
+
+      {dot && (
+        <span
+          className="pointer-events-none absolute block rounded-full"
+          style={{
+            left: `${dot.x * 100}%`,
+            top: `${dot.y * 100}%`,
+            width: 10,
+            height: 10,
+            marginLeft: -5,
+            marginTop: -5,
+            backgroundColor: tokens.color.orange,
+          }}
+        />
+      )}
+
+      <div className="pointer-events-none absolute inset-x-0 top-0 p-[6%]">
+        <div className="font-heading text-[9px] font-semibold uppercase tracking-[0.25em] text-white/85 sm:text-[11px]">
+          CoastPro.us
+        </div>
+        <div className="mt-1.5 h-px w-16" style={{ backgroundColor: tokens.color.orange }} />
+
+        {treatment.label && (
+          <div
+            className="mt-[6%] font-heading text-[10px] font-semibold uppercase tracking-[0.3em] sm:text-xs"
+            style={{ color: tokens.color.orange }}
+          >
+            {treatment.label}
+          </div>
+        )}
+
+        {treatment.main && (
+          <div
+            className="font-heading font-extrabold uppercase leading-[0.85] tracking-tight text-white"
+            style={{ fontSize: 'clamp(3rem, 17vw, 7rem)' }}
+          >
+            {treatment.main}
+          </div>
+        )}
+
+        {treatment.headline && (
+          <div
+            className="font-heading font-extrabold uppercase leading-[0.9] tracking-tight text-white"
+            style={{ fontSize: 'clamp(1.5rem, 8vw, 3.2rem)' }}
+          >
+            {treatment.headline}
+          </div>
+        )}
+      </div>
+
+      {dot && (
+        <div
+          className="pointer-events-none absolute left-[8%] right-[8%]"
+          style={{ top: `${labelY * 100 - 8}%` }}
+        >
+          <div className="font-heading text-[11px] font-bold uppercase tracking-label text-white sm:text-sm">
+            {dot.text}
+          </div>
+          {treatment.secondary && (
+            <div className="text-[11px] leading-snug text-white/85 sm:text-[13px]">
+              {treatment.secondary}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* The foot: a hairline, what it was and where, and the note's number. */}
+      <div className="pointer-events-none absolute inset-x-[6%] bottom-[5%]">
+        <div className="h-px w-full" style={{ backgroundColor: tokens.color.orange }} />
+        <div className="mt-2 flex items-baseline justify-between gap-3">
+          <span className="text-[11px] text-white/85 sm:text-[13px]">{treatment.footer}</span>
+          {treatment.index && (
+            <span
+              className="font-heading text-[11px] font-semibold tabular-nums sm:text-[13px]"
+              style={{ color: tokens.color.orange }}
+            >
+              {treatment.index.split(' / ')[0]}
+            </span>
+          )}
+        </div>
+      </div>
+    </>
   );
 }
