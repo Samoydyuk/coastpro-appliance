@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import type { LayoutName, PhotoType, Treatment } from '@/lib/marketing/treatment';
 import { tokens } from '@/lib/marketing/treatment-tokens';
 import { downloadSocialCard } from '@/lib/marketing/compose';
+import { PhotoTreatment } from '@/components/marketing/PhotoTreatment';
 
 /**
  * What the model proposed for one photograph, and the means to disagree with it.
@@ -118,46 +119,23 @@ export function PhotoTreatmentEditor({
 
   return (
     <div className="space-y-3 rounded-card border border-primary-500/20 p-3">
-      {/* The picture with the words on it, at the size it will be read. */}
+      {/* The published article's own component, not a sketch of it. A preview
+          that is merely similar is how something gets approved and then looks
+          different in public. The dot is draggable on top of it. */}
       <div
         ref={frameRef}
-        className="relative aspect-[4/3] cursor-crosshair overflow-hidden rounded-card bg-graphite"
+        className="relative cursor-crosshair"
         onMouseMove={(event) => dragging && moveAnnotation(event)}
         onMouseUp={() => setDragging(false)}
         onMouseLeave={() => setDragging(false)}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt="" className="h-full w-full object-cover" />
-
-        {treatment.layout !== 'clean' && (
-          <>
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-graphite/70 via-graphite/20 to-transparent" />
-            <div className="pointer-events-none absolute bottom-0 left-0 max-w-[80%] p-3">
-              {treatment.label && (
-                <div
-                  className="font-heading text-[8px] font-semibold uppercase tracking-label"
-                  style={{ color: tokens.color.orange }}
-                >
-                  {treatment.label}
-                </div>
-              )}
-              {treatment.main && (
-                <div className="font-heading text-2xl font-extrabold leading-none text-white">
-                  {treatment.main}
-                </div>
-              )}
-              {treatment.headline && (
-                <div className="font-heading text-[11px] font-bold uppercase tracking-label text-white">
-                  {treatment.headline}
-                </div>
-              )}
-              {treatment.secondary && (
-                <div className="text-[10px] text-white/75">{treatment.secondary}</div>
-              )}
-            </div>
-          </>
-        )}
-
+        <PhotoTreatment
+          src={src}
+          alt=""
+          treatment={treatment}
+          aspect={treatment.layout === 'field_note' ? 4 / 5 : 4 / 3}
+          sizes="480px"
+        />
         {treatment.annotation && (
           <span
             role="button"
@@ -165,21 +143,12 @@ export function PhotoTreatmentEditor({
             aria-label="Move the annotation"
             onMouseDown={() => setDragging(true)}
             onKeyDown={() => {}}
-            className="absolute flex cursor-grab items-center gap-1.5 active:cursor-grabbing"
+            className="absolute h-6 w-6 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-full ring-2 ring-white/60 active:cursor-grabbing"
             style={{
               left: `${treatment.annotation.x * 100}%`,
               top: `${treatment.annotation.y * 100}%`,
-              transform: 'translate(-50%, -50%)',
             }}
-          >
-            <span
-              className="block h-2.5 w-2.5 rounded-full ring-2 ring-white/80"
-              style={{ backgroundColor: tokens.color.orange }}
-            />
-            <span className="whitespace-nowrap font-heading text-[9px] font-semibold uppercase tracking-label text-white drop-shadow">
-              {treatment.annotation.text}
-            </span>
-          </span>
+          />
         )}
       </div>
 

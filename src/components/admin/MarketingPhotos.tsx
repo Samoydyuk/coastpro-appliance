@@ -42,8 +42,6 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
   );
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [describing, setDescribing] = useState(false);
-  const [describeNote, setDescribeNote] = useState<string | null>(null);
   const [alts, setAlts] = useState<Record<string, string>>({});
   const [treatments, setTreatments] = useState<Record<string, Treatment>>(() =>
     Object.fromEntries(
@@ -64,9 +62,9 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
    * the server and there does not need to be — the browser has a canvas, and
    * the original is never what gets written to.
    */
-  const correctAll = async () => {
+  const correctAll = async (quiet = false) => {
     setCorrecting(true);
-    setDressNote(null);
+    if (!quiet) setDressNote(null);
     let done = 0;
     try {
       for (const id of chosen) {
@@ -90,12 +88,14 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
         });
         if (response.ok) done += 1;
       }
-      setDressNote(
-        done > 0
-          ? `Corrected ${done} photograph${done === 1 ? '' : 's'}. The originals are untouched.`
-          : 'Nothing could be corrected — the photographs would not load.'
-      );
-      router.refresh();
+      if (!quiet) {
+        setDressNote(
+          done > 0
+            ? `Corrected ${done} photograph${done === 1 ? '' : 's'}. The originals are untouched.`
+            : 'Nothing could be corrected — the photographs would not load.'
+        );
+        router.refresh();
+      }
     } finally {
       setCorrecting(false);
     }
@@ -125,8 +125,32 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
     }
   };
 
+  /**
+   * The one button: correct the tone, agree to the words, save.
+   *
+   * There were five, and choosing between them was a job in itself. What
+   * somebody actually wants to say here is "these are right" — so that is the
+   * button, and it does everything that sentence implies in the order it has
+   * to happen.
+   */
+  const approveAll = async () => {
+    setBusy(true);
+    setDressNote('Correcting the tone…');
+    try {
+      await correctAll(true);
+      setDressNote('Saving…');
+      const approved = Object.fromEntries(chosen.map((id) => [id, Boolean(treatments[id])]));
+      setApprovals({ ...approvals, ...approved });
+      await saveTreatments(approved);
+      setDressNote('Approved. This is what the article will show.');
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  };
+
   /** Save the treatments and which of them were agreed to. */
-  const saveTreatments = async () => {
+  const saveTreatments = async (approvedOverride?: Record<string, boolean>) => {
     setBusy(true);
     try {
       const response = await fetch('/api/admin/marketing/treatment', {
@@ -137,7 +161,7 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
           photos: chosen.map((id) => ({
             photoId: id,
             treatment: treatments[id] ?? null,
-            approved: Boolean(approvals[id] && treatments[id]),
+            approved: Boolean((approvedOverride ?? approvals)[id] && treatments[id]),
           })),
         }),
       });
@@ -190,31 +214,6 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
     }
   };
 
-  const describe = async () => {
-    setDescribing(true);
-    setDescribeNote(null);
-    try {
-      const response = await fetch('/api/admin/marketing/describe-photos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId }),
-      });
-      const payload = (await response.json().catch(() => ({}))) as { described?: number; error?: string };
-      setDescribeNote(
-        response.ok
-          ? `Described ${payload.described ?? 0} photograph${payload.described === 1 ? '' : 's'} from the pictures themselves.`
-          : payload.error ?? 'Could not describe the photographs.'
-      );
-      if (response.ok) {
-        // The captions on screen are the old ones until the page comes back.
-        setAlts({});
-        router.refresh();
-      }
-    } finally {
-      setDescribing(false);
-    }
-  };
-
   const selectionChanged =
     chosen.join(',') !==
     photos
@@ -226,6 +225,9 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
     (photo) => alts[photo.id] !== undefined && alts[photo.id] !== (photo.altText ?? '')
   );
   const dirty = selectionChanged || captionsChanged;
+  /** Every chosen photograph has been agreed to — the state publish looks for. */
+  const allApproved =
+    chosen.length > 0 && chosen.every((id) => approvals[id] && treatments[id]);
 
   return (
     <div className="space-y-3">
@@ -332,18 +334,6 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
         >
           {busy ? 'Saving…' : 'Save selection & captions'}
         </button>
-        {/* Written from the pictures, not from the story. Every article
-            published before the model was shown its own photographs carries
-            descriptions it invented — worth being able to put right without
-            rewriting text that has already been approved. */}
-        <button
-          type="button"
-          onClick={describe}
-          disabled={describing || chosen.length === 0}
-          className="h-8 rounded-card border border-ink/20 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-ink disabled:opacity-40"
-        >
-          {describing ? 'Looking…' : 'Describe from the photos'}
-        </button>
         <span className="text-xs text-gray-500">
           {chosen.length === 0
             ? 'None chosen — the article goes out without pictures.'
@@ -352,7 +342,7 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
         {saved && !dirty && <span className="ml-auto text-xs text-gray-500">Saved</span>}
       </div>
 
-      {describeNote && <p className="text-xs text-gray-500">{describeNote}</p>}
+
 
       {/* The series as it will be read, in order, each with what the model
           proposes to put on it. Reviewed here rather than on the published
@@ -360,44 +350,28 @@ export function MarketingPhotos({ jobId, photos }: { jobId: string; photos: Phot
       {chosen.length > 0 && (
         <div className="space-y-3 border-t border-primary-500/15 pt-4">
           <div className="flex flex-wrap items-center gap-3">
+            {/* One thing to press when they are right, and one quiet way back
+                if they are not. */}
+            <button
+              type="button"
+              onClick={approveAll}
+              disabled={busy || correcting || Object.keys(treatments).length === 0}
+              className="h-9 rounded-card bg-ink px-4 font-heading text-[11px] font-semibold uppercase tracking-label text-cream disabled:opacity-40"
+            >
+              {busy || correcting ? 'Working…' : 'These are right — approve'}
+            </button>
             <button
               type="button"
               onClick={dress}
-              disabled={dressing}
-              className="h-8 rounded-card border border-ink/20 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-ink disabled:opacity-40"
+              disabled={dressing || busy}
+              className="font-heading text-[10px] font-semibold uppercase tracking-label text-gray-500 underline underline-offset-4 disabled:opacity-40"
             >
-              {dressing ? 'Looking…' : 'Dress the series'}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const all = Object.fromEntries(chosen.map((id) => [id, Boolean(treatments[id])]));
-                setApprovals({ ...approvals, ...all });
-              }}
-              disabled={Object.keys(treatments).length === 0}
-              className="h-8 rounded-card border border-ink/20 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-ink disabled:opacity-40"
-            >
-              Approve all
-            </button>
-            <button
-              type="button"
-              onClick={correctAll}
-              disabled={correcting}
-              className="h-8 rounded-card border border-ink/20 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-ink disabled:opacity-40"
-            >
-              {correcting ? 'Correcting…' : 'Correct the tone'}
-            </button>
-            <button
-              type="button"
-              onClick={saveTreatments}
-              disabled={busy || Object.keys(treatments).length === 0}
-              className="h-8 rounded-card bg-ink px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-cream disabled:opacity-40"
-            >
-              Save treatment
+              {dressing ? 'Preparing…' : 'Prepare again'}
             </button>
             <span className="text-xs text-gray-500">
-              Prepared automatically when the piece was written. Nothing publishes until these
-              have been looked over and saved.
+              {allApproved
+                ? 'Approved — the article will show these.'
+                : 'Prepared automatically. Nothing publishes until you approve them.'}
             </span>
           </div>
 
