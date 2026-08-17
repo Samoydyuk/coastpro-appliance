@@ -10,3 +10,7 @@ export { ProcessSteps } from './ProcessSteps';
 export { BrandsServiced } from './BrandsServiced';
 export { ServiceCallExplained } from './ServiceCallExplained';
 export { LegalSection } from './LegalSection';
+export { HeroCompact } from './HeroCompact';
+export { RecentRepairs } from './RecentRepairs';
+export { StickyCallBar } from './StickyCallBar';
+export { Technician } from './Technician';
