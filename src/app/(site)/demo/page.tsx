@@ -16,8 +16,10 @@ import {
  *
  *   - the first screen fits on a screen, and carries the two facts that earn a
  *     call rather than three badges in boxes;
- *   - real repairs, with photographs, stand where reviews would stand if there
- *     were any — and they are the stronger evidence anyway;
+ *   - the list of what we repair comes first, because that is the question
+ *     everybody arrives with;
+ *   - real repairs, with photographs, then stand where reviews would stand if
+ *     there were any — and they are the stronger evidence anyway;
  *   - the person who turns up is named, because that is what is actually being
  *     bought;
  *   - six sections rather than nine, and they are not all built the same way,
@@ -39,11 +41,16 @@ export default function DemoHomePage() {
     <>
       <HeroCompact />
 
-      {/* Proof before persuasion: what was fixed, with the photographs, before
-          a single sentence about why to choose us. */}
-      <RecentRepairs />
+      {/* First the question everybody actually arrives with — do you fix mine —
+          and only then the evidence that we do. Proof before the answer is
+          proof of something nobody has asked about yet. */}
+      <ServicesGrid
+        eyebrow="What we repair"
+        title="Every major appliance in the house."
+        subtitle="Refrigerators, washers, dryers, dishwashers, ovens and the rest — diagnosed the same day where the schedule allows."
+      />
 
-      <ServicesGrid eyebrow="What we repair" />
+      <RecentRepairs />
 
       <Technician />
 

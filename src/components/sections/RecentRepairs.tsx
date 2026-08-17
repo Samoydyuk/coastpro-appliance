@@ -24,10 +24,10 @@ export async function RecentRepairs() {
       <div className="container mx-auto px-4">
         <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <div className="eyebrow mb-3">Recent work</div>
+            <div className="eyebrow mb-3">Recent repairs</div>
             <h2 className="headline text-2xl sm:text-3xl">
-              What we fixed
-              <span className="headline-muted"> this month.</span>
+              And here is one
+              <span className="headline-muted"> of each, done.</span>
             </h2>
           </div>
           <Link
