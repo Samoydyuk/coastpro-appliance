@@ -22,15 +22,17 @@ function hasPortrait(): boolean {
 }
 
 /**
- * The person who will be standing in the kitchen.
+ * What actually happens once somebody is in the kitchen.
  *
- * Every photograph on the site is of a machine. A premium home service is not
- * bought from a company — it is bought from whoever is about to be let through
- * the front door, and the site never says who that is.
+ * Every photograph on the site is of a machine, and the site never describes
+ * the part a customer is really buying: an hour of a stranger in their house.
+ * The first draft sold that as "one technician, not a rota", which reads as a
+ * limit on the business rather than a promise to the customer — the owner's
+ * judgement, and he was right.
  *
- * No portrait yet, so this says what is true in words and leaves a space the
- * photograph slots into later. Deliberately understated: a name, a sentence,
- * and the two facts a person weighs before letting somebody in.
+ * So it describes the visit instead: found, shown, tidied, and a date rather
+ * than a vague week. Nothing here is a claim that needs proving; it is ordinary
+ * work described properly, which is most of what premium means in this trade.
  */
 export function Technician() {
   const portrait = hasPortrait();
@@ -55,16 +57,15 @@ export function Technician() {
           )}
 
           <div>
-            <div className="eyebrow mb-3">Who comes out</div>
+            <div className="eyebrow mb-3">The visit</div>
             <h2 className="headline text-2xl sm:text-3xl">
-              One technician.
-              <span className="headline-muted"> Not a rota.</span>
+              Diagnosed, explained,
+              <span className="headline-muted"> left clean.</span>
             </h2>
             <div className="rule-short my-6" />
             <p className="text-[15px] leading-relaxed text-gray-600 sm:text-base">
-              The same person diagnoses the machine, orders the part and comes back to fit it — so
-              nothing is explained twice and nobody arrives without knowing what they are walking
-              into.
+              We find the fault, show you what it is, and put the kitchen back the way we found it.
+              If a part has to come, you get a date for it — not &ldquo;sometime next week&rdquo;.
             </p>
             <p className="mt-4 text-[13px] text-gray-500">
               Licensed and insured. Every repair carries a 90-day warranty on parts and labour.
