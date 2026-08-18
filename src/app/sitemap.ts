@@ -3,8 +3,10 @@ import { services } from '@/data/services';
 import { serviceAreas } from '@/data/service-areas';
 import { brands } from '@/data/brands';
 import { siteConfig } from '@/data/site-config';
+import { brandErrorCodes } from '@/data/error-codes';
 import {
-  BRAND_CONTENT_UPDATED,
+  brandUpdated,
+  errorCodesUpdated,
   CITY_CONTENT_UPDATED,
   pageUpdated,
   serviceUpdated,
@@ -34,6 +36,7 @@ const STATIC_ROUTES: Array<[string, MetadataRoute.Sitemap[number]['changeFrequen
   ['services', 'weekly', 0.9],
   ['service-areas', 'monthly', 0.8],
   ['brands', 'monthly', 0.8],
+  ['error-codes', 'monthly', 0.7],
   ['book-appointment', 'monthly', 0.9],
   ['contact', 'monthly', 0.8],
   ['about', 'monthly', 0.7],
@@ -63,9 +66,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const brandPages: MetadataRoute.Sitemap = brands.map((brand) => ({
     url: `${BASE_URL}/brands/${brand.slug}`,
-    lastModified: updatedAt(BRAND_CONTENT_UPDATED),
+    lastModified: updatedAt(brandUpdated[brand.slug]),
     changeFrequency: 'monthly' as const,
     priority: 0.8,
+  }));
+
+  // Reference rather than sales copy, so a lower priority than the pages that
+  // ask for the booking — but a real one. These answer a question nothing else
+  // on the site answers, and they are what someone standing in front of a
+  // beeping machine is actually searching for.
+  const errorCodePages: MetadataRoute.Sitemap = brandErrorCodes.map((entry) => ({
+    url: `${BASE_URL}/error-codes/${entry.brandSlug}`,
+    lastModified: updatedAt(errorCodesUpdated[entry.brandSlug]),
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
   }));
 
   const cityPages: MetadataRoute.Sitemap = serviceAreas.map((area) => ({
@@ -93,5 +107,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     };
   });
 
-  return [...staticPages, ...servicePages, ...brandPages, ...cityPages, ...articlePages];
+  return [
+    ...staticPages,
+    ...servicePages,
+    ...brandPages,
+    ...errorCodePages,
+    ...cityPages,
+    ...articlePages,
+  ];
 }

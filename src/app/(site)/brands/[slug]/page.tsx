@@ -1,10 +1,11 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Phone, ArrowRight, Info, MapPin } from 'lucide-react';
+import { Phone, ArrowRight, Info, MapPin, ListChecks } from 'lucide-react';
 import { Button, Badge } from '@/components/ui';
 import { CTABanner, StatsBand } from '@/components/sections';
 import { brands, getBrandBySlug } from '@/data/brands';
+import { getErrorCodesForBrand } from '@/data/error-codes';
 import { siteConfig } from '@/data/site-config';
 import { breadcrumbSchema } from '@/lib/schema';
 
@@ -38,7 +39,11 @@ export default async function BrandPage({ params }: BrandPageProps) {
 
   if (!brand) notFound();
 
-  const others = brands.filter((b) => b.slug !== brand.slug);
+  const codes = getErrorCodesForBrand(brand.slug);
+  // Same shelf only. With fifteen brands, "we also specialise in" listing all
+  // fourteen others says nothing — a Sub-Zero owner is not choosing between it
+  // and a Frigidaire.
+  const others = brands.filter((b) => b.slug !== brand.slug && b.tier === brand.tier);
 
   const schema = [
     {
@@ -166,6 +171,34 @@ export default async function BrandPage({ params }: BrandPageProps) {
                 ))}
               </div>
             </div>
+
+            {/* Placed here rather than at the foot of the page: someone who has
+                just read the fault list has a code in front of them, and this
+                is the moment it is worth something. */}
+            {codes && (
+              <div className="mt-12 border border-primary-500/25 bg-cream-light p-6 md:p-8">
+                <div className="flex items-start gap-4">
+                  <ListChecks className="h-5 w-5 text-primary-500 shrink-0 mt-1" strokeWidth={1.5} />
+                  <div>
+                    <h3 className="font-heading text-[11px] font-semibold uppercase tracking-label text-ink mb-3">
+                      Is there a code on the display?
+                    </h3>
+                    <p className="text-lg leading-relaxed text-gray-600 max-w-prose mb-5">
+                      We have written out {codes.codes.length} {brand.name} codes — what each one
+                      reports, what causes it, and whether it needs anybody. Some of them are not
+                      faults at all, and knowing which saves you a call-out.
+                    </p>
+                    <Link
+                      href={`/error-codes/${brand.slug}`}
+                      className="inline-flex items-center font-heading text-[11px] font-semibold uppercase tracking-label text-primary-600 hover:text-ink transition-colors"
+                    >
+                      {brand.name} error codes
+                      <ArrowRight className="h-3.5 w-3.5 ml-2" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="mt-12">
               <div className="eyebrow mb-4">03 — Locally</div>

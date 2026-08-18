@@ -32,13 +32,52 @@ export const pageUpdated: Record<string, string> = {
   gallery: '2026-08-12',
   'book-appointment': '2026-08-14',
   blog: '2026-08-14',
-  brands: '2026-08-15',
+  brands: '2026-08-18',
+  'error-codes': '2026-08-18',
   privacy: '2026-08-13',
   terms: '2026-08-14',
 };
 
-/** The day the brand pages were written. */
-export const BRAND_CONTENT_UPDATED = '2026-08-15';
+/**
+ * Brand detail pages, keyed by slug.
+ *
+ * This was one date for all six pages, which was true on the day they were
+ * written and stopped being true the moment a second batch went up: adding nine
+ * mainstream brands under a shared constant would have claimed Sub-Zero changed
+ * as well. It did not. One date per page, and they are each the day that page's
+ * copy was actually written.
+ */
+export const brandUpdated: Record<string, string> = {
+  'sub-zero': '2026-08-15',
+  wolf: '2026-08-15',
+  viking: '2026-08-15',
+  thermador: '2026-08-15',
+  miele: '2026-08-15',
+  bosch: '2026-08-15',
+  samsung: '2026-08-18',
+  whirlpool: '2026-08-18',
+  ge: '2026-08-18',
+  lg: '2026-08-18',
+  maytag: '2026-08-18',
+  kitchenaid: '2026-08-18',
+  frigidaire: '2026-08-18',
+  electrolux: '2026-08-18',
+  kenmore: '2026-08-18',
+};
+
+/** Error code pages, keyed by brand slug. */
+export const errorCodesUpdated: Record<string, string> = {
+  samsung: '2026-08-18',
+  lg: '2026-08-18',
+  whirlpool: '2026-08-18',
+  ge: '2026-08-18',
+  maytag: '2026-08-18',
+  kitchenaid: '2026-08-18',
+  frigidaire: '2026-08-18',
+  electrolux: '2026-08-18',
+  bosch: '2026-08-18',
+  kenmore: '2026-08-18',
+};
 
 /** Service detail pages, keyed by slug. */
 export const serviceUpdated: Record<string, string> = {

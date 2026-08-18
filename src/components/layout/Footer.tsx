@@ -68,6 +68,14 @@ export function Footer() {
                   Brands We Service →
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/error-codes"
+                  className="text-cream hover:text-primary-300 transition-colors"
+                >
+                  Error Codes Explained →
+                </Link>
+              </li>
             </ul>
           </div>
 
