@@ -144,17 +144,20 @@ function CodeEntry({ code }: { code: ErrorCode }) {
 
       {/* Only where the photograph is of this fault. Everywhere else the entry
           simply ends — a stock image against an error number is decoration. */}
+      {/* Small on purpose. The picture is evidence beside the entry, not the
+          subject of it — at full column width it read as a hero and pushed the
+          next code off the screen. */}
       {photo && (
-        <figure className="mt-8 max-w-2xl">
+        <figure className="mt-7 w-[220px] max-w-full">
           <Image
             src={`/images/work/${code.photo}`}
             alt={photo.alt}
-            width={1200}
-            height={900}
+            width={440}
+            height={330}
             className="w-full h-auto border border-primary-500/20"
-            sizes="(max-width: 768px) 100vw, 640px"
+            sizes="220px"
           />
-          <figcaption className="mt-3 font-heading text-[11px] font-semibold uppercase tracking-label text-primary-500">
+          <figcaption className="mt-2 font-heading text-[10px] font-semibold uppercase tracking-label leading-relaxed text-primary-500">
             {photo.location ? `${photo.location} — ` : ''}
             {photo.caption ?? 'From a CoastPro visit'}
           </figcaption>

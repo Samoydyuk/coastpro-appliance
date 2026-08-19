@@ -23,21 +23,11 @@ const navigation = [
       { name: 'Oven & Range Repair', href: '/services/oven-range' },
       { name: 'Microwave Repair', href: '/services/microwave' },
       { name: 'All Services', href: '/services' },
-    ],
-  },
-  {
-    name: 'Brands',
-    href: '/brands',
-    children: [
-      { name: 'Sub-Zero Repair', href: '/brands/sub-zero' },
-      { name: 'Wolf Repair', href: '/brands/wolf' },
-      { name: 'Viking Repair', href: '/brands/viking' },
-      { name: 'Thermador Repair', href: '/brands/thermador' },
-      { name: 'Samsung Repair', href: '/brands/samsung' },
-      { name: 'LG Repair', href: '/brands/lg' },
-      { name: 'Whirlpool Repair', href: '/brands/whirlpool' },
-      { name: 'GE Repair', href: '/brands/ge' },
-      { name: 'All Brands', href: '/brands' },
+      // The two hubs, here rather than as a ninth top-level item. A brand is
+      // not a service and this is a slight stretch of the label, but the owner
+      // wanted the row shorter and the row is the constraint that binds — the
+      // eighth item was already the one the comment below is about.
+      { name: 'Brands We Repair', href: '/brands' },
       { name: 'Error Codes Explained', href: '/error-codes' },
     ],
   },
@@ -54,16 +44,16 @@ const navigation = [
 // phone number and a button do not fit, and the labels were breaking mid-name
 // ("SERVICE / AREAS") long before this file gained an eighth item.
 //
-// Brands is the ninth, and it earns the room: /brands and /error-codes are the
-// two hubs the rest of the site hangs off — twenty-five pages between them —
-// and until this they were reachable from the footer and almost nowhere else.
-// Google had crawled /brands and declined to index it, which is what a page
-// with one sitewide link looks like from the outside.
-// px-1 rather than px-1.5 below xl: with nine items the ninth spent the last of
-// the slack and the wordmark ended up touching HOME. Two pixels an item either
-// side buys the gap back, and only at the width that needs it.
+// A ninth was tried and taken back out. /brands and /error-codes are the two
+// hubs the rest of the site hangs off, and a page reachable only from the
+// footer is exactly what Google had already crawled and declined to index —
+// but the row is full, and the fix does not have to cost a top-level slot.
+// They sit in the Services dropdown instead, which the panel below now renders
+// into the document rather than mounting on hover, so a crawler follows them
+// from every page either way. Padding goes back to px-1.5 with the row at
+// eight: the ninth item was what had spent the last of the slack.
 const navLinkClass =
-  'px-1 xl:px-3 py-2 font-heading text-[11px] font-semibold uppercase tracking-label text-primary-600 hover:text-ink transition-colors flex items-center gap-1 whitespace-nowrap';
+  'px-1.5 xl:px-3 py-2 font-heading text-[11px] font-semibold uppercase tracking-label text-primary-600 hover:text-ink transition-colors flex items-center gap-1 whitespace-nowrap';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
