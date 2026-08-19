@@ -1,18 +1,24 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import Image from 'next/image';
 import { Phone, ArrowRight, Info } from 'lucide-react';
 import { Button, Badge } from '@/components/ui';
 import { CTABanner } from '@/components/sections';
 import {
   brandErrorCodes,
   getErrorCodesForBrand,
+  serviceSlugForAppliance,
+  COST_BAND_COPY,
   CODE_CAVEAT,
   VERDICT_COPY,
   type CodeVerdict,
   type ErrorCode,
 } from '@/data/error-codes';
 import { getBrandBySlug } from '@/data/brands';
+import { getServiceBySlug } from '@/data/services';
+import { errorCodesUpdated, updatedAt } from '@/data/content-dates';
+import { photoCaptions } from '@/data/work-photos';
 import { siteConfig } from '@/data/site-config';
 import { breadcrumbSchema } from '@/lib/schema';
 
@@ -43,8 +49,33 @@ const VERDICT_VARIANT: Record<CodeVerdict, 'success' | 'warning' | 'info'> = {
   tech: 'info',
 };
 
+/**
+ * The published range for a code's appliance, and where in it this fault sits.
+ *
+ * Returns nothing when there is no band, no matching service, or the service
+ * is priced as a flat job rather than a range — printing "between $200 and
+ * $200" would read as a system talking to itself.
+ */
+function costFor(code: ErrorCode) {
+  if (!code.costBand) return null;
+
+  const slug = serviceSlugForAppliance(code.appliance);
+  const service = slug ? getServiceBySlug(slug) : undefined;
+  if (!service || service.priceRange.min === service.priceRange.max) return null;
+
+  return {
+    band: COST_BAND_COPY[code.costBand],
+    min: service.priceRange.min,
+    max: service.priceRange.max,
+    name: service.name.replace(' Repair', '').toLowerCase(),
+  };
+}
+
 /** Keeps a linked code clear of the sticky header when jumped to directly. */
 function CodeEntry({ code }: { code: ErrorCode }) {
+  const cost = costFor(code);
+  const photo = code.photo ? photoCaptions[code.photo] : undefined;
+
   return (
     <article id={code.anchor} className="scroll-mt-28 border-b border-primary-500/20 py-10 last:border-b-0">
       <div className="flex flex-wrap items-baseline justify-between gap-4 mb-5">
@@ -83,6 +114,26 @@ function CodeEntry({ code }: { code: ErrorCode }) {
           </div>
         )}
 
+        {/* The published range for the appliance, plus which end of it this
+            fault sits at. No figure is invented here: the numbers are the ones
+            already printed on the service page, and the band is a judgement
+            about the repair rather than a quote for it. */}
+        {cost && (
+          <div>
+            <dt className="font-heading text-[11px] font-semibold uppercase tracking-label text-primary-500 mb-2">
+              What it usually costs
+            </dt>
+            <dd className="text-lg leading-relaxed text-gray-600 max-w-prose">
+              Most {cost.name} jobs land between{' '}
+              <strong className="text-ink">
+                ${cost.min} and ${cost.max}
+              </strong>
+              , parts included, and the ${siteConfig.serviceCall.minimum} minimum service call is
+              part of that rather than on top of it. This one {cost.band}.
+            </dd>
+          </div>
+        )}
+
         <div>
           <dt className="font-heading text-[11px] font-semibold uppercase tracking-label text-primary-500 mb-2">
             True for
@@ -90,6 +141,25 @@ function CodeEntry({ code }: { code: ErrorCode }) {
           <dd className="text-gray-600 max-w-prose">{code.appliesTo}</dd>
         </div>
       </dl>
+
+      {/* Only where the photograph is of this fault. Everywhere else the entry
+          simply ends — a stock image against an error number is decoration. */}
+      {photo && (
+        <figure className="mt-8 max-w-2xl">
+          <Image
+            src={`/images/work/${code.photo}`}
+            alt={photo.alt}
+            width={1200}
+            height={900}
+            className="w-full h-auto border border-primary-500/20"
+            sizes="(max-width: 768px) 100vw, 640px"
+          />
+          <figcaption className="mt-3 font-heading text-[11px] font-semibold uppercase tracking-label text-primary-500">
+            {photo.location ? `${photo.location} — ` : ''}
+            {photo.caption ?? 'From a CoastPro visit'}
+          </figcaption>
+        </figure>
+      )}
     </article>
   );
 }
@@ -154,6 +224,25 @@ export default async function BrandErrorCodesPage({ params }: CodesPageProps) {
               <span className="headline-muted">and what each one costs you.</span>
             </h1>
             <div className="rule-short my-8" />
+
+            {/* A date a reader can check, from the same record the sitemap
+                uses. Reference pages are worth less when nobody can tell
+                whether they were written last month or in 2019. */}
+            <div className="font-heading text-[11px] font-semibold uppercase tracking-label text-primary-500 mb-6">
+              <span>{entry.codes.length} codes</span>
+              <span className="text-primary-400 px-2">·</span>
+              <span>
+                Reviewed{' '}
+                <time dateTime={errorCodesUpdated[entry.brandSlug]}>
+                  {updatedAt(errorCodesUpdated[entry.brandSlug]).toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                    timeZone: 'UTC',
+                  })}
+                </time>
+              </span>
+            </div>
 
             <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-prose">{entry.intro}</p>
 
@@ -295,6 +384,56 @@ export default async function BrandErrorCodesPage({ params }: CodesPageProps) {
           </section>
         );
       })}
+
+      {/* What the visit is, in the terms the rest of the site already uses.
+          Nothing here is a new claim: every figure comes from site-config, and
+          no licence or certification is asserted anywhere on this page. */}
+      <section className="py-16 bg-cream border-t border-primary-500/20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl">
+            <div className="eyebrow mb-4">If it needs us</div>
+            <h2 className="headline text-2xl sm:text-3xl mb-8">What the visit actually is</h2>
+
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-8">
+              <div>
+                <dt className="font-heading text-[11px] font-semibold uppercase tracking-label text-primary-500 mb-2">
+                  You know when we arrive
+                </dt>
+                <dd className="text-gray-600 leading-relaxed">
+                  A {siteConfig.appointment.arrivalWindow} window and a call no later than{' '}
+                  {siteConfig.appointment.noticeMinutes} minutes before we turn up.
+                </dd>
+              </div>
+              <div>
+                <dt className="font-heading text-[11px] font-semibold uppercase tracking-label text-primary-500 mb-2">
+                  You see the fault
+                </dt>
+                <dd className="text-gray-600 leading-relaxed">
+                  A code narrows it down; the test settles it. We show you what failed before we
+                  quote anything.
+                </dd>
+              </div>
+              <div>
+                <dt className="font-heading text-[11px] font-semibold uppercase tracking-label text-primary-500 mb-2">
+                  You approve the figure first
+                </dt>
+                <dd className="text-gray-600 leading-relaxed">
+                  {siteConfig.pricing.rangeNote}
+                </dd>
+              </div>
+              <div>
+                <dt className="font-heading text-[11px] font-semibold uppercase tracking-label text-primary-500 mb-2">
+                  The ${siteConfig.serviceCall.minimum} is not a second bill
+                </dt>
+                <dd className="text-gray-600 leading-relaxed">
+                  {siteConfig.serviceCall.appliedToRepair}. Repairs carry a{' '}
+                  {siteConfig.trustSignals.warrantyDays}-day warranty.
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      </section>
 
       {brandPage && (
         <section className="py-16 bg-cream-light border-t border-primary-500/20">

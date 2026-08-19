@@ -55,6 +55,25 @@ export interface ErrorCode {
   verdict: CodeVerdict;
   /** Which models and years this entry is true for. Required, and it is load-bearing. */
   appliesTo: string;
+  /**
+   * Where in the published range for this appliance the fault usually lands.
+   *
+   * Not a quote and not a number invented for this page. The figures come from
+   * `services.ts` — the ranges already printed on the service pages — and this
+   * says which end of one a given fault sits at, which is a technical
+   * judgement rather than a price. `varies` is used where the honest answer is
+   * that the same code covers a five-minute fix and a sealed-system job.
+   */
+  costBand?: 'low' | 'mid' | 'high' | 'varies';
+  /**
+   * A photograph of this fault, from `public/images/work/`.
+   *
+   * Only where the picture genuinely shows *this* — a lint-packed duct against
+   * a restricted-airflow code, a latch against a door fault. A stock kitchen
+   * against an error number is decoration, and the site does not do decoration.
+   * Most codes have none, and the page renders without a gap.
+   */
+  photo?: string;
 }
 
 export interface BrandErrorCodes {
@@ -94,6 +113,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: '22 E / 22 C',
         anchor: '22e',
+        costBand: 'mid',
         appliance: 'Refrigerator',
         means: 'The fresh-food evaporator fan is not turning, or the control cannot confirm that it is.',
         causes:
@@ -106,6 +126,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: '5 E / 5 C',
         anchor: '5e-fridge',
+        costBand: 'low',
         appliance: 'Refrigerator',
         means: 'The fresh-food defrost sensor is reading out of range — open circuit or short.',
         causes:
@@ -116,6 +137,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: '88 88 / 8 8',
         anchor: '8888',
+        costBand: 'low',
         appliance: 'Refrigerator',
         means: 'The control board took a power event and has not come back cleanly.',
         causes:
@@ -141,6 +163,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'PC ER / PC CH',
         anchor: 'pc-er',
+        costBand: 'mid',
         appliance: 'Refrigerator',
         means: 'The display panel and the main board have stopped talking to each other.',
         causes: 'The ribbon connector at the door hinge, most often — it flexes every time the door opens.',
@@ -150,6 +173,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: '4C / 4E',
         anchor: '4c',
+        costBand: 'low',
         appliance: 'Washer',
         means: 'The machine did not receive the water it asked for within the expected time.',
         causes:
@@ -162,6 +186,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: '5C / 5E',
         anchor: '5c',
+        costBand: 'low',
         appliance: 'Washer',
         means: 'The machine could not empty within the expected time.',
         causes:
@@ -174,6 +199,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'dC / DC',
         anchor: 'dc',
+        costBand: 'low',
         appliance: 'Washer',
         means: 'The door is not registering as closed.',
         causes:
@@ -185,6 +211,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'UB / UE / Ub',
         anchor: 'ub',
+        costBand: 'varies',
         appliance: 'Washer',
         means: 'The load will not balance well enough to spin safely.',
         causes:
@@ -197,6 +224,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'LC / LE / 1C',
         anchor: 'lc',
+        costBand: 'varies',
         appliance: 'Washer',
         means: 'Water has been detected where it should not be, and the machine has stopped.',
         causes: 'A leak at a hose, the bellows, or the pump seal. Occasionally the sensor itself has got damp and is over-reporting.',
@@ -206,6 +234,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: '3E / 3C',
         anchor: '3e',
+        costBand: 'mid',
         appliance: 'Washer',
         means: 'The motor hall sensor is not reporting drum speed correctly.',
         causes:
@@ -216,6 +245,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'HE / HC / hE',
         anchor: 'he',
+        costBand: 'high',
         appliance: 'Washer / Dryer',
         means: 'The heater circuit is not behaving — no heat, or heat that will not stop.',
         causes:
@@ -253,6 +283,8 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'D80 / D90 / D95',
         anchor: 'd80',
+        costBand: 'low',
+        photo: '03-dryer-lint.jpg',
         appliance: 'Dryer',
         means: 'The exhaust duct is 80, 90 or 95 per cent restricted. This is a measurement, not a fault.',
         causes:
@@ -265,6 +297,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'OE',
         anchor: 'oe',
+        costBand: 'low',
         appliance: 'Washer',
         means: 'The machine could not drain within the expected time.',
         causes:
@@ -277,6 +310,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'IE / 1E',
         anchor: 'ie',
+        costBand: 'low',
         appliance: 'Washer',
         means: 'The machine did not fill in the expected time.',
         causes: 'Taps, hoses, or the inlet screens. The valve itself is a distant fourth.',
@@ -287,6 +321,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'UE / uE',
         anchor: 'ue',
+        costBand: 'varies',
         appliance: 'Washer',
         means: 'The load will not balance for a spin.',
         causes:
@@ -299,6 +334,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'LE',
         anchor: 'le',
+        costBand: 'mid',
         appliance: 'Washer',
         means: 'The motor is reporting a locked rotor — it was told to turn and did not.',
         causes:
@@ -309,6 +345,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'dE / dE1 / dE2',
         anchor: 'de',
+        costBand: 'low',
         appliance: 'Washer',
         means: 'The door lock is not confirming closed.',
         causes: 'Laundry in the seal, then the latch assembly or its switch.',
@@ -319,6 +356,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'FE',
         anchor: 'fe',
+        costBand: 'mid',
         appliance: 'Washer',
         means: 'Water level has gone past where it should — an overfill.',
         causes: 'The inlet valve not closing fully, or the pressure sensor misreading.',
@@ -328,6 +366,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'PE / 1E',
         anchor: 'pe',
+        costBand: 'mid',
         appliance: 'Washer',
         means: 'The water level sensor is out of range.',
         causes: 'The pressure switch or its air hose, which can perish or come off the port.',
@@ -337,6 +376,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'tE / tE1 / tE2',
         anchor: 'te',
+        costBand: 'mid',
         appliance: 'Washer / Dryer',
         means: 'A temperature sensor is reading out of range.',
         causes: 'The thermistor or its connector. On dryers, a restricted vent can push readings far enough to trip it.',
@@ -346,6 +386,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'ER RF / ER FF / ER IF',
         anchor: 'er-rf',
+        costBand: 'mid',
         appliance: 'Refrigerator',
         means:
           'A fan is not confirming rotation — RF the fridge fan, FF the freezer fan, IF the ice maker fan.',
@@ -357,6 +398,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'ER dH',
         anchor: 'er-dh',
+        costBand: 'mid',
         appliance: 'Refrigerator',
         means: 'The defrost cycle ran and the evaporator did not reach the temperature it should have.',
         causes: 'Defrost heater, defrost sensor, or the control driving them.',
@@ -366,6 +408,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'ER CO / ER IS',
         anchor: 'er-co',
+        costBand: 'mid',
         appliance: 'Refrigerator',
         means: 'Communication between the display and the main board has failed.',
         causes: 'The harness through the door hinge, or a connector that has worked loose.',
@@ -375,6 +418,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'No code, no cooling',
         anchor: 'no-cooling',
+        costBand: 'high',
         appliance: 'Refrigerator',
         means:
           'Nothing on the display, both compartments warm. Listed here because it is the LG fault people search hardest for and it does not announce itself.',
@@ -404,6 +448,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F21 / F02',
         anchor: 'f21',
+        costBand: 'low',
         appliance: 'Washer',
         means: 'The machine took too long to drain.',
         causes:
@@ -416,6 +461,8 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F5 E3',
         anchor: 'f5e3',
+        costBand: 'low',
+        photo: '02-washer-door-latch.jpg',
         appliance: 'Washer',
         means: 'The door or lid lock will not release.',
         causes: 'The lock assembly, which is a known wear item across the top-load platform. Occasionally the control driving it.',
@@ -427,6 +474,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F7 E1',
         anchor: 'f7e1',
+        costBand: 'mid',
         appliance: 'Washer',
         means: 'The motor did not reach the speed it was asked for.',
         causes:
@@ -437,6 +485,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F8 E1 / LF / LO FL',
         anchor: 'f8e1',
+        costBand: 'low',
         appliance: 'Washer / Dishwasher',
         means: 'Long fill — the machine did not get the water it asked for in time.',
         causes: 'Taps, hoses, inlet screens. Then the valve. On dishwashers, the float or the flow meter.',
@@ -447,6 +496,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F8 E4',
         anchor: 'f8e4',
+        costBand: 'mid',
         appliance: 'Dishwasher',
         means: 'The flow meter is reporting water the machine did not expect — usually an overfill.',
         causes:
@@ -469,6 +519,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'dr / dET',
         anchor: 'dr',
+        costBand: 'low',
         appliance: 'Washer',
         means: 'The detergent dispensing system is reporting a fault or needs setting up.',
         causes: 'On load-and-go models, an empty reservoir or a dispenser that has not been primed. Then the dispenser motor.',
@@ -478,6 +529,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F01',
         anchor: 'f01',
+        costBand: 'high',
         appliance: 'Dryer',
         means: 'A main control board fault.',
         causes: 'The board itself, or a connector on it that has overheated at a terminal.',
@@ -487,6 +539,8 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'AF',
         anchor: 'af',
+        costBand: 'low',
+        photo: '03-dryer-lint.jpg',
         appliance: 'Dryer',
         means: 'Restricted airflow. The machine is not exhausting properly.',
         causes:
@@ -508,6 +562,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F9 E1',
         anchor: 'f9e1',
+        costBand: 'low',
         appliance: 'Washer',
         means: 'Long drain — water is leaving, but far too slowly.',
         causes: 'A partially blocked pump or filter, or a drain hose kinked behind the machine.',
@@ -534,6 +589,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F2 / F20',
         anchor: 'f2',
+        costBand: 'varies',
         appliance: 'Oven / Range',
         means: 'The oven exceeded its safe temperature and shut down.',
         causes:
@@ -544,6 +600,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F3 / F4',
         anchor: 'f3',
+        costBand: 'mid',
         appliance: 'Oven / Range',
         means: 'The oven temperature sensor circuit is open (F3) or shorted (F4).',
         causes: 'The sensor probe itself, or its harness where it passes through the oven wall.',
@@ -553,6 +610,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F7',
         anchor: 'f7',
+        costBand: 'mid',
         appliance: 'Oven / Range',
         means: 'A key on the touch panel is registering as permanently pressed.',
         causes:
@@ -565,6 +623,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F9 / F9 E0',
         anchor: 'f9',
+        costBand: 'mid',
         appliance: 'Oven / Range',
         means: 'The door lock motor or its switch is not reporting the position it should.',
         causes: 'The lock motor, the switch, or something obstructing the latch. Most often noticed after a self-clean cycle.',
@@ -574,6 +633,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F0',
         anchor: 'f0',
+        costBand: 'low',
         appliance: 'Oven / Range',
         means: 'A stuck key or a control that is not clearing.',
         causes: 'The membrane, as with F7. Sometimes clears with a power cycle and stays clear.',
@@ -584,6 +644,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'Blinking cycle lights',
         anchor: 'blinking-lights',
+        costBand: 'varies',
         appliance: 'Dishwasher',
         means: 'A fault code, expressed as a blink pattern rather than a number.',
         causes:
@@ -594,6 +655,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'No display, no water at the door',
         anchor: 'no-water',
+        costBand: 'low',
         appliance: 'Refrigerator',
         means:
           'Listed because GE refrigerators mostly do not announce faults, and this is the most common one.',
@@ -623,6 +685,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F51 / rPS',
         anchor: 'f51',
+        costBand: 'mid',
         appliance: 'Washer',
         means: 'The rotor position sensor is not reporting drum position correctly.',
         causes:
@@ -633,6 +696,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'uL / UL',
         anchor: 'ul',
+        costBand: 'low',
         appliance: 'Washer',
         means: 'The load is unbalanced and the machine will not spin at full speed.',
         causes: 'Load distribution, then levelling, then suspension rods.',
@@ -643,6 +707,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'Ld',
         anchor: 'ld',
+        costBand: 'low',
         appliance: 'Washer',
         means: 'Long drain — the water is leaving too slowly.',
         causes: 'The pump or an obstruction in it, then the drain hose.',
@@ -672,6 +737,8 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F5 E3',
         anchor: 'maytag-f5e3',
+        costBand: 'low',
+        photo: '02-washer-door-latch.jpg',
         appliance: 'Washer',
         means: 'The lid lock will not release.',
         causes: 'The lock assembly — a wear item across the shared Whirlpool platform.',
@@ -681,6 +748,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F8 E1 / LF',
         anchor: 'maytag-f8e1',
+        costBand: 'low',
         appliance: 'Washer',
         means: 'Long fill — the water did not arrive in time.',
         causes: 'Taps, hoses, inlet screens, then the valve.',
@@ -717,6 +785,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F8 E4',
         anchor: 'ka-f8e4',
+        costBand: 'mid',
         appliance: 'Dishwasher',
         means: 'The flow meter is reporting more water than the cycle asked for.',
         causes: 'The flow meter, the inlet valve failing to shut fully, or the float switch. Shared with the Whirlpool platform.',
@@ -726,6 +795,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F6 E4',
         anchor: 'ka-f6e4',
+        costBand: 'low',
         appliance: 'Dishwasher',
         means: 'The float or its switch is reporting a level the control does not expect.',
         causes: 'A stuck float, debris under it, or the switch itself.',
@@ -736,6 +806,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F7 E1',
         anchor: 'ka-f7e1',
+        costBand: 'mid',
         appliance: 'Dishwasher',
         means: 'The wash motor is not reaching the speed it was asked for.',
         causes: 'The circulation pump, or something jammed in the impeller — glass fragments are a frequent culprit.',
@@ -745,6 +816,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F9 E1',
         anchor: 'ka-f9e1',
+        costBand: 'low',
         appliance: 'Dishwasher',
         means: 'The machine is draining too slowly.',
         causes:
@@ -757,6 +829,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F2 E2',
         anchor: 'ka-f2e2',
+        costBand: 'mid',
         appliance: 'Dishwasher',
         means: 'A user-interface fault — the control panel is not communicating properly.',
         causes: 'The touch panel or the ribbon between it and the main board.',
@@ -766,6 +839,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'Clean light blinking 7 times',
         anchor: 'ka-blink-7',
+        costBand: 'mid',
         appliance: 'Dishwasher',
         means: 'A heater circuit fault on models that report by blink pattern.',
         causes: 'The heating element or its relay on the control. This is the fault behind "nothing dries any more".',
@@ -776,6 +850,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'Clean light blinking, other patterns',
         anchor: 'ka-blink-other',
+        costBand: 'varies',
         appliance: 'Dishwasher',
         means: 'A code — the pattern names which system, and the manual for your model lists the set.',
         causes:
@@ -802,6 +877,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'SY EF',
         anchor: 'sy-ef',
+        costBand: 'mid',
         appliance: 'Refrigerator',
         means: 'The evaporator fan circuit has failed to report correctly.',
         causes: 'Ice around the blade — which points at the defrost circuit — then the fan motor, then its wiring.',
@@ -811,6 +887,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'SY CE',
         anchor: 'sy-ce',
+        costBand: 'low',
         appliance: 'Refrigerator',
         means: 'The control boards have lost communication with each other.',
         causes: 'A harness or connector, frequently at the hinge where it flexes. Sometimes clears with a power cycle.',
@@ -821,6 +898,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'dF / df',
         anchor: 'df',
+        costBand: 'mid',
         appliance: 'Refrigerator',
         means: 'A defrost fault — the cycle ran and did not achieve what it should.',
         causes: 'Defrost heater, defrost thermostat, or the adaptive defrost control.',
@@ -830,6 +908,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'OP / SH',
         anchor: 'op-sh',
+        costBand: 'low',
         appliance: 'Refrigerator',
         means: 'A temperature sensor is reading open (OP) or shorted (SH).',
         causes: 'The sensor itself or its connector. Which compartment it names tells us where to go.',
@@ -839,6 +918,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F10',
         anchor: 'f10',
+        costBand: 'varies',
         appliance: 'Oven / Range',
         means: 'Runaway temperature — the oven got hotter than commanded and shut down.',
         causes:
@@ -849,6 +929,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F11',
         anchor: 'f11',
+        costBand: 'mid',
         appliance: 'Oven / Range',
         means: 'A key on the touch panel is registering as stuck.',
         causes:
@@ -860,6 +941,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F30 / F31',
         anchor: 'f30',
+        costBand: 'mid',
         appliance: 'Oven / Range',
         means: 'The oven temperature probe circuit is open (F30) or shorted (F31).',
         causes: 'The probe or its harness at the oven wall.',
@@ -869,6 +951,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'F90',
         anchor: 'f90',
+        costBand: 'mid',
         appliance: 'Oven / Range',
         means: 'The self-clean door lock motor is not reaching its position.',
         causes: 'The lock motor, its switch, or an obstruction at the latch.',
@@ -878,6 +961,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'E10 / E11',
         anchor: 'e10',
+        costBand: 'low',
         appliance: 'Washer',
         means: 'The machine did not fill in time.',
         causes: 'Taps, hoses, inlet screens, then the valve.',
@@ -888,6 +972,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'E20 / E21',
         anchor: 'e20',
+        costBand: 'low',
         appliance: 'Washer',
         means: 'The machine could not drain in time.',
         causes: 'The pump filter or an obstruction in it, then the pump, then the drain hose.',
@@ -914,6 +999,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'E11 / E13',
         anchor: 'e11',
+        costBand: 'varies',
         appliance: 'Washer',
         means: 'A fill fault — water did not arrive as expected (E11), or was detected where it should not be (E13).',
         causes:
@@ -925,6 +1011,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'E20 / E21',
         anchor: 'elux-e20',
+        costBand: 'low',
         appliance: 'Washer',
         means: 'The machine could not drain in time.',
         causes: 'The pump filter, then the pump, then the drain hose or standpipe.',
@@ -935,6 +1022,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'E23 / E24',
         anchor: 'e23',
+        costBand: 'mid',
         appliance: 'Washer',
         means: 'The drain pump circuit or its control is reporting a fault.',
         causes: 'The pump motor or the triac on the control that drives it.',
@@ -944,6 +1032,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'E5E / E57 / E58',
         anchor: 'e5e',
+        costBand: 'high',
         appliance: 'Washer',
         means: 'A motor circuit fault — current or speed outside the expected range.',
         causes: 'The motor, the control, or a drum physically obstructed.',
@@ -953,6 +1042,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'E64',
         anchor: 'e64',
+        costBand: 'mid',
         appliance: 'Dryer',
         means: 'The heating element circuit is out of range.',
         causes: 'The element or a thermostat. A restricted vent is often what took the element out in the first place.',
@@ -962,6 +1052,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'E68',
         anchor: 'e68',
+        costBand: 'mid',
         appliance: 'Dryer',
         means: 'A key on the panel is registering as stuck.',
         causes: 'The membrane or the control panel behind it.',
@@ -972,6 +1063,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'No steam on a steam cycle',
         anchor: 'no-steam',
+        costBand: 'mid',
         appliance: 'Dryer',
         means:
           'Listed without a code because it often has none — the cycle simply fails or completes without steaming.',
@@ -983,6 +1075,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'SY EF / SY CE',
         anchor: 'elux-sy-ef',
+        costBand: 'mid',
         appliance: 'Refrigerator',
         means: 'Evaporator fan circuit (SY EF) or a communication fault between boards (SY CE).',
         causes: 'The same as on Frigidaire, because it is the same platform — ice at the fan blade, or a connector at the hinge.',
@@ -1009,6 +1102,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'E15',
         anchor: 'e15',
+        costBand: 'varies',
         appliance: 'Dishwasher',
         means: 'Water has reached the base pan and the float has cut the machine off.',
         causes:
@@ -1021,6 +1115,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'E24 / E25',
         anchor: 'bosch-e24',
+        costBand: 'low',
         appliance: 'Dishwasher',
         means: 'The machine could not drain — blocked (E24) or the pump is not performing (E25).',
         causes:
@@ -1033,6 +1128,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'E09',
         anchor: 'e09',
+        costBand: 'high',
         appliance: 'Dishwasher',
         means: 'The heating circuit is not performing.',
         causes: 'The flow-through heater or the control that drives it. Presents as cold washes and nothing drying.',
@@ -1042,6 +1138,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'E22',
         anchor: 'e22',
+        costBand: 'low',
         appliance: 'Dishwasher',
         means: 'The filter is blocked enough to restrict circulation.',
         causes: 'The filter assembly in the tub floor, which needs rinsing every few weeks and rarely gets it.',
@@ -1052,6 +1149,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'E01 / E02',
         anchor: 'e01',
+        costBand: 'high',
         appliance: 'Dishwasher',
         means: 'A control or motor circuit fault.',
         causes: 'The main control board, or the wash motor it drives.',
@@ -1061,6 +1159,7 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'E18',
         anchor: 'e18',
+        costBand: 'low',
         appliance: 'Washer',
         means: 'The washing machine could not drain.',
         causes: 'The pump filter behind the lower flap, then the pump, then the hose.',
@@ -1098,6 +1197,8 @@ export const brandErrorCodes: BrandErrorCodes[] = [
       {
         code: 'Dryer runs, no heat',
         anchor: 'kenmore-no-heat',
+        costBand: 'low',
+        photo: '03-dryer-lint.jpg',
         appliance: 'Dryer',
         means: 'Listed separately because it is true across every Kenmore dryer regardless of who built it.',
         causes:
@@ -1162,6 +1263,39 @@ export const brandErrorCodes: BrandErrorCodes[] = [
     },
   },
 ];
+
+/**
+ * Which service page's published range applies to a code's appliance.
+ *
+ * The `appliance` strings are written for a reader, not for a lookup, so the
+ * mapping is explicit rather than inferred — a fuzzy match here would quietly
+ * print refrigerator money against a dryer fault.
+ */
+const APPLIANCE_TO_SERVICE: Record<string, string> = {
+  Refrigerator: 'refrigerator',
+  Washer: 'washer',
+  Dryer: 'dryer',
+  'Washer / Dryer': 'washer',
+  Dishwasher: 'dishwasher',
+  'Oven / Range': 'oven-range',
+};
+
+export function serviceSlugForAppliance(appliance: string): string | undefined {
+  return APPLIANCE_TO_SERVICE[appliance];
+}
+
+/**
+ * How each band reads once the range has been stated.
+ *
+ * Written as a clause that follows the figures rather than precedes them —
+ * "at the bottom of that range" in front of the range points at nothing.
+ */
+export const COST_BAND_COPY: Record<NonNullable<ErrorCode['costBand']>, string> = {
+  low: 'sits at the bottom of that range, and plenty of these end at the visit',
+  mid: 'sits around the middle of it',
+  high: 'sits at the top of it, and past it on a built-in',
+  varies: 'lands anywhere in it — the same code covers a rinse-out and a part',
+};
 
 export function getErrorCodesForBrand(brandSlug: string) {
   return brandErrorCodes.find((entry) => entry.brandSlug === brandSlug);
