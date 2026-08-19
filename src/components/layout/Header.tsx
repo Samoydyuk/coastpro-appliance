@@ -25,6 +25,22 @@ const navigation = [
       { name: 'All Services', href: '/services' },
     ],
   },
+  {
+    name: 'Brands',
+    href: '/brands',
+    children: [
+      { name: 'Sub-Zero Repair', href: '/brands/sub-zero' },
+      { name: 'Wolf Repair', href: '/brands/wolf' },
+      { name: 'Viking Repair', href: '/brands/viking' },
+      { name: 'Thermador Repair', href: '/brands/thermador' },
+      { name: 'Samsung Repair', href: '/brands/samsung' },
+      { name: 'LG Repair', href: '/brands/lg' },
+      { name: 'Whirlpool Repair', href: '/brands/whirlpool' },
+      { name: 'GE Repair', href: '/brands/ge' },
+      { name: 'All Brands', href: '/brands' },
+      { name: 'Error Codes Explained', href: '/error-codes' },
+    ],
+  },
   { name: 'Service Areas', href: '/service-areas' },
   { name: 'Gallery', href: '/gallery' },
   { name: 'Repair Notes', href: '/blog' },
@@ -37,8 +53,17 @@ const navigation = [
 // row: at 1024 — the width the desktop nav first appears at — eight items, a
 // phone number and a button do not fit, and the labels were breaking mid-name
 // ("SERVICE / AREAS") long before this file gained an eighth item.
+//
+// Brands is the ninth, and it earns the room: /brands and /error-codes are the
+// two hubs the rest of the site hangs off — twenty-five pages between them —
+// and until this they were reachable from the footer and almost nowhere else.
+// Google had crawled /brands and declined to index it, which is what a page
+// with one sitewide link looks like from the outside.
+// px-1 rather than px-1.5 below xl: with nine items the ninth spent the last of
+// the slack and the wordmark ended up touching HOME. Two pixels an item either
+// side buys the gap back, and only at the width that needs it.
 const navLinkClass =
-  'px-1.5 xl:px-3 py-2 font-heading text-[11px] font-semibold uppercase tracking-label text-primary-600 hover:text-ink transition-colors flex items-center gap-1 whitespace-nowrap';
+  'px-1 xl:px-3 py-2 font-heading text-[11px] font-semibold uppercase tracking-label text-primary-600 hover:text-ink transition-colors flex items-center gap-1 whitespace-nowrap';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -168,16 +193,24 @@ export function Header() {
                   </Link>
                   {item.children && (
                     <div className="pl-4">
-                      {item.children.slice(0, -1).map((child) => (
-                        <Link
-                          key={child.name}
-                          href={child.href}
-                          className="block py-2.5 text-sm text-gray-600 hover:text-ink border-b border-primary-500/10"
-                          onClick={() => setMobileMenuOpen(false)}
-                        >
-                          {child.name}
-                        </Link>
-                      ))}
+                      {/* Drop the child that repeats the parent — "All Services"
+                          under Services, "All Brands" under Brands. This used to
+                          be `slice(0, -1)`, which quietly assumed the redundant
+                          one was always last and would have swallowed whatever
+                          followed it. Match on the href instead, which is the
+                          thing actually being deduplicated. */}
+                      {item.children
+                        .filter((child) => child.href !== item.href)
+                        .map((child) => (
+                          <Link
+                            key={child.name}
+                            href={child.href}
+                            className="block py-2.5 text-sm text-gray-600 hover:text-ink border-b border-primary-500/10"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            {child.name}
+                          </Link>
+                        ))}
                     </div>
                   )}
                 </div>
