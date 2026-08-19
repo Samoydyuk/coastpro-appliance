@@ -116,7 +116,7 @@ export function Header() {
               {navigation.map((item) => (
                 <div
                   key={item.name}
-                  className="relative"
+                  className="group relative"
                   onMouseEnter={() => item.children && setOpenDropdown(item.name)}
                   onMouseLeave={() => setOpenDropdown(null)}
                 >
@@ -125,8 +125,26 @@ export function Header() {
                     {item.children && <ChevronDown className="h-3 w-3" strokeWidth={2} />}
                   </Link>
 
-                  {item.children && openDropdown === item.name && (
-                    <div className="absolute top-full left-0 w-60 bg-cream-light border border-primary-500/25 py-2 z-50">
+                  {/* Hidden with CSS rather than left out of the render.
+                      Mounting these only while the pointer is over the parent
+                      means they are in no crawl and no keyboard path: a robot
+                      does not hover, so /error-codes had exactly one link on
+                      the whole site — the footer — even after Brands went into
+                      the menu. `invisible` keeps it out of the tab order and
+                      off the screen while the anchors stay in the document,
+                      which is how a dropdown menu is normally built.
+
+                      group-focus-within opens it for anyone arriving by
+                      keyboard, which the mouse-only version never did. */}
+                  {item.children && (
+                    <div
+                      className={cn(
+                        'absolute top-full left-0 w-60 bg-cream-light border border-primary-500/25 py-2 z-50',
+                        'invisible opacity-0 pointer-events-none transition-opacity duration-150',
+                        'group-focus-within:visible group-focus-within:opacity-100 group-focus-within:pointer-events-auto',
+                        openDropdown === item.name && 'visible opacity-100 pointer-events-auto'
+                      )}
+                    >
                       {item.children.map((child) => (
                         <Link
                           key={child.name}
