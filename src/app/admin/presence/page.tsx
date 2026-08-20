@@ -3,6 +3,16 @@ import { getPresence, getPresenceImportRuns } from '@/lib/admin/presence-queries
 import { count, delta, percent, relativeTime, shortDate } from '@/lib/admin/format';
 import { Empty, Hint, Panel, SetupNotice, Table, Td, Th, Warning } from '@/components/admin/ui';
 import { PresenceEntry } from '@/components/admin/PresenceEntry';
+import {
+  PresenceConnections,
+  type ConnectionState,
+} from '@/components/admin/PresenceConnections';
+import {
+  getGoogleConnection,
+  getMetaConnection,
+  googleAppConfigured,
+  metaAppConfigured,
+} from '@/lib/presence/credentials';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,11 +57,44 @@ export default async function PresencePage({
     to: searchParams.to as string,
   });
 
+  const connected = searchParams.connected as string | undefined;
+  const failed = searchParams.error as string | undefined;
+
   try {
-    const [channels, runs] = await Promise.all([getPresence(range), getPresenceImportRuns()]);
+    const [channels, runs, google, meta] = await Promise.all([
+      getPresence(range),
+      getPresenceImportRuns(),
+      getGoogleConnection(),
+      getMetaConnection(),
+    ]);
 
     const live = channels.filter((c) => c.hasData);
     const manual = channels.filter((c) => !c.channel.automated);
+
+    const connections: ConnectionState[] = [
+      {
+        provider: 'google',
+        label: 'Google Business Profile',
+        appReady: googleAppConfigured(),
+        connectedAs: google
+          ? [google.locationName, google.accountName].filter(Boolean).join(' · ') || 'Connected'
+          : null,
+        connectedAt: google?.connectedAt ?? null,
+        setupHint: 'Set GBP_CLIENT_ID and GBP_CLIENT_SECRET first — those register the app itself.',
+      },
+      {
+        provider: 'meta',
+        label: 'Instagram & Facebook',
+        appReady: metaAppConfigured(),
+        connectedAs: meta
+          ? [meta.pageName, meta.igUsername ? `@${meta.igUsername}` : null]
+              .filter(Boolean)
+              .join(' · ') || 'Connected'
+          : null,
+        connectedAt: meta?.connectedAt ?? null,
+        setupHint: 'Set META_APP_ID and META_APP_SECRET first — those register the app itself.',
+      },
+    ];
 
     return (
       <div className="space-y-6">
@@ -65,10 +108,24 @@ export default async function PresencePage({
           <PresenceEntry channels={manual.map((c) => c.channel)} />
         </header>
 
+        {connected && (
+          <div className="rounded-card border border-primary-700/40 bg-primary-700/5 px-4 py-3 text-sm text-ink">
+            {connected}
+          </div>
+        )}
+        {failed && <Warning>{failed}</Warning>}
+
+        <Panel
+          title="Connected accounts"
+          subtitle="Connecting an account is a click; registering the app with Google and Meta is a one-time job in their developer consoles"
+        >
+          <PresenceConnections connections={connections} />
+        </Panel>
+
         {!live.length && (
           <Warning>
             No listing has reported yet. Google, Instagram and Facebook fill themselves in once
-            their credentials are set; Yelp and Apple are entered by hand with the button above.
+            their accounts are connected above; Yelp and Apple are entered by hand.
           </Warning>
         )}
 

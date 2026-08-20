@@ -3,6 +3,7 @@ import { isDbConfigured, requireDb } from '@/lib/db';
 import { presenceChannel, writePresenceRows } from '@/lib/presence/store';
 import { importGoogleBusinessProfile } from '@/lib/presence/gbp';
 import { importMeta } from '@/lib/presence/meta';
+import { clearGoogleConnection, clearMetaConnection } from '@/lib/presence/credentials';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -34,9 +35,10 @@ function clamp(value: unknown): number {
 
 export async function POST(request: NextRequest) {
   let body: {
-    action?: 'save' | 'refresh';
+    action?: 'save' | 'refresh' | 'disconnect';
     day?: string;
     channel?: string;
+    provider?: string;
     measures?: Record<string, unknown>;
   };
 
@@ -54,6 +56,15 @@ export async function POST(request: NextRequest) {
   }
 
   const sql = requireDb();
+
+  // Forgetting an account is deliberately a separate action from replacing one.
+  // Reconnecting overwrites; this is for handing the listing to somebody else.
+  if (body.action === 'disconnect') {
+    if (body.provider === 'google') await clearGoogleConnection();
+    else if (body.provider === 'meta') await clearMetaConnection();
+    else return NextResponse.json({ error: 'Unknown provider' }, { status: 400 });
+    return NextResponse.json({ ok: true });
+  }
 
   // Pull whatever can be pulled, on demand.
   if (body.action === 'refresh') {

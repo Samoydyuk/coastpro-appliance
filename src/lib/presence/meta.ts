@@ -1,4 +1,5 @@
 import { writePresenceRows, lookbackWindow, type PresenceRow } from './store';
+import { getMetaConnection } from './credentials';
 import type { ImportOutcome } from './gbp';
 import type postgres from 'postgres';
 
@@ -36,13 +37,6 @@ interface InsightValue {
 interface InsightEntry {
   name?: string;
   values?: InsightValue[];
-}
-
-export function metaConfigured(): boolean {
-  return Boolean(
-    process.env.META_PAGE_TOKEN &&
-      (process.env.META_PAGE_ID || process.env.META_IG_USER_ID)
-  );
 }
 
 /** `end_time` is an ISO instant at the *end* of the day it describes. */
@@ -126,23 +120,24 @@ async function followerCount(node: string, field: string, token: string): Promis
 }
 
 export async function importMeta(sql: postgres.Sql, days?: number): Promise<ImportOutcome[]> {
-  if (!metaConfigured()) {
+  const connection = await getMetaConnection();
+  if (!connection) {
     return [
       {
         ok: true,
         channel: 'instagram',
         rows: 0,
-        skipped: 'No Meta credentials set — add META_PAGE_TOKEN plus META_IG_USER_ID and/or META_PAGE_ID.',
+        skipped: 'No Meta account connected — use Connect on the Presence screen.',
       },
     ];
   }
 
-  const token = process.env.META_PAGE_TOKEN ?? '';
+  const token = connection.pageToken;
   const { from, to } = lookbackWindow(days);
   const outcomes: ImportOutcome[] = [];
 
   // Instagram
-  const igUser = process.env.META_IG_USER_ID;
+  const igUser = connection.igUserId;
   if (igUser) {
     try {
       const data = await graphInsights(igUser, IG_DAY_METRICS, from, to, token);
@@ -182,7 +177,7 @@ export async function importMeta(sql: postgres.Sql, days?: number): Promise<Impo
   }
 
   // Facebook Page
-  const pageId = process.env.META_PAGE_ID;
+  const pageId = connection.pageId;
   if (pageId) {
     try {
       const data = await graphInsights(pageId, FB_DAY_METRICS, from, to, token);

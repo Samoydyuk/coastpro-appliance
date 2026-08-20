@@ -1,4 +1,5 @@
 import { writePresenceRows, lookbackWindow, type PresenceRow } from './store';
+import { getGoogleConnection, type GoogleConnection } from './credentials';
 import type postgres from 'postgres';
 
 /**
@@ -65,37 +66,27 @@ export interface ImportOutcome {
   error?: string;
 }
 
-export function gbpConfigured(): boolean {
-  return Boolean(
-    process.env.GBP_CLIENT_ID &&
-      process.env.GBP_CLIENT_SECRET &&
-      process.env.GBP_REFRESH_TOKEN &&
-      process.env.GBP_LOCATION_ID
-  );
-}
-
-async function accessToken(): Promise<string> {
+async function accessToken(connection: GoogleConnection): Promise<string> {
   const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       client_id: process.env.GBP_CLIENT_ID ?? '',
       client_secret: process.env.GBP_CLIENT_SECRET ?? '',
-      refresh_token: process.env.GBP_REFRESH_TOKEN ?? '',
+      refresh_token: connection.refreshToken,
       grant_type: 'refresh_token',
     }),
   });
   const body = (await response.json()) as { access_token?: string; error_description?: string };
   if (!response.ok || !body.access_token) {
-    throw new Error(`Google token exchange failed: ${body.error_description ?? response.status}`);
+    // `invalid_grant` here means the consent was withdrawn or the password
+    // changed. Named, because the fix is pressing Connect again and no amount
+    // of waiting will do it.
+    throw new Error(
+      `Google token exchange failed: ${body.error_description ?? response.status}. Reconnect the account from the Presence screen.`
+    );
   }
   return body.access_token;
-}
-
-/** `locations/123…` however it was configured, with or without the prefix. */
-function locationPath(): string {
-  const raw = (process.env.GBP_LOCATION_ID ?? '').trim();
-  return raw.startsWith('locations/') ? raw : `locations/${raw}`;
 }
 
 function dateParts(day: string) {
@@ -127,18 +118,20 @@ export async function importGoogleBusinessProfile(
   sql: postgres.Sql,
   days?: number
 ): Promise<ImportOutcome> {
-  if (!gbpConfigured()) {
+  const connection = await getGoogleConnection();
+  if (!connection) {
     return {
       ok: true,
       channel: 'google_business',
       rows: 0,
-      skipped: 'No Business Profile credentials set — add GBP_CLIENT_ID, GBP_CLIENT_SECRET, GBP_REFRESH_TOKEN and GBP_LOCATION_ID.',
+      skipped: 'No Business Profile account connected — use Connect on the Presence screen.',
     };
   }
 
   try {
     const { from, to } = lookbackWindow(days);
-    const token = await accessToken();
+    const token = await accessToken(connection);
+    const locationPath = () => connection.locationId;
 
     const params = new URLSearchParams();
     ALL_METRICS.forEach((metric) => params.append('dailyMetrics', metric));
