@@ -15,6 +15,7 @@ const SECTIONS = [
   { href: '/admin/calls', label: 'Calls' },
   { href: '/admin/pages', label: 'Pages' },
   { href: '/admin/geo', label: 'Geography' },
+  { href: '/admin/presence', label: 'Presence' },
   { href: '/admin/spend', label: 'Spend' },
   { href: '/admin/quality', label: 'Quality' },
   { href: '/admin/speed', label: 'Speed' },

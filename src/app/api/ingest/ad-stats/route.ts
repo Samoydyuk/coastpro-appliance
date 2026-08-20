@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash, timingSafeEqual } from 'crypto';
 import { requireDb } from '@/lib/db';
+import { PRESENCE_CHANNEL_KEYS, upsertPlatformStats } from '@/lib/presence/store';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -38,6 +39,10 @@ const LEVELS = new Set([
   'day_of_week',
   'placement',
   'audience',
+  // A whole listing or profile for a day. The unpaid surfaces have no campaign
+  // to sit under, so this is the only grain they report at.
+  'profile',
+  'post',
 ]);
 
 const CHANNELS = new Set([
@@ -48,9 +53,22 @@ const CHANNELS = new Set([
   'tiktok_ads',
   'yelp_ads',
   'nextdoor',
+  // The unpaid side: map listings, directory pages and social profiles. Kept
+  // apart from their advertising namesakes on purpose — `yelp_ads` is money
+  // spent, `yelp_profile` is a page people found. Merging them would make the
+  // free listing look like it had a budget.
+  ...PRESENCE_CHANNEL_KEYS,
 ]);
 
-const SOURCES = new Set(['google_ads_script', 'meta_api', 'manual_csv']);
+const SOURCES = new Set([
+  'google_ads_script',
+  'meta_api',
+  'manual_csv',
+  'gbp_api',
+  // Numbers copied out of a dashboard that has no API. Recorded as its own
+  // source so the screen can say a figure was typed, not fetched.
+  'manual_entry',
+]);
 
 interface IncomingRow {
   day?: string;
@@ -173,41 +191,11 @@ export async function POST(request: NextRequest) {
       // Re-sent days overwrite rather than accumulate: the importer deliberately
       // re-fetches a rolling window because the platforms restate recent figures
       // for a day or two after the fact.
-      const columns = [
-        'day',
-        'channel',
-        'level',
-        'entity_id',
-        'entity_name',
-        'parent_name',
-        'segment',
-        'impressions',
-        'clicks',
-        'cost_cents',
-        'conversions',
-        'conversion_value_cents',
-        'extra',
-        'source',
-      ] as const;
-
-      // Chunked so a single statement never carries thousands of parameters.
-      for (let start = 0; start < rows.length; start += 500) {
-        const chunk = rows.slice(start, start + 500);
-        await sql`
-          insert into platform_stats ${sql(chunk, ...columns)}
-          on conflict (day, channel, level, entity_id, segment) do update set
-            entity_name            = excluded.entity_name,
-            parent_name            = excluded.parent_name,
-            impressions            = excluded.impressions,
-            clicks                 = excluded.clicks,
-            cost_cents             = excluded.cost_cents,
-            conversions            = excluded.conversions,
-            conversion_value_cents = excluded.conversion_value_cents,
-            extra                  = excluded.extra,
-            source                 = excluded.source,
-            updated_at             = now()
-        `;
-      }
+      //
+      // The insert itself lives in lib/presence/store so the scheduled
+      // importers write through exactly the same conflict clause — that rule is
+      // worth having in one place rather than in every caller that learned it.
+      await upsertPlatformStats(sql, rows);
 
       // Campaign totals are mirrored into ad_spend, which is what every
       // existing screen already reads for cost per lead and return on spend.
