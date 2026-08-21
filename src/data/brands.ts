@@ -70,7 +70,7 @@ export const brands: ApplianceBrand[] = [
     summary: 'Built-in refrigeration, and the coil that decides most of it.',
     positioning:
       'Sub-Zero builds built-in refrigeration and very little else, which is why the units last as long as they do and why they fail in a narrow set of ways. Most models run dual refrigeration — separate sealed systems for the fresh-food and freezer compartments — so one side can be perfectly cold while the other slowly warms. That single fact rules out half of what a technician would otherwise suspect, and it is the first thing we check.',
-    categories: ['Built-in refrigerators', 'Freezer columns', 'Wine storage'],
+    categories: ['Built-in refrigerators', 'Freezer columns'],
     lines: ['Built-In (BI)', 'Integrated (IT)', 'PRO', 'Designer', 'Classic', '500 & 600 Series'],
     faults: [
       {
@@ -128,8 +128,8 @@ export const brands: ApplianceBrand[] = [
     summary: 'Professional ranges — and the spark module behind most call-outs.',
     positioning:
       'Wolf shares a parent company with Sub-Zero and the same design philosophy: heavy, serviceable, built to be repaired rather than replaced. The ranges are genuinely commercial in construction, which means the burners and grates will outlast the house — and that almost everything that actually goes wrong is electrical rather than mechanical.',
-    categories: ['Gas ranges', 'Dual-fuel ranges', 'Rangetops', 'Wall ovens', 'Steam ovens'],
-    lines: ['Gas Range (GR)', 'Dual Fuel (DF)', 'Sealed Burner Rangetop (SRT)', 'M Series ovens', 'Convection Steam'],
+    categories: ['Gas ranges', 'Dual-fuel ranges', 'Wall ovens'],
+    lines: ['Gas Range (GR)', 'Dual Fuel (DF)', 'M Series ovens'],
     faults: [
       {
         symptom: 'A burner clicks and will not stop, even once it is lit',
@@ -186,7 +186,7 @@ export const brands: ApplianceBrand[] = [
     summary: 'Professional ranges, and a reliability story that split in 2013.',
     positioning:
       'Viking effectively created the residential professional range, and the build quality of the metalwork has never been in question. The service history is more complicated than that, and it is worth knowing which side of it your range falls on: units built before the Middleby acquisition in 2013 earned a genuine reputation for electrical and igniter trouble, and the generations since are materially better. The model and age tell us a great deal before we open anything.',
-    categories: ['Professional ranges', 'Rangetops', 'Wall ovens', 'Built-in refrigeration', 'Dishwashers'],
+    categories: ['Professional ranges', 'Wall ovens', 'Built-in refrigeration', 'Dishwashers'],
     lines: ['Professional 5 Series', 'Professional 7 Series', 'Tuscany', 'Virtuoso', 'Designer'],
     faults: [
       {
@@ -241,21 +241,16 @@ export const brands: ApplianceBrand[] = [
     slug: 'thermador',
     name: 'Thermador',
     tier: 'premium',
-    summary: 'Star burners, Freedom induction, and column refrigeration.',
+    summary: 'Star burners, column refrigeration, and Sapphire dishwashers.',
     positioning:
-      'Thermador sits inside the BSH group alongside Bosch, which matters practically: the engineering and the parts supply are shared in places, and a technician who knows one has a head start on the other. The distinctive pieces are the patented star burner, the Freedom induction cooktop, and the built-in refrigeration columns — and each fails in its own way.',
-    categories: ['Ranges & rangetops', 'Induction cooktops', 'Wall ovens', 'Column refrigeration', 'Dishwashers'],
-    lines: ['Professional Harmony', 'Masterpiece', 'Freedom Induction', 'Sapphire dishwashers', 'Liberty columns'],
+      'Thermador sits inside the BSH group alongside Bosch, which matters practically: the engineering and the parts supply are shared in places, and a technician who knows one has a head start on the other. The distinctive pieces are the patented star burner, the built-in refrigeration columns and the Sapphire dishwashers — and each fails in its own way.',
+    categories: ['Ranges', 'Wall ovens', 'Column refrigeration', 'Dishwashers'],
+    lines: ['Professional Harmony', 'Masterpiece', 'Sapphire dishwashers', 'Liberty columns'],
     faults: [
       {
         symptom: 'Star burner will not light or the flame pattern is uneven',
         cause:
           'The igniter or a blocked burner port. The star geometry spreads flame more evenly than a round burner, which is the point of it — but it also means a partially blocked port shows up as a visibly lopsided flame rather than a weak one.',
-      },
-      {
-        symptom: 'Freedom induction cooktop drops out or will not recognise a pan',
-        cause:
-          'Usually the control board or a coil sensor rather than the pan. These cooktops read the vessel across the whole surface, so a fault reads as "it works over here and not over there" — which is diagnostic in itself.',
       },
       {
         symptom: 'Column refrigerator or freezer not holding temperature',
@@ -280,18 +275,14 @@ export const brands: ApplianceBrand[] = [
         a: 'Almost always a partially blocked port rather than a gas supply problem. The star shape makes it obvious in a way a round burner would hide. It usually cleans up; if it does not, the burner cap or igniter is the next thing to look at.',
       },
       {
-        q: 'My induction cooktop works on some zones but not others. Is the whole thing failing?',
-        a: 'Not necessarily, and that pattern is genuinely useful. Zone-specific behaviour points at a coil or its sensor rather than at the main board, which is a much smaller repair. We test each zone before quoting anything.',
-      },
-      {
         q: 'Is Thermador the same as Bosch for repair purposes?',
-        a: 'Related, not identical. They share a parent and some engineering, which helps with parts and with diagnosis on the dishwashers particularly. The cooking products are their own design, and the star burner and Freedom induction have no Bosch equivalent.',
+        a: 'Related, not identical. They share a parent and some engineering, which helps with parts and with diagnosis on the dishwashers particularly. The cooking products are their own design, and the star burner has no Bosch equivalent.',
       },
     ],
     seo: {
       title: 'Thermador Repair Orange County | Same-Day',
       description:
-        'Thermador repair across Orange County — star burners, Freedom induction, column refrigeration and Sapphire dishwashers. Same-day service. Call (949) 749-0006.',
+        'Thermador repair across Orange County — star burners, wall ovens, column refrigeration and Sapphire dishwashers. Same-day service. Call (949) 749-0006.',
     },
   },
 
@@ -302,7 +293,7 @@ export const brands: ApplianceBrand[] = [
     summary: 'Built to run twenty years — and to tell you when water escapes.',
     positioning:
       'Miele designs to a stated twenty-year service life and largely achieves it, which changes the economics of every repair conversation. A fifteen-year-old Miele dishwasher with a failed pump is usually worth fixing, where the same age on a mainstream machine would not be. The trade-off is parts that cost more and occasionally take longer, and a machine that is genuinely unlike its competitors inside.',
-    categories: ['Dishwashers', 'Washing machines', 'Heat-pump dryers', 'Built-in ovens', 'Coffee systems'],
+    categories: ['Dishwashers', 'Washing machines', 'Heat-pump dryers', 'Built-in ovens'],
     lines: ['G Series dishwashers', 'W1 washers', 'T1 dryers', 'Generation 7000', 'DGC steam combi'],
     faults: [
       {
@@ -784,7 +775,7 @@ export const brands: ApplianceBrand[] = [
     summary: 'Whirlpool\'s kitchen badge — and the county\'s most common upgrade dishwasher.',
     positioning:
       'KitchenAid is where Whirlpool puts its better kitchen engineering, and in Orange County that shows up overwhelmingly as dishwashers: it is the standard step-up from a builder-grade machine in Irvine, Tustin and Lake Forest kitchens, one tier below where Bosch and Thermador sit. The stainless tub, the third rack and the quieter wash system are genuine differences rather than trim. The advantage at repair time is that underneath it is a Whirlpool, so the parts situation is far better than the badge would suggest.',
-    categories: ['Dishwashers', 'Wall ovens', 'Ranges & cooktops', 'Built-in refrigeration', 'Warming drawers'],
+    categories: ['Dishwashers', 'Wall ovens', 'Ranges', 'Built-in refrigeration'],
     lines: ['KDTM / KDPM dishwashers', 'Architect Series II', 'Superba', 'KOSE wall ovens', 'Commercial-Style ranges'],
     faults: [
       {
@@ -928,7 +919,7 @@ export const brands: ApplianceBrand[] = [
     summary: 'Frigidaire\'s engineering, moved upmarket — and a laundry pair that rewards it.',
     positioning:
       'Electrolux and Frigidaire come from the same company and share more than either markets, which is genuinely useful at repair time: platforms, control architecture and a good deal of the parts catalogue carry across, so a technician who knows one is not starting from nothing on the other. Where they diverge is specification. The Electrolux badge goes on the better laundry and the French-door refrigeration, and the machines are built to a standard that puts them between the mainstream and the built-in brands rather than squarely in either.',
-    categories: ['French-door refrigerators', 'Front-load washers', 'Dryers', 'Wall ovens', 'Dishwashers', 'Induction cooktops'],
+    categories: ['French-door refrigerators', 'Front-load washers', 'Dryers', 'Wall ovens', 'Dishwashers'],
     lines: ['ICON', 'Perfect Steam laundry', 'EI / ELFW washers', 'EW French-door refrigeration', '500 / 700 Series'],
     faults: [
       {

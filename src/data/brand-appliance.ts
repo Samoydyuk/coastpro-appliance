@@ -790,10 +790,6 @@ export const brandAppliances: BrandAppliance[] = [
         symptom: 'Temperature drifting against the dial',
         cause: 'The temperature sensor or the bake element. Sensor first, because it is a two-minute check.',
       },
-      {
-        symptom: 'Warming drawer not heating',
-        cause: 'Its own element and thermostat — a separate circuit from the oven, so this says nothing about the rest.',
-      },
     ],
     partsNote:
       'Igniters, sensors and elements are readily available through the Whirlpool catalogue. Boards on the commercial-style ranges cost more than the mainstream equivalents and are worth testing carefully before ordering.',
@@ -810,7 +806,7 @@ export const brandAppliances: BrandAppliance[] = [
     seo: {
       title: 'KitchenAid Oven & Range Repair Orange County',
       description:
-        'KitchenAid range and wall oven repair across Orange County — igniters, control boards versus membranes, temperature sensors and warming drawers. Call (949) 749-0006.',
+        'KitchenAid range and wall oven repair across Orange County — igniters, control boards versus membranes, temperature sensors and bake elements. Call (949) 749-0006.',
     },
   },
 ];
