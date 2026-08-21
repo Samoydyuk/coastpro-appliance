@@ -527,4 +527,220 @@ export const cityLocal: Record<string, CityLocal> = {
       },
     ],
   },
+
+  'garden-grove': {
+    housing:
+      'Post-war tract, mostly built between the early fifties and the late sixties, and a great deal of it still in the hands of families rather than investors. Kitchens have usually been updated once and the laundry sits in the garage where the original builder put it.',
+    conditions:
+      'Two things run through the work here. North county water is hard, so scale on dishwasher elements, narrowed inlet valves and refrigerators whose ice production tails off are all routine. And households tend to be larger and multi-generational, which means machines running far more cycles than the manual assumed — bearings, pumps and latches wear out on schedule rather than failing oddly.',
+    brands: ['Whirlpool', 'Kenmore', 'GE', 'Frigidaire', 'Samsung', 'LG', 'Maytag'],
+    neighborhoods: ['Little Saigon', 'Historic Main Street', 'West Garden Grove', 'Buena Clinton'],
+    driveTime: 'Around 25 minutes from our Irvine base',
+    faq: [
+      {
+        q: 'Why does my dishwasher keep leaving film on everything?',
+        a: 'On this water it is hardness rather than the machine. Rinse aid and the right detergent dose fix more of these than any repair does — and if the machine has also stopped drying, that is scale on the heating element and it descales.',
+      },
+      {
+        q: 'The washer is only a few years old and the bearing has gone.',
+        a: 'Age is the wrong measure — cycles are. A household running ten or twelve loads a week reaches a bearing failure years before one running three, and it is wear rather than a defect.',
+      },
+    ],
+  },
+
+  westminster: {
+    housing:
+      'Fifties and sixties tract housing, single-storey for the most part, with garages that were built for a car and a wringer washer. Kitchens are original more often than not, and where they were updated the machine usually went into the space the old one left.',
+    conditions:
+      'High-cycle use is the pattern, as it is across this part of the county — larger households, more loads, and wear items reaching the end of their rated life years earlier than the average. That makes diagnosis quick and repair the sensible option far more often than replacement, because what has failed is a pump or a latch rather than anything structural.',
+    brands: ['Whirlpool', 'Kenmore', 'LG', 'Samsung', 'GE', 'Maytag', 'Frigidaire'],
+    neighborhoods: ['Little Saigon', 'Westminster Village', 'Sigler Park', 'Bolsa'],
+    driveTime: 'Around 30 minutes from our Irvine base',
+    faq: [
+      {
+        q: 'Is it worth repairing a washer that gets this much use?',
+        a: 'Usually yes, and more so than on a lightly used machine. High-cycle wear is predictable — a pump, a latch, a set of shock absorbers — and the rest of the machine is generally sound. It is unusual failures on lightly used machines that end up not being worth it.',
+      },
+    ],
+  },
+
+  'buena-park': {
+    housing:
+      'Built out between the fifties and the seventies, with the tracts around Knott\'s among the oldest. A lot of these kitchens have had two generations of appliance and the plumbing behind them has not changed since.',
+    conditions:
+      'This is some of the hardest water in the county and it does the same three things everywhere: scales the dishwasher heating element until the machine will not dry, narrows washer inlet screens until fills time out, and restricts the fill line on a refrigerator until ice production stops. All three read as component failures and all three are usually a clean.',
+    brands: ['Whirlpool', 'GE', 'Kenmore', 'Frigidaire', 'Maytag', 'Samsung', 'LG'],
+    neighborhoods: ['Knott\'s Berry Farm area', 'Buena Park Downtown', 'Los Coyotes'],
+    driveTime: 'Around 35 minutes from our Irvine base',
+    faq: [
+      {
+        q: 'Would a water softener actually help?',
+        a: 'On this water, genuinely — dishwashers, washing machines and refrigerators all last longer without the scale. It is a plumbing decision rather than an appliance one and we are not going to sell you one, but we will tell you what the scale is costing you.',
+      },
+    ],
+  },
+
+  'la-habra': {
+    housing:
+      'The north edge of the county, with housing running from pre-war bungalows near the old downtown to hillside tracts above it. The range of build eras is wider than most cities here, so the appliance generation varies street to street rather than neighbourhood to neighbourhood.',
+    conditions:
+      'Hard water again, and the same consequences — scale on elements, restricted valves, ice makers slowing. The older housing adds the second theme: dishwashers and laundry that were retrofitted into kitchens and garages built before either was standard, and the retrofit is what fails rather than the machine.',
+    brands: ['Whirlpool', 'GE', 'Kenmore', 'Maytag', 'Frigidaire', 'LG'],
+    neighborhoods: ['Old Town La Habra', 'Westridge', 'La Habra Heights border', 'Country Hills'],
+    driveTime: 'Around 40 minutes from our Irvine base',
+    faq: [
+      {
+        q: 'The sink backs up when the dishwasher drains.',
+        a: 'That is the drain arrangement rather than the dishwasher — usually no air gap or high loop, so the machine empties into a line that pushes back. In a retrofitted kitchen it is the most common cause, and correcting it is straightforward.',
+      },
+    ],
+  },
+
+  'fountain-valley': {
+    housing:
+      'Single-storey tract from the sixties and seventies, and unusually long ownership — a lot of these homes have had one or two families in fifty years. That shows up as original kitchens, appliances that were maintained rather than replaced, and garages still laid out the way the builder drew them.',
+    conditions:
+      'Garage laundry is close to universal, which means dryer ducts that run the length of a wall before they turn and exit. That run packs with lint and it is the most common reason a Fountain Valley dryer stops heating. Water here is easier than north county, so scale is less of a theme than it is ten miles inland.',
+    brands: ['Whirlpool', 'Maytag', 'GE', 'Kenmore', 'LG', 'Samsung'],
+    neighborhoods: ['Mile Square area', 'Green Valley', 'Los Caballeros', 'Talbert'],
+    driveTime: 'Around 20 minutes from our Irvine base',
+    faq: [
+      {
+        q: 'The dryer has stopped heating again.',
+        a: 'On a garage run that long, the duct is the first thing to look at. The part that failed is usually a symptom of a restricted exhaust, and replacing it without clearing the run just resets the clock.',
+      },
+      {
+        q: 'Is a thirty-year-old machine worth fixing?',
+        a: 'Sometimes, genuinely. Machines from that era are simple and often still supported, and a belt or a thermostat on one that has been looked after is money well spent. Where it stops being worth it is a control board that is no longer made, and we will tell you that before starting.',
+      },
+    ],
+  },
+
+  'laguna-niguel': {
+    housing:
+      'Hillside master-planned housing from the eighties through the two-thousands, split between detached homes on the ridges and a large stock of attached communities below them. The build era means most kitchens are on their second appliance rather than their first.',
+    conditions:
+      'The attached communities bring the closet-laundry problem — stacked pairs, long vents, drain hoses at awkward heights and a machine that has to come out before it can be opened. The detached homes on the slopes bring garages instead, and with them the wall-length duct. Water is easier here than in the north county.',
+    brands: ['LG', 'Samsung', 'Whirlpool', 'GE', 'Bosch', 'KitchenAid', 'Maytag'],
+    neighborhoods: ['Bear Brand', 'Marina Hills', 'Niguel Summit', 'Rancho Niguel', 'Beacon Hill'],
+    driveTime: 'Around 25 minutes from our Irvine base',
+    faq: [
+      {
+        q: 'The laundry is stacked in a closet. Does that make it harder?',
+        a: 'It makes it longer rather than harder. The pair has to come forward before anything can be reached, so a job that takes twenty minutes in a garage takes an hour here. Tell us it is a closet install when you book and we arrive expecting it.',
+      },
+    ],
+  },
+
+  'aliso-viejo': {
+    housing:
+      'The youngest city in the county — almost all of it built between the late eighties and the mid two-thousands, and a large share of it attached. Condominiums, townhomes and carriage units outnumber detached homes, which decides most of what we find.',
+    conditions:
+      'Laundry lives in a closet rather than a garage, and that closet is the recurring theme: vents that run long and turn twice before they reach an exterior wall, drain standpipes at heights the machine did not expect, and no room to work without pulling the pair out first. The housing is also young enough that a fair number of machines are still inside a manufacturer warranty nobody has checked.',
+    brands: ['LG', 'Samsung', 'Whirlpool', 'Bosch', 'GE', 'KitchenAid'],
+    neighborhoods: ['Glenwood', 'Vantis', 'Westridge', 'California Renaissance', 'Canyon Villas'],
+    driveTime: 'Around 20 minutes from our Irvine base',
+    faq: [
+      {
+        q: 'My dryer is in a closet and takes two cycles.',
+        a: 'A closet run is three times the duct of a garage install and every foot of it collects lint. Clearing the whole run — not just the first few feet — usually brings the drying times back without any part being replaced.',
+      },
+      {
+        q: 'The machines came with the condo. Are they under warranty?',
+        a: 'Quite possibly, given how much of this city is recent. Check before booking anyone including us — if it is covered, that repair should not cost you anything.',
+      },
+    ],
+  },
+
+  'san-clemente': {
+    housing:
+      'Two cities in one. The older beach housing near the pier and along the bluffs is small-footprint and often heavily remodelled; Talega and Forster Ranch inland are two-thousands master-planned with original kitchens. They need entirely different things.',
+    conditions:
+      'Near the water, salt air is the constant — it reaches terminals and control boards and corrodes the electrical side long before anything mechanical wears out, so coastal faults look random when they are not. Inland at Talega the story is ordinary suburban wear on machines that are all reaching the same age together. The drive is the other factor: this is the far end of the county and the afternoon traffic on the 5 is real.',
+    brands: ['Samsung', 'LG', 'Whirlpool', 'GE', 'Bosch', 'KitchenAid', 'Sub-Zero'],
+    neighborhoods: ['Talega', 'Forster Ranch', 'Rancho San Clemente', 'Pier Bowl', 'Riviera District'],
+    driveTime: 'Around 40 minutes from our Irvine base, longer in afternoon traffic',
+    faq: [
+      {
+        q: 'Does being close to the water really shorten appliance life?',
+        a: 'On the electrical side, measurably. Salt reaches connectors and boards and corrodes them years before anything mechanical wears out, which is why a coastal machine often fails in a way that looks random.',
+      },
+      {
+        q: 'Can you still do same-day this far south?',
+        a: 'Often, if you ring early. San Clemente is the far end of the county and an afternoon call here is frequently first thing the next morning instead — we will tell you which when you ring rather than after.',
+      },
+    ],
+  },
+
+  'villa-park': {
+    housing:
+      'The smallest city in the county and the one with the largest lots — half-acre minimums, custom homes, and kitchens that were specified rather than delivered. Built-in refrigeration and professional cooking are the norm here rather than the exception.',
+    conditions:
+      'What we open here is different from anywhere else in the county at this scale. Built-in columns installed tight into cabinetry runs, professional ranges whose burners will outlast the house and whose electronics will not, and panelled machines that need the panel off before they will come forward. North county water adds scale on anything water-fed on top of that.',
+    brands: ['Sub-Zero', 'Wolf', 'Viking', 'Thermador', 'Bosch', 'KitchenAid', 'Miele'],
+    neighborhoods: ['Hidden Valley', 'Villa Park Town Center area', 'Santiago Oaks border'],
+    driveTime: 'Around 25 minutes from our Irvine base',
+    faq: [
+      {
+        q: 'The refrigerator is panelled into the cabinetry. Is that a problem?',
+        a: 'Not a problem, but say so at booking. A panelled column often needs the door front off before the machine will come forward, and arriving prepared is the difference between finishing the job and rescheduling it.',
+      },
+      {
+        q: 'Do you work on professional ranges?',
+        a: 'Yes — Wolf, Viking and Thermador are a routine part of the work here. What we do not claim is factory authorisation we do not have: if your range is still inside a manufacturer warranty we will say so and send you to them rather than take the job.',
+      },
+    ],
+  },
+
+  'coto-de-caza': {
+    housing:
+      'Gated and unincorporated, with large custom homes built mostly from the late eighties onward and kitchens specified alongside the house. Second kitchens and outdoor kitchens are common, which means more machines per address than anywhere else we cover.',
+    conditions:
+      'Built-in refrigeration and professional cooking dominate, and the recurring fault on both is airflow: a column built into a tight cabinetry run and a coil that never got the clearance it was designed around. Outdoor kitchens add their own factor — a refrigerator under a counter outdoors through an inland summer is working well outside its rating.',
+    brands: ['Sub-Zero', 'Wolf', 'Viking', 'Thermador', 'Miele', 'Bosch', 'KitchenAid'],
+    neighborhoods: ['Coto Valley', 'Los Ranchos Estates', 'The Village', 'Weatherly'],
+    driveTime: 'Around 30 minutes from our Irvine base',
+    faq: [
+      {
+        q: 'The outdoor refrigerator struggles every summer.',
+        a: 'Most likely a specification problem rather than a fault. A great many refrigerators are not rated for the ambient range an inland Orange County summer reaches, and an undercounter unit outdoors is the hardest case of all.',
+      },
+      {
+        q: 'How often should a built-in condenser be cleaned?',
+        a: 'Every six to twelve months, and closer to six with pets. On a built-in the coil sits behind a grille and out of sight, so nobody notices until the machine is running constantly or the ice has stopped.',
+      },
+    ],
+  },
+
+  'ladera-ranch': {
+    housing:
+      'Almost the whole community went in between 1999 and 2010, which produces something we see nowhere else: an entire town whose original appliances are reaching the end of their service life within a few years of each other. Kitchens are largely original or on their first replacement.',
+    conditions:
+      'Family housing with the appliance use that implies — laundry running most days, dishwashers running daily, refrigerators with ice makers working hard. The build cohort means the failures arrive in waves: a lot of fifteen-year-old dishwashers and washers at once, and the parts for them are still well supplied.',
+    brands: ['Whirlpool', 'LG', 'Samsung', 'GE', 'KitchenAid', 'Bosch', 'Maytag'],
+    neighborhoods: ['Avendale', 'Flintridge', 'Oak Knoll', 'Terramor', 'Covenant Hills'],
+    driveTime: 'Around 25 minutes from our Irvine base',
+    faq: [
+      {
+        q: 'Everything in the kitchen seems to be failing at once.',
+        a: 'It is not your imagination and it is not bad luck. The whole community was built inside about a decade, so the original appliances reach the end of their service life at roughly the same time. The good news is that parts for that generation are still well supplied.',
+      },
+    ],
+  },
+
+  'north-tustin': {
+    housing:
+      'Unincorporated hillside above Tustin — Cowan Heights, Lemon Heights and Panorama Heights. Large lots and custom homes spanning several decades, so the appliance generation varies by house rather than by street.',
+    conditions:
+      'A mix that no incorporated city matches: mid-century custom homes with original kitchens next to properties remodelled in the last five years with built-in refrigeration and professional ranges. The hillside adds long driveways and detached garages, and second refrigerators in unconditioned spaces are common — a machine working outside its rated ambient range through an inland summer.',
+    brands: ['Sub-Zero', 'Thermador', 'Viking', 'Whirlpool', 'GE', 'KitchenAid', 'Bosch'],
+    neighborhoods: ['Cowan Heights', 'Lemon Heights', 'Panorama Heights', 'Racquet Hill'],
+    driveTime: 'Around 20 minutes from our Irvine base',
+    faq: [
+      {
+        q: 'The garage refrigerator works all winter and struggles every summer.',
+        a: 'Ambient temperature rather than a fault. Many refrigerators are not rated for the range an unconditioned Orange County garage reaches, and up on the hill the summer highs are higher than they are at the coast.',
+      },
+    ],
+  },
 };

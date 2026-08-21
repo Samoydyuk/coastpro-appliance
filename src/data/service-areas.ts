@@ -255,6 +255,210 @@ export const serviceAreas: ServiceArea[] = [
       description: "Dependable appliance repair in Placentia. Refrigerator, washer, dryer repair. All brands. 90-day warranty. Call (949) 749-0006.",
       keywords: ["appliance repair placentia", "refrigerator repair placentia", "washer repair placentia"]
     }
+  },
+  {
+    id: "garden-grove",
+    slug: "garden-grove",
+    name: "Garden Grove",
+    county: "Orange County",
+    state: "CA",
+    zipCodes: ["92840", "92841", "92843", "92844", "92845"],
+    coordinates: { lat: 33.7739, lng: -117.9414 },
+    description: "Garden Grove runs on hard north county water and post-war tract housing, and both show up inside the machines. CoastPro repairs appliances across the city, from Little Saigon to the Historic Main Street district.",
+    landmarks: ["Little Saigon", "Historic Main Street", "Garden Grove Park", "Christ Cathedral"],
+    neighboringCities: ["santa-ana", "anaheim", "orange", "westminster"],
+    seo: {
+      title: "Appliance Repair Garden Grove, CA | Same-Day",
+      description: "Appliance repair in Garden Grove — hard water scale, post-war housing, all major brands. 90-day warranty. Call (949) 749-0006.",
+      keywords: ["appliance repair garden grove", "refrigerator repair garden grove", "washer repair garden grove ca"]
+    }
+  },
+  {
+    id: "westminster",
+    slug: "westminster",
+    name: "Westminster",
+    county: "Orange County",
+    state: "CA",
+    zipCodes: ["92683", "92684", "92685"],
+    coordinates: { lat: 33.7514, lng: -117.9939 },
+    description: "Westminster housing is largely 1950s and 60s tract, and the appliances inside it work hard in multi-generational households. CoastPro covers the whole city including the Little Saigon core.",
+    landmarks: ["Little Saigon", "Asian Garden Mall", "Westminster Mall", "Sigler Park"],
+    neighboringCities: ["garden-grove", "huntington-beach", "fountain-valley", "santa-ana"],
+    seo: {
+      title: "Appliance Repair Westminster, CA | Same-Day",
+      description: "Appliance repair in Westminster — high-cycle households, 1950s and 60s housing, all major brands. 90-day warranty. Call (949) 749-0006.",
+      keywords: ["appliance repair westminster ca", "refrigerator repair westminster", "washer repair westminster"]
+    }
+  },
+  {
+    id: "buena-park",
+    slug: "buena-park",
+    name: "Buena Park",
+    county: "Orange County",
+    state: "CA",
+    zipCodes: ["90620", "90621", "90622", "90624"],
+    coordinates: { lat: 33.8675, lng: -117.9981 },
+    description: "Buena Park sits on the hardest water in the county and a housing stock built mostly between the fifties and the seventies. CoastPro repairs appliances throughout the city and the surrounding north county neighborhoods.",
+    landmarks: ["Knott's Berry Farm", "Buena Park Downtown", "Ralph B. Clark Regional Park"],
+    neighboringCities: ["fullerton", "anaheim", "la-habra", "cypress"],
+    seo: {
+      title: "Appliance Repair Buena Park, CA | Same-Day",
+      description: "Appliance repair in Buena Park — hard water scale on elements and valves, older tract housing, all brands. Call (949) 749-0006.",
+      keywords: ["appliance repair buena park", "refrigerator repair buena park", "washer repair buena park ca"]
+    }
+  },
+  {
+    id: "la-habra",
+    slug: "la-habra",
+    name: "La Habra",
+    county: "Orange County",
+    state: "CA",
+    zipCodes: ["90631", "90632", "90633"],
+    coordinates: { lat: 33.9319, lng: -117.9461 },
+    description: "La Habra is the north edge of the county and it has the water to match — scale is the recurring theme in the machines here. CoastPro covers the city and the hills above it.",
+    landmarks: ["La Habra Children's Museum", "Westridge Golf Club", "La Bonita Park"],
+    neighboringCities: ["brea", "fullerton", "buena-park"],
+    seo: {
+      title: "Appliance Repair La Habra, CA | Same-Day",
+      description: "Appliance repair in La Habra — hard water scale, older housing stock, all major brands. 90-day warranty. Call (949) 749-0006.",
+      keywords: ["appliance repair la habra", "refrigerator repair la habra ca", "washer repair la habra"]
+    }
+  },
+  {
+    id: "fountain-valley",
+    slug: "fountain-valley",
+    name: "Fountain Valley",
+    county: "Orange County",
+    state: "CA",
+    zipCodes: ["92708", "92728"],
+    coordinates: { lat: 33.7092, lng: -117.9536 },
+    description: "Fountain Valley is single-story tract housing from the sixties and seventies with unusually long ownership, which means original kitchens and appliances that were looked after. CoastPro covers the whole city.",
+    landmarks: ["Mile Square Regional Park", "Fountain Valley Recreation Center", "Talbert Nature Preserve"],
+    neighboringCities: ["huntington-beach", "costa-mesa", "santa-ana", "westminster"],
+    seo: {
+      title: "Appliance Repair Fountain Valley, CA | Same-Day",
+      description: "Appliance repair in Fountain Valley — original kitchens in long-held homes, garage laundry, all major brands. Call (949) 749-0006.",
+      keywords: ["appliance repair fountain valley", "refrigerator repair fountain valley ca", "washer repair fountain valley"]
+    }
+  },
+  {
+    id: "laguna-niguel",
+    slug: "laguna-niguel",
+    name: "Laguna Niguel",
+    county: "Orange County",
+    state: "CA",
+    zipCodes: ["92677"],
+    coordinates: { lat: 33.5225, lng: -117.7075 },
+    description: "Laguna Niguel is hillside master-planned housing from the eighties through the two-thousands, with a heavy mix of detached homes and attached communities. CoastPro covers the whole city from Crown Valley to Bear Brand.",
+    landmarks: ["Laguna Niguel Regional Park", "Crown Valley Community Park", "Bear Brand Plaza"],
+    neighboringCities: ["mission-viejo", "laguna-beach", "lake-forest"],
+    seo: {
+      title: "Appliance Repair Laguna Niguel, CA | Same-Day",
+      description: "Appliance repair in Laguna Niguel — hillside master-planned housing, attached communities, all major brands. Call (949) 749-0006.",
+      keywords: ["appliance repair laguna niguel", "refrigerator repair laguna niguel", "washer repair laguna niguel ca"]
+    }
+  },
+  {
+    id: "aliso-viejo",
+    slug: "aliso-viejo",
+    name: "Aliso Viejo",
+    county: "Orange County",
+    state: "CA",
+    zipCodes: ["92656", "92698"],
+    coordinates: { lat: 33.5767, lng: -117.7256 },
+    description: "Aliso Viejo is the county's youngest city and it shows in the work — nineties and two-thousands housing, a great deal of it attached, with laundry in closets rather than garages. CoastPro covers the whole city.",
+    landmarks: ["Aliso Viejo Town Center", "Soka University", "Aliso and Wood Canyons Wilderness Park"],
+    neighboringCities: ["laguna-niguel", "lake-forest", "mission-viejo", "laguna-beach"],
+    seo: {
+      title: "Appliance Repair Aliso Viejo, CA | Same-Day",
+      description: "Appliance repair in Aliso Viejo — newer attached housing, closet laundry and long vent runs, all major brands. Call (949) 749-0006.",
+      keywords: ["appliance repair aliso viejo", "refrigerator repair aliso viejo ca", "washer repair aliso viejo"]
+    }
+  },
+  {
+    id: "san-clemente",
+    slug: "san-clemente",
+    name: "San Clemente",
+    county: "Orange County",
+    state: "CA",
+    zipCodes: ["92672", "92673", "92674"],
+    coordinates: { lat: 33.4270, lng: -117.6120 },
+    description: "San Clemente splits between older beach housing near the pier and the newer Talega and Forster Ranch developments inland. The two ends need different things, and CoastPro covers both.",
+    landmarks: ["San Clemente Pier", "Talega", "Forster Ranch", "Casa Romantica"],
+    neighboringCities: ["dana-point", "san-juan-capistrano", "laguna-niguel"],
+    seo: {
+      title: "Appliance Repair San Clemente, CA | Same-Day",
+      description: "Appliance repair in San Clemente — coastal salt air near the pier, newer Talega housing inland, all major brands. Call (949) 749-0006.",
+      keywords: ["appliance repair san clemente", "refrigerator repair san clemente ca", "washer repair talega"]
+    }
+  },
+  {
+    id: "villa-park",
+    slug: "villa-park",
+    name: "Villa Park",
+    county: "Orange County",
+    state: "CA",
+    zipCodes: ["92861", "92867"],
+    coordinates: { lat: 33.8144, lng: -117.8131 },
+    description: "The smallest city in Orange County and the one with the largest lots — half-acre minimums, custom homes and kitchens specified rather than delivered. CoastPro repairs the built-in and professional equipment those kitchens contain.",
+    landmarks: ["Villa Park Town Center", "Santiago Oaks Regional Park", "Hidden Valley"],
+    neighboringCities: ["orange", "anaheim", "tustin", "yorba-linda"],
+    seo: {
+      title: "Appliance Repair Villa Park, CA | Built-In Specialists",
+      description: "Appliance repair in Villa Park — built-in refrigeration and professional ranges in custom kitchens. Sub-Zero, Wolf, Viking, Thermador. Call (949) 749-0006.",
+      keywords: ["appliance repair villa park", "sub-zero repair villa park", "viking range repair villa park ca"]
+    }
+  },
+  {
+    id: "coto-de-caza",
+    slug: "coto-de-caza",
+    name: "Coto de Caza",
+    county: "Orange County",
+    state: "CA",
+    zipCodes: ["92679"],
+    coordinates: { lat: 33.6086, lng: -117.5867 },
+    description: "A gated, unincorporated community of large custom homes where the kitchens were specified alongside the house. CoastPro services the built-in refrigeration and professional cooking these homes were built around.",
+    landmarks: ["Coto de Caza Golf & Racquet Club", "Coto Valley", "Trabuco Canyon"],
+    neighboringCities: ["rancho-santa-margarita", "mission-viejo", "lake-forest"],
+    seo: {
+      title: "Appliance Repair Coto de Caza, CA | Built-In & Pro",
+      description: "Appliance repair in Coto de Caza — Sub-Zero, Wolf, Viking and Thermador in custom kitchens, plus everyday machines. Call (949) 749-0006.",
+      keywords: ["appliance repair coto de caza", "sub-zero repair coto de caza", "wolf range repair coto de caza"]
+    }
+  },
+  {
+    id: "ladera-ranch",
+    slug: "ladera-ranch",
+    name: "Ladera Ranch",
+    county: "Orange County",
+    state: "CA",
+    zipCodes: ["92694"],
+    coordinates: { lat: 33.5511, lng: -117.6414 },
+    description: "Ladera Ranch went in almost entirely between 1999 and 2010, which means a whole community's appliances are reaching the same age at the same time. CoastPro covers all of it.",
+    landmarks: ["Ladera Ranch Town Green", "Founders Park", "Avendale Village"],
+    neighboringCities: ["mission-viejo", "san-juan-capistrano", "rancho-santa-margarita"],
+    seo: {
+      title: "Appliance Repair Ladera Ranch, CA | Same-Day",
+      description: "Appliance repair in Ladera Ranch — a community whose original appliances are ageing out together. All major brands. Call (949) 749-0006.",
+      keywords: ["appliance repair ladera ranch", "refrigerator repair ladera ranch", "washer repair ladera ranch ca"]
+    }
+  },
+  {
+    id: "north-tustin",
+    slug: "north-tustin",
+    name: "North Tustin",
+    county: "Orange County",
+    state: "CA",
+    zipCodes: ["92705"],
+    coordinates: { lat: 33.7644, lng: -117.7967 },
+    description: "Unincorporated hillside above Tustin — Cowan Heights, Lemon Heights and Panorama Heights, with large lots and custom homes across several decades of building. CoastPro covers all of it.",
+    landmarks: ["Cowan Heights", "Lemon Heights", "Panorama Heights", "Peters Canyon Regional Park"],
+    neighboringCities: ["tustin", "orange", "irvine", "villa-park"],
+    seo: {
+      title: "Appliance Repair North Tustin, CA | Cowan & Lemon Heights",
+      description: "Appliance repair in North Tustin — Cowan Heights, Lemon Heights and Panorama Heights. Built-in refrigeration and everyday machines. Call (949) 749-0006.",
+      keywords: ["appliance repair north tustin", "appliance repair cowan heights", "appliance repair lemon heights"]
+    }
   }
 ];
 
