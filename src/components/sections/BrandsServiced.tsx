@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { services } from '@/data/services';
-import { brands as brandPages } from '@/data/brands';
+import { premiumBrands, mainstreamBrands } from '@/data/brands';
 
 /**
  * The brands, gathered from the service data rather than typed out again.
@@ -16,25 +15,23 @@ import { brands as brandPages } from '@/data/brands';
  * keep two clicks later.
  */
 
-/** Slug for a brand that has a page of its own, or undefined. */
-const pageFor = new Map(brandPages.map((brand) => [brand.name, brand.slug]));
-
-function collectBrands() {
-  const all = new Set<string>();
-  for (const service of services) {
-    for (const brand of service.brands ?? []) all.add(brand);
-  }
-  // Every brand with a page belongs in the premium column whether or not a
-  // service happens to list it, so the two never disagree about which is which.
-  const list = new Set([...all, ...pageFor.keys()]);
-  return {
-    premium: [...list].filter((b) => pageFor.has(b)).sort(),
-    mainstream: [...list].filter((b) => !pageFor.has(b)).sort(),
-  };
-}
+/**
+ * Split by tier, not by whether a page exists.
+ *
+ * It used to be the latter, and that quietly became wrong the day the volume
+ * brands got pages of their own: Samsung and Whirlpool moved into the column
+ * headed "Built-in and professional", and the column headed "Everyday brands"
+ * was left holding InSinkErator, Moen and Waste King — component makers, under
+ * a heading promising the machines in most kitchens. Both labels were lying.
+ *
+ * `tier` says which shelf a brand is on and is the thing the headings actually
+ * mean, so it is what they read from now. The leftovers that appear on a
+ * service page but have no page of their own are no longer listed here at all:
+ * six unlinked names under a generic paragraph earned nobody anything, and the
+ * owner asked for them gone.
+ */
 
 export function BrandsServiced() {
-  const { premium: high, mainstream } = collectBrands();
 
   return (
     <section className="py-20 lg:py-24 bg-cream border-t border-primary-500/20">
@@ -54,17 +51,21 @@ export function BrandsServiced() {
               Everyday brands
             </h3>
             <div className="flex flex-wrap gap-x-6 gap-y-3 mb-6">
-              {mainstream.map((brand) => (
-                <span key={brand} className="text-lg text-gray-600">
-                  {brand}
-                </span>
+              {mainstreamBrands.map((brand) => (
+                <Link
+                  key={brand.slug}
+                  href={`/brands/${brand.slug}`}
+                  className="text-lg text-primary-600 hover:text-ink underline underline-offset-4 decoration-primary-500/40 hover:decoration-ink transition-colors"
+                >
+                  {brand.name}
+                </Link>
               ))}
             </div>
             <p className="text-gray-600 max-w-prose leading-relaxed">
-              These are the machines in most Orange County kitchens and garages, and most of them
-              fail in familiar ways: a drain pump that has swallowed something, a door latch that no
-              longer reads as closed, an inlet valve narrowed by hard water. Common parts ride on the
-              van, so a large share of these repairs finish on the first visit.
+              Three of these — Samsung, Whirlpool and GE — account for roughly three in five branded
+              service calls in this trade, so the failures are extremely well mapped. Common parts
+              ride on the van, which is why a large share of these repairs finish on the first visit
+              rather than in two.
             </p>
           </div>
 
@@ -73,13 +74,13 @@ export function BrandsServiced() {
               Built-in and professional
             </h3>
             <div className="flex flex-wrap gap-x-6 gap-y-3 mb-6">
-              {high.map((brand) => (
+              {premiumBrands.map((brand) => (
                 <Link
-                  key={brand}
-                  href={`/brands/${pageFor.get(brand)}`}
+                  key={brand.slug}
+                  href={`/brands/${brand.slug}`}
                   className="text-lg text-primary-600 hover:text-ink underline underline-offset-4 decoration-primary-500/40 hover:decoration-ink transition-colors"
                 >
-                  {brand}
+                  {brand.name}
                 </Link>
               ))}
             </div>
