@@ -5,9 +5,11 @@ import { brands } from '@/data/brands';
 import { siteConfig } from '@/data/site-config';
 import { brandErrorCodes } from '@/data/error-codes';
 import { brandAppliances } from '@/data/brand-appliance';
+import { serviceCities } from '@/data/service-city';
 import {
   brandUpdated,
   BRAND_APPLIANCE_UPDATED,
+  SERVICE_CITY_UPDATED,
   errorCodesUpdated,
   CITY_CONTENT_UPDATED,
   pageUpdated,
@@ -96,6 +98,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  // One machine in one city — the intersection the site was missing, and the
+  // largest cluster in this niche.
+  const serviceCityPages: MetadataRoute.Sitemap = serviceCities.map((entry) => ({
+    url: `${BASE_URL}/service-areas/${entry.citySlug}/${entry.serviceSlug}`,
+    lastModified: updatedAt(SERVICE_CITY_UPDATED),
+    changeFrequency: 'monthly' as const,
+    priority: 0.8,
+  }));
+
   const cityPages: MetadataRoute.Sitemap = serviceAreas.map((area) => ({
     url: `${BASE_URL}/service-areas/${area.slug}`,
     lastModified: updatedAt(CITY_CONTENT_UPDATED),
@@ -128,6 +139,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...brandAppliancePages,
     ...errorCodePages,
     ...cityPages,
+    ...serviceCityPages,
     ...articlePages,
   ];
 }

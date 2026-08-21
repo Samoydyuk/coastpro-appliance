@@ -6,6 +6,8 @@ import { Button, Badge } from '@/components/ui';
 import { CTABanner, ServicesGrid, StatsBand } from '@/components/sections';
 import { serviceAreas, getServiceAreaBySlug, getNeighboringAreas } from '@/data/service-areas';
 import { cityLocal } from '@/data/city-local';
+import { servicesForCity } from '@/data/service-city';
+import { getServiceBySlug } from '@/data/services';
 import { siteConfig } from '@/data/site-config';
 import { breadcrumbSchema } from '@/lib/schema';
 
@@ -49,6 +51,7 @@ export default async function CityPage({ params }: CityPageProps) {
 
   const neighboringAreas = getNeighboringAreas(city);
   const local = cityLocal[area.slug];
+  const machines = servicesForCity(area.slug);
 
   // JSON-LD for Local Business in this city
   const localBusinessSchema = {
@@ -247,6 +250,40 @@ export default async function CityPage({ params }: CityPageProps) {
                 ))}
               </div>
             </div>
+
+            {/* The machines with a page of their own in this city. Placed
+                before the neighbourhood list because it is the more specific
+                answer: somebody who knows it is the dryer wants the dryer. */}
+            {machines.length > 0 && (
+              <div className="mt-12">
+                <div className="eyebrow mb-4">Straight to the machine</div>
+                <h3 className="headline text-xl mb-6">
+                  What fails differently in {area.name}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 border-t border-l border-primary-500/20">
+                  {machines.map((machine) => {
+                    const svc = getServiceBySlug(machine.serviceSlug);
+                    if (!svc) return null;
+                    return (
+                      <Link
+                        key={machine.serviceSlug}
+                        href={`/service-areas/${area.slug}/${machine.serviceSlug}`}
+                        className="group p-5 border-b border-r border-primary-500/20 transition-colors hover:bg-cream-dark/50"
+                      >
+                        <div className="font-heading text-[11px] font-semibold uppercase tracking-label text-ink mb-2">
+                          {svc.name.replace(' Repair', '')} in {area.name}
+                        </div>
+                        <p className="text-gray-600 leading-relaxed mb-3">{machine.summary}</p>
+                        <span className="inline-flex items-center font-heading text-[11px] font-semibold uppercase tracking-label text-primary-600 group-hover:text-ink transition-colors">
+                          Read more
+                          <ArrowRight className="h-3.5 w-3.5 ml-2 transition-transform group-hover:translate-x-1" />
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Landmarks */}
             {((area.landmarks?.length ?? 0) > 0 || (local?.neighborhoods.length ?? 0) > 0) && (

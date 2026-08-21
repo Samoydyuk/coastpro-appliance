@@ -110,3 +110,6 @@ export function updatedAt(date: string | undefined): Date {
  * together, as the brand pages had to be.
  */
 export const BRAND_APPLIANCE_UPDATED = '2026-08-20';
+
+/** Service × city intersections. One date while they were written together. */
+export const SERVICE_CITY_UPDATED = '2026-08-21';
