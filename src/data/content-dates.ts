@@ -92,8 +92,6 @@ export const serviceUpdated: Record<string, string> = {
   'garbage-disposal': '2026-08-14',
   'dryer-vent-cleaning': '2026-08-14',
   freezer: '2026-08-21',
-  'wine-cooler': '2026-08-21',
-  cooktop: '2026-08-21',
 };
 
 /** The day the local copy for every city page was rewritten. */

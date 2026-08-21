@@ -36,6 +36,20 @@ const nextConfig = {
         destination: '/services/refrigerator',
         permanent: true,
       },
+      // Wine cooler and cooktop were published and withdrawn the same day —
+      // the owner does not take that work either. Live for minutes rather than
+      // months, so almost certainly never crawled, but a redirect costs
+      // nothing and a 404 in a sitemap Google fetched in between does not.
+      {
+        source: '/services/wine-cooler',
+        destination: '/services/refrigerator',
+        permanent: true,
+      },
+      {
+        source: '/services/cooktop',
+        destination: '/services/oven-range',
+        permanent: true,
+      },
     ];
   },
 }
