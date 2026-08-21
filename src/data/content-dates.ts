@@ -101,3 +101,10 @@ const FALLBACK = '2026-08-14';
 export function updatedAt(date: string | undefined): Date {
   return new Date(`${date ?? FALLBACK}T12:00:00Z`);
 }
+
+/**
+ * Brand × appliance pages. One date for the batch, which is honest while they
+ * were all written in one sitting — split it the moment they stop moving
+ * together, as the brand pages had to be.
+ */
+export const BRAND_APPLIANCE_UPDATED = '2026-08-20';

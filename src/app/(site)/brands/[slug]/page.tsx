@@ -6,6 +6,7 @@ import { Button, Badge } from '@/components/ui';
 import { CTABanner, StatsBand } from '@/components/sections';
 import { brands, getBrandBySlug } from '@/data/brands';
 import { getErrorCodesForBrand } from '@/data/error-codes';
+import { appliancesForBrand } from '@/data/brand-appliance';
 import { siteConfig } from '@/data/site-config';
 import { breadcrumbSchema } from '@/lib/schema';
 
@@ -40,6 +41,7 @@ export default async function BrandPage({ params }: BrandPageProps) {
   if (!brand) notFound();
 
   const codes = getErrorCodesForBrand(brand.slug);
+  const machines = appliancesForBrand(brand.slug);
   // Same shelf only. With fifteen brands, "we also specialise in" listing all
   // fourteen others says nothing — a Sub-Zero owner is not choosing between it
   // and a Frigidaire.
@@ -171,6 +173,37 @@ export default async function BrandPage({ params }: BrandPageProps) {
                 ))}
               </div>
             </div>
+
+            {/* The machines under this badge that have a page of their own.
+                Placed above the code prompt because it is the more specific
+                answer: somebody who knows it is the refrigerator wants the
+                refrigerator page, not the whole brand. */}
+            {machines.length > 0 && (
+              <div className="mt-12">
+                <div className="eyebrow mb-4">Straight to the machine</div>
+                <h3 className="headline text-xl mb-6">
+                  What we open on a {brand.name}, in detail
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 border-t border-l border-primary-500/20">
+                  {machines.map((machine) => (
+                    <Link
+                      key={machine.serviceSlug}
+                      href={`/brands/${brand.slug}/${machine.serviceSlug}`}
+                      className="group p-5 border-b border-r border-primary-500/20 transition-colors hover:bg-cream-dark/50"
+                    >
+                      <div className="font-heading text-[11px] font-semibold uppercase tracking-label text-ink mb-2">
+                        {machine.name}
+                      </div>
+                      <p className="text-gray-600 leading-relaxed mb-3">{machine.summary}</p>
+                      <span className="inline-flex items-center font-heading text-[11px] font-semibold uppercase tracking-label text-primary-600 group-hover:text-ink transition-colors">
+                        Read more
+                        <ArrowRight className="h-3.5 w-3.5 ml-2 transition-transform group-hover:translate-x-1" />
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Placed here rather than at the foot of the page: someone who has
                 just read the fault list has a code in front of them, and this

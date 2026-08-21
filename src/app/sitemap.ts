@@ -4,8 +4,10 @@ import { serviceAreas } from '@/data/service-areas';
 import { brands } from '@/data/brands';
 import { siteConfig } from '@/data/site-config';
 import { brandErrorCodes } from '@/data/error-codes';
+import { brandAppliances } from '@/data/brand-appliance';
 import {
   brandUpdated,
+  BRAND_APPLIANCE_UPDATED,
   errorCodesUpdated,
   CITY_CONTENT_UPDATED,
   pageUpdated,
@@ -71,6 +73,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
+  // One brand against one machine — the narrowest commercial page on the site
+  // and the one that converts hardest, so it ranks with the brand pages rather
+  // than below them.
+  const brandAppliancePages: MetadataRoute.Sitemap = brandAppliances.map((entry) => ({
+    url: `${BASE_URL}/brands/${entry.brandSlug}/${entry.serviceSlug}`,
+    lastModified: updatedAt(BRAND_APPLIANCE_UPDATED),
+    changeFrequency: 'monthly' as const,
+    priority: 0.8,
+  }));
+
   // Reference rather than sales copy, so a lower priority than the pages that
   // ask for the booking — but a real one. These answer a question nothing else
   // on the site answers, and they are what someone standing in front of a
@@ -111,6 +123,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...staticPages,
     ...servicePages,
     ...brandPages,
+    ...brandAppliancePages,
     ...errorCodePages,
     ...cityPages,
     ...articlePages,
