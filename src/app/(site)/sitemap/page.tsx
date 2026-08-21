@@ -5,6 +5,8 @@ import { serviceAreas } from '@/data/service-areas';
 import { brands, premiumBrands, mainstreamBrands } from '@/data/brands';
 import { brandErrorCodes } from '@/data/error-codes';
 import { brandAppliances, appliancesForBrand } from '@/data/brand-appliance';
+import { serviceCities, servicesForCity } from '@/data/service-city';
+import { getServiceBySlug } from '@/data/services';
 import { siteConfig } from '@/data/site-config';
 import { breadcrumbSchema } from '@/lib/schema';
 
@@ -103,13 +105,34 @@ export default function SiteMapPage() {
             </Column>
 
             <Column title={`Service areas (${serviceAreas.length})`}>
-              {serviceAreas.map((area) => (
-                <li key={area.slug}>
-                  <Link href={`/service-areas/${area.slug}`} className={linkClass}>
-                    {area.name}
-                  </Link>
-                </li>
-              ))}
+              {serviceAreas.map((area) => {
+                const machines = servicesForCity(area.slug);
+                return (
+                  <li key={area.slug}>
+                    <Link href={`/service-areas/${area.slug}`} className={linkClass}>
+                      {area.name}
+                    </Link>
+                    {machines.length > 0 && (
+                      <ul className="mt-1 ml-4 space-y-1">
+                        {machines.map((machine) => {
+                          const svc = getServiceBySlug(machine.serviceSlug);
+                          if (!svc) return null;
+                          return (
+                            <li key={machine.serviceSlug}>
+                              <Link
+                                href={`/service-areas/${area.slug}/${machine.serviceSlug}`}
+                                className={`${linkClass} text-sm`}
+                              >
+                                {svc.name.replace(' Repair', '')}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </li>
+                );
+              })}
               <li className="pt-2">
                 <Link href="/service-areas" className={linkClass}>
                   All service areas
@@ -121,6 +144,8 @@ export default function SiteMapPage() {
               <li><Link href="/" className={linkClass}>Home</Link></li>
               <li><Link href="/book-appointment" className={linkClass}>Book an appointment</Link></li>
               <li><Link href="/same-day" className={linkClass}>Same-day service</Link></li>
+              <li><Link href="/repair-cost" className={linkClass}>What repairs cost</Link></li>
+              <li><Link href="/repair-or-replace" className={linkClass}>Repair or replace?</Link></li>
               <li><Link href="/error-codes" className={linkClass}>Error codes explained</Link></li>
               <li><Link href="/brands" className={linkClass}>Brands we repair</Link></li>
               <li><Link href="/blog" className={linkClass}>Repair notes</Link></li>
@@ -178,7 +203,7 @@ export default function SiteMapPage() {
           </div>
 
           <p className="mt-12 text-sm text-gray-500">
-            {brandAppliances.length} brand-and-machine pages · {brandErrorCodes.length} error code
+            {brandAppliances.length} brand-and-machine pages · {serviceCities.length} machine-and-city pages · {brandErrorCodes.length} error code
             pages · machine-specific pages exist where that maker actually builds the machine.
           </p>
         </div>

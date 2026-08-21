@@ -33,6 +33,8 @@ export const pageUpdated: Record<string, string> = {
   'book-appointment': '2026-08-14',
   blog: '2026-08-14',
   'same-day': '2026-08-21',
+  'repair-cost': '2026-08-21',
+  'repair-or-replace': '2026-08-21',
   sitemap: '2026-08-21',
   brands: '2026-08-18',
   'error-codes': '2026-08-18',
