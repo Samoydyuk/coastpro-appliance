@@ -809,6 +809,675 @@ export const brandAppliances: BrandAppliance[] = [
         'KitchenAid range and wall oven repair across Orange County — igniters, control boards versus membranes, temperature sensors and bake elements. Call (949) 749-0006.',
     },
   },
+
+  // -------------------------------------------------------------------------
+  // Sub-Zero
+  // -------------------------------------------------------------------------
+  {
+    brandSlug: 'sub-zero',
+    serviceSlug: 'refrigerator',
+    name: 'Built-in refrigeration',
+    summary: 'Two sealed systems, and a coil that decides most of it.',
+    positioning:
+      'Sub-Zero runs dual refrigeration on most built-ins — separate sealed systems for fresh food and freezer — and that single fact rules out half of what a technician would otherwise suspect. One side can be perfectly cold while the other slowly warms, which on any other refrigerator would point at the compressor and here points somewhere much cheaper.',
+    lines: ['Built-In (BI)', 'Integrated (IT)', 'PRO', 'Designer', 'Classic', '500 & 600 Series'],
+    faults: [
+      {
+        symptom: 'Ice production drops off, then stops',
+        cause:
+          'Nine times in ten the condenser, not the ice maker. The coil sits behind the upper grille and packs with dust and pet hair; once it cannot shed heat the unit runs almost continuously and ice is the first thing to go. Cleaning it restores production on a machine that looked like it needed a part.',
+      },
+      {
+        symptom: 'Fresh food warm, freezer still cold',
+        cause:
+          'The signature dual-refrigeration fault. Two sealed systems means one can fail alone — usually the fresh-food evaporator fan or its defrost circuit rather than anything sealed.',
+      },
+      {
+        symptom: 'Runs constantly and never reaches temperature',
+        cause:
+          'Airflow at the coil, or a door gasket that has lost its magnet. On units past ten years the gasket is a genuinely common answer and a cheap one.',
+      },
+      {
+        symptom: 'Corroded connections on a coastal unit',
+        cause:
+          'Salt air works on the electrical side long before anything mechanical wears. In Newport Coast, Laguna and along the sand this is the fault that arrives early and gets blamed on the age of the machine.',
+      },
+    ],
+    partsNote:
+      'Current BI, IT and Designer parts are readily available. The 500 and 600 series are old enough that some components are getting scarce; where a part has genuinely gone we say so and give you the replacement figure rather than fitting an approximation.',
+    faq: [
+      {
+        q: 'How often does the condenser need cleaning?',
+        a: 'Every six to twelve months, and closer to six with pets or near the beach. It is the highest-value maintenance on these units — most of the "it stopped making ice" and "it runs all the time" calls we take are a blocked coil.',
+      },
+      {
+        q: 'Mine is over twenty years old. Worth repairing?',
+        a: 'Often yes, and more often than with any other brand — these were built to be serviced, and a fan motor or a gasket at that age is money well spent. The line we draw is the sealed system, where replacement deserves a serious look and we will put both numbers in front of you.',
+      },
+    ],
+    seo: {
+      title: 'Sub-Zero Refrigerator Repair Orange County | Same-Day',
+      description:
+        'Sub-Zero built-in refrigerator repair across Orange County — dual refrigeration faults, condenser cleaning, ice production, gaskets and coastal corrosion. Call (949) 749-0006.',
+    },
+  },
+  {
+    brandSlug: 'sub-zero',
+    serviceSlug: 'freezer',
+    name: 'Freezer columns',
+    summary: 'A column that fails alone, because it cools alone.',
+    positioning:
+      'A Sub-Zero freezer column has its own sealed system and its own controls, so it fails independently of the refrigerator column standing beside it. People assume the pair is one appliance and describe the fault as "half the fridge" — it is not half of anything, it is a separate machine that happens to share a cabinet run.',
+    lines: ['Built-In Freezer (BI-30F, BI-36F)', 'Integrated Freezer (IT)', 'Designer Column', '600 Series'],
+    faults: [
+      {
+        symptom: 'Column drifting warm while the refrigerator beside it is fine',
+        cause:
+          'Its own evaporator fan or defrost circuit. Nothing about the neighbouring column is diagnostic here, which is the thing most people get wrong when they describe the problem.',
+      },
+      {
+        symptom: 'Heavy frost on the drawers or the rear wall',
+        cause:
+          'Defrost heater or sensor, or a drawer gasket letting humid air in every time it is opened. Panel-ready columns hide a poorly seated gasket well.',
+      },
+      {
+        symptom: 'Running hard with the coil clear',
+        cause:
+          'Clearance. Columns go into tight cabinetry runs and the airflow the coil was designed around is not always what it got at installation.',
+      },
+    ],
+    partsNote:
+      'Fans, heaters, sensors and gaskets are available for current and recent columns. Older 600-series parts are getting harder, and we check before starting.',
+    faq: [
+      {
+        q: 'The freezer column is warm but the refrigerator column is perfect. Same fault?',
+        a: 'No — they are separate machines with separate sealed systems. That the other one is fine tells us nothing except that the problem is contained to this column, which is good news.',
+      },
+    ],
+    seo: {
+      title: 'Sub-Zero Freezer Repair Orange County | Columns',
+      description:
+        'Sub-Zero freezer column repair across Orange County — warm compartments, frost buildup, defrost circuits and drawer gaskets. Same-day service. Call (949) 749-0006.',
+    },
+  },
+
+  // -------------------------------------------------------------------------
+  // Wolf
+  // -------------------------------------------------------------------------
+  {
+    brandSlug: 'wolf',
+    serviceSlug: 'oven-range',
+    name: 'Ranges and wall ovens',
+    summary: 'Commercial metalwork, and an electrical fault behind most call-outs.',
+    positioning:
+      'Wolf ranges are genuinely commercial in construction, which means the burners and grates will outlast the house — and that almost everything that actually goes wrong is electrical rather than mechanical. One fault accounts for more Wolf calls than the rest put together, and it is usually a clean rather than a part.',
+    lines: ['Gas Range (GR)', 'Dual Fuel (DF)', 'M Series ovens', 'L Series ovens'],
+    faults: [
+      {
+        symptom: 'A burner clicks and will not stop, even once it is lit',
+        cause:
+          'The spark ignition module or a fouled igniter — the most common Wolf call by a wide margin. Spilled liquid around the igniter is a frequent trigger, and cleaning is often the whole repair.',
+      },
+      {
+        symptom: 'Oven runs hot or cold against the dial',
+        cause:
+          'Thermostat drift or a failing temperature sensor, and much more noticeable on dual-fuel models where the electric oven is expected to hold a tight temperature. Often a calibration rather than a replacement.',
+      },
+      {
+        symptom: 'Infrared broiler will not light or heats unevenly',
+        cause:
+          'The broiler element or its igniter. These run very hot and the element is a wear part on a range that sees real use.',
+      },
+      {
+        symptom: 'Griddle or charbroiler will not hold temperature',
+        cause:
+          'The dedicated thermostat for that module. These are separate circuits from the main burners, so a fault here says nothing about the rest of the range.',
+      },
+    ],
+    partsNote:
+      'Current-generation parts are well supplied. Igniters, spark modules and thermostats are the fast-moving items and the ones worth having on the van.',
+    faq: [
+      {
+        q: 'My burner clicks constantly. Is it dangerous?',
+        a: 'Not usually, but it should not be left. Continuous sparking normally means the igniter is fouled or wet, or the spark module is failing — gas is still being controlled properly. Turn that burner off and use the others until it is looked at.',
+      },
+      {
+        q: 'Is dual-fuel harder to repair than all-gas?',
+        a: 'Not harder, but it fails differently. The electric oven brings a control board and a temperature sensor the all-gas model does not have, so oven complaints on a dual-fuel are usually electronic while the same complaint on an all-gas range is the thermostat or the igniter.',
+      },
+    ],
+    seo: {
+      title: 'Wolf Range & Oven Repair Orange County | Same-Day',
+      description:
+        'Wolf range and wall oven repair across Orange County — spark modules and igniters, oven temperature drift, infrared broilers and griddle thermostats. Call (949) 749-0006.',
+    },
+  },
+
+  // -------------------------------------------------------------------------
+  // Viking
+  // -------------------------------------------------------------------------
+  {
+    brandSlug: 'viking',
+    serviceSlug: 'oven-range',
+    name: 'Professional ranges',
+    summary: 'Which side of 2013 your range falls on decides the visit.',
+    positioning:
+      'Viking effectively created the residential professional range and the metalwork has never been in question. The service history is more complicated: units built before the Middleby acquisition in 2013 earned a real reputation for electrical and igniter trouble, and the generations since are materially better. The model and age tell us a great deal before anything is opened.',
+    lines: ['Professional 5 Series', 'Professional 7 Series', 'Tuscany', 'Virtuoso'],
+    faults: [
+      {
+        symptom: 'Burner will not light or lights slowly',
+        cause:
+          'The igniter, which on older Viking ranges is the single most replaced part in the machine. On pre-2013 units it is closer to a maintenance item than a failure.',
+      },
+      {
+        symptom: 'Oven door sags or will not seal',
+        cause:
+          'Door hinges. These are heavy doors and the hinges carry real load — a sagging door also throws oven temperature off, so the two complaints usually arrive together.',
+      },
+      {
+        symptom: 'Convection fan noisy or the oven heating unevenly',
+        cause:
+          'The blower motor or its bearing. Noise usually precedes the uneven heating by a while, which makes it one of the few faults you can get ahead of.',
+      },
+      {
+        symptom: 'Control board fault on an older unit',
+        cause:
+          'Pre-2013 electronics are the weak point of that generation. Where a board is still available this is straightforward; where it is not, the honest conversation is about the range as a whole.',
+      },
+    ],
+    partsNote:
+      'Current-generation parts are fine. For pre-2013 units, igniters and hinges are still readily available; control boards for some of those model years are getting hard to source, and we say so before starting rather than after.',
+    faq: [
+      {
+        q: 'How do I tell which generation my range is?',
+        a: 'The model and serial plate, usually behind the kick panel or on the door frame. Send a photo when you book and we will know before arriving whether we are looking at the older electronics or the post-2013 design — which changes what we bring.',
+      },
+      {
+        q: 'The igniter has been replaced before. Why again?',
+        a: 'On the older ranges igniters are a genuine wear part, and a second replacement is not a sign the first repair was wrong. What is worth checking is whether liquid reaches it during cooking, because that shortens the life of the new one the same way it did the old.',
+      },
+    ],
+    seo: {
+      title: 'Viking Range Repair Orange County | Pre & Post 2013',
+      description:
+        'Viking professional range repair across Orange County — igniters, sagging oven doors, convection blowers and pre-2013 control boards. Same-day service. Call (949) 749-0006.',
+    },
+  },
+  {
+    brandSlug: 'viking',
+    serviceSlug: 'refrigerator',
+    name: 'Built-in refrigeration',
+    summary: 'Less common than the ranges, and diagnosed the same way as any built-in.',
+    positioning:
+      'Viking refrigeration turns up far less often than the ranges, usually as part of a matched suite in a kitchen designed around the cooking. It is diagnosed like any built-in: airflow at the condenser first, and only then anything electrical.',
+    lines: ['Professional Series built-in', 'Designer Series', 'Virtuoso column'],
+    faults: [
+      {
+        symptom: 'Not holding temperature',
+        cause:
+          'Condenser airflow before anything else. These are installed tight into cabinetry and the clearance the coil needs is often not what it got.',
+      },
+      {
+        symptom: 'Door not closing or sealing properly',
+        cause:
+          'The door closer or the gasket. Heavy panelled doors put real load on both.',
+      },
+      {
+        symptom: 'Evaporator fan noise or frost buildup',
+        cause: 'The defrost circuit, with the fan striking ice as the audible symptom.',
+      },
+    ],
+    partsNote:
+      'Current parts are obtainable without long waits. Older Viking refrigeration is thinner on the ground and worth checking before ordering.',
+    faq: [
+      {
+        q: 'Is Viking refrigeration as good as the ranges?',
+        a: 'It is a competent built-in, but the ranges are what the brand is known for and what we open most. Where a suite was bought together, the refrigeration usually needs less than the cooking does.',
+      },
+    ],
+    seo: {
+      title: 'Viking Refrigerator Repair Orange County | Built-In',
+      description:
+        'Viking built-in refrigerator repair across Orange County — condenser airflow, door closers and gaskets, defrost faults. Same-day service. Call (949) 749-0006.',
+    },
+  },
+  {
+    brandSlug: 'viking',
+    serviceSlug: 'dishwasher',
+    name: 'Dishwashers',
+    summary: 'The quiet member of the suite, and a short fault list.',
+    positioning:
+      'Viking dishwashers are bought as part of a matched kitchen rather than on their own, and they fail in a short and predictable set of ways. The panel-ready installations are the only thing that changes the job — a machine built into a run of cabinetry may need the panel off before it will come forward.',
+    lines: ['Professional Series', 'Designer Series', 'VDWU / FDWU'],
+    faults: [
+      {
+        symptom: 'Standing water after a cycle',
+        cause: 'The drain pump or the check valve, and on a retrofitted kitchen the drain hose loop.',
+      },
+      {
+        symptom: 'Will not start or the door will not latch',
+        cause: 'The latch assembly and its switch — a contained repair.',
+      },
+      {
+        symptom: 'Not cleaning properly',
+        cause: 'The filter, then the wash pump or the spray arm feed.',
+      },
+    ],
+    partsNote:
+      'Pumps, latches and filters are obtainable. Tell us if the machine is panel-ready when you book — knowing in advance is the difference between finishing the job and rescheduling it.',
+    faq: [
+      {
+        q: 'Mine is panelled into the cabinetry. Is that a problem?',
+        a: 'Not a problem, but worth saying at booking. A panelled machine may need the door front off before the unit can come forward, and arriving prepared for that saves a second visit.',
+      },
+    ],
+    seo: {
+      title: 'Viking Dishwasher Repair Orange County | Same-Day',
+      description:
+        'Viking dishwasher repair across Orange County — drain pumps, door latches, filters and panel-ready installations. Same-day service. Call (949) 749-0006.',
+    },
+  },
+
+  // -------------------------------------------------------------------------
+  // Thermador
+  // -------------------------------------------------------------------------
+  {
+    brandSlug: 'thermador',
+    serviceSlug: 'oven-range',
+    name: 'Ranges and wall ovens',
+    summary: 'The star burner shows a blocked port instead of hiding it.',
+    positioning:
+      'The patented star burner spreads flame more evenly than a round one, which is the point of it — and it also means a partially blocked port shows up as a visibly lopsided flame rather than a weak one. That is a diagnostic gift: the machine tells you which port before anybody kneels down with a torch.',
+    lines: ['Professional Harmony', 'Masterpiece', 'Pro Grand', 'Professional wall ovens'],
+    faults: [
+      {
+        symptom: 'Star burner will not light or the flame pattern is uneven',
+        cause:
+          'The igniter or a blocked burner port. The star geometry makes a partial blockage obvious in a way a round burner would hide. It usually cleans up; if not, the burner cap or igniter is next.',
+      },
+      {
+        symptom: 'Oven temperature drifting',
+        cause: 'The temperature probe or the bake element. The probe is a two-minute resistance check and rules out the more expensive answer.',
+      },
+      {
+        symptom: 'Door locked after a self-clean cycle',
+        cause: 'The lock motor or its switch. Common enough after self-clean that we ask whether one was run.',
+      },
+    ],
+    partsNote:
+      'Good availability across the range, helped by the shared BSH supply chain. Igniters, probes and elements are all obtainable without long waits.',
+    faq: [
+      {
+        q: 'Why is my star burner flame uneven?',
+        a: 'Almost always a partially blocked port rather than a gas supply problem — the star shape makes it obvious where a round burner would hide it. It usually cleans up; if not, the burner cap or the igniter is next.',
+      },
+      {
+        q: 'A lot of Thermador here is new. Should I check the warranty?',
+        a: 'Yes, before booking anyone including us. A great deal of the Thermador in this county went into homes built in the last few years and is still inside its manufacturer warranty.',
+      },
+    ],
+    seo: {
+      title: 'Thermador Range & Oven Repair Orange County',
+      description:
+        'Thermador range and wall oven repair across Orange County — star burner ports and igniters, oven temperature probes, self-clean door locks. Call (949) 749-0006.',
+    },
+  },
+  {
+    brandSlug: 'thermador',
+    serviceSlug: 'dishwasher',
+    name: 'Sapphire dishwashers',
+    summary: 'A Bosch underneath, which is good news for parts.',
+    positioning:
+      'Thermador sits inside the BSH group alongside Bosch, and the dishwashers share a good deal of design language. That makes parts and diagnosis more straightforward than the badge suggests — a technician who knows the Bosch platform has a head start here, and the supply chain is the same one.',
+    lines: ['Sapphire', 'Star-Sapphire', 'Emerald', 'DWHD series'],
+    faults: [
+      {
+        symptom: 'Will not drain or leaves standing water',
+        cause: 'The drain pump, the filter in the tub floor, or the drain hose loop in a retrofitted kitchen.',
+      },
+      {
+        symptom: 'Machine stops and reports water in the base',
+        cause:
+          'The leak float has cut it off — the same protection Bosch uses. It says water escaped, not where from, and finding it is the repair.',
+      },
+      {
+        symptom: 'Not cleaning properly',
+        cause: 'The filter first, then the wash motor. Hard water in north county shortens the descaling interval noticeably.',
+      },
+    ],
+    partsNote:
+      'Very good, on the shared BSH catalogue. Drain pumps, filters and latches are stocked and sensibly priced.',
+    faq: [
+      {
+        q: 'Is a Thermador dishwasher the same as a Bosch?',
+        a: 'Related, not identical. They share a parent and a good deal of engineering, which helps with parts and diagnosis. The cooking products are a different story — the star burner has no Bosch equivalent.',
+      },
+    ],
+    seo: {
+      title: 'Thermador Dishwasher Repair Orange County | Sapphire',
+      description:
+        'Thermador Sapphire dishwasher repair across Orange County — drain pumps, leak floats, filters and wash motors. Same-day service. Call (949) 749-0006.',
+    },
+  },
+  {
+    brandSlug: 'thermador',
+    serviceSlug: 'refrigerator',
+    name: 'Column refrigeration',
+    summary: 'Installed tight into cabinetry, and that is usually the fault.',
+    positioning:
+      'Thermador columns are frequently installed in a tight run of cabinetry, panel-ready and flush — which looks superb and gives the condenser less air than it was designed around. Clearance at the coil is the most common cause we find on these, ahead of anything electrical.',
+    lines: ['Liberty columns', 'Freedom columns', 'T18 / T24 / T30 series'],
+    faults: [
+      {
+        symptom: 'Column not holding temperature',
+        cause: 'Condenser airflow first, exactly as on any built-in. Then the evaporator fan or the defrost circuit.',
+      },
+      {
+        symptom: 'Frost building inside',
+        cause: 'Defrost heater or sensor, or a gasket on a panelled door that is not seating properly.',
+      },
+      {
+        symptom: 'One column fine, the other not',
+        cause:
+          'They are separate machines. That the neighbouring column works is not diagnostic — it just contains the problem to this one.',
+      },
+    ],
+    partsNote:
+      'Good availability through the BSH chain. Fans, heaters and gaskets are obtainable without long waits.',
+    faq: [
+      {
+        q: 'A lot of these are in newer Irvine kitchens. Does that matter?',
+        a: 'It matters for the warranty. Much of the Thermador in the eastern villages and Tustin Legacy is young enough to still be covered, so check before booking anyone including us.',
+      },
+    ],
+    seo: {
+      title: 'Thermador Refrigerator Repair Orange County | Columns',
+      description:
+        'Thermador column refrigeration repair across Orange County — condenser clearance, evaporator fans, defrost circuits and panelled door gaskets. Call (949) 749-0006.',
+    },
+  },
+
+  // -------------------------------------------------------------------------
+  // Miele
+  // -------------------------------------------------------------------------
+  {
+    brandSlug: 'miele',
+    serviceSlug: 'dishwasher',
+    name: 'G Series dishwashers',
+    summary: 'Designed to be serviced, which changes the repair-or-replace answer.',
+    positioning:
+      'Miele designs to a stated twenty-year service life and largely achieves it, and the machines are built assuming somebody will open them — access is far better than on most. That changes the economics of every conversation: a fifteen-year-old Miele with a failed pump is usually worth fixing where the same age on a mainstream machine would not be.',
+    lines: ['G 5000 / G 7000 series', 'Futura', 'Professional', 'Panel-ready integrated'],
+    faults: [
+      {
+        symptom: 'Machine stops and reports water in the base',
+        cause:
+          'The Waterproof System doing its job — a float in the base pan shuts off the supply before there is a flood. The fault is real, but the water is often from a hose or a seal rather than anything catastrophic.',
+      },
+      {
+        symptom: 'Will not drain',
+        cause: 'Drain pump or a blocked non-return valve. Straightforward on these machines, and the design assumes it will be done.',
+      },
+      {
+        symptom: 'Door will not lock, or the cycle will not start',
+        cause: 'The door interlock — a common wear item across the G series and a contained repair.',
+      },
+    ],
+    partsNote:
+      'Availability is good but pricing runs above mainstream brands, and some components come on longer lead times. We quote the real figure and the real timeline before ordering, because a cheap-sounding estimate that turns into a three-week wait helps nobody.',
+    faq: [
+      {
+        q: 'It says there is water in the base. Is it flooding?',
+        a: 'The opposite — the Waterproof System detected water and cut the supply so it cannot flood. Turn off the tap, leave the machine, and get it looked at. The leak is frequently a hose or a seal rather than the machine itself.',
+      },
+      {
+        q: 'Worth repairing a fifteen-year-old Miele dishwasher?',
+        a: 'Usually, and this is the brand where that answer is most often yes. We still put the repair figure next to a replacement figure — but on a Miele the repair wins far more often than it does elsewhere.',
+      },
+    ],
+    seo: {
+      title: 'Miele Dishwasher Repair Orange County | G Series',
+      description:
+        'Miele dishwasher repair across Orange County — Waterproof System water faults, drain pumps, non-return valves and door interlocks. Call (949) 749-0006.',
+    },
+  },
+  {
+    brandSlug: 'miele',
+    serviceSlug: 'washer',
+    name: 'W1 washing machines',
+    summary: 'Built to a twenty-year life, and priced accordingly at repair time.',
+    positioning:
+      'A Miele washer is genuinely unlike its competitors inside, and the same twenty-year design life applies. The trade-off is parts that cost more and occasionally take longer — which is worth knowing before the quote rather than after, because the figure will not look like a mainstream figure.',
+    lines: ['W1 Classic', 'W1 Excellence', 'WWD / WWH series', 'Little Giant'],
+    faults: [
+      {
+        symptom: 'Machine halts and reports water in the base pan',
+        cause: 'The Waterproof System again — the same float protection the dishwashers use, and the same advice: turn off the tap and stop using it.',
+      },
+      {
+        symptom: 'Door will not open at the end of a cycle',
+        cause: 'The door interlock, or water still in the drum keeping the lock engaged.',
+      },
+      {
+        symptom: 'Will not drain',
+        cause: 'The pump or its filter. Access is better than on most machines, which keeps this a short visit.',
+      },
+    ],
+    partsNote:
+      'Good availability, higher prices, and occasional longer lead times on the less common parts. We give you both the figure and the timeline before ordering anything.',
+    faq: [
+      {
+        q: 'Miele parts are expensive. Is it still worth it?',
+        a: 'On these machines, usually — they are built to a twenty-year life and they reach it. The calculation is different from a mainstream washer, where a big-ticket part at ten years is often the end.',
+      },
+    ],
+    seo: {
+      title: 'Miele Washer Repair Orange County | W1 Series',
+      description:
+        'Miele W1 washing machine repair across Orange County — Waterproof System faults, door interlocks, drain pumps and filters. Same-day service. Call (949) 749-0006.',
+    },
+  },
+  {
+    brandSlug: 'miele',
+    serviceSlug: 'dryer',
+    name: 'T1 heat-pump dryers',
+    summary: 'Cycle times creep up for months before anything is reported.',
+    positioning:
+      'A T1 is a heat-pump dryer, which means no vent and a condenser doing the work an exhaust duct would do elsewhere. It also means the failure nobody notices: the heat exchanger fouls with lint, drying times stretch out gradually, and no error is ever shown. By the time somebody calls, it has usually been happening for a season.',
+    lines: ['T1 Classic', 'T1 Excellence', 'TWF / TWH series'],
+    faults: [
+      {
+        symptom: 'Taking far longer than it used to, with no fault shown',
+        cause:
+          'The condenser fouling with lint. It is a maintenance item on these dryers and it gets missed because there is no error and no obvious symptom other than creeping cycle times. Cleaning it usually restores the original performance.',
+      },
+      {
+        symptom: 'Not heating at all',
+        cause: 'The heat-pump circuit or its controls — a different diagnosis entirely from a vented dryer, and not a heating element.',
+      },
+      {
+        symptom: 'Water in the base or the tank not filling',
+        cause: 'The condensate pump or its float. These dryers collect the water they take out, and that path can block.',
+      },
+    ],
+    partsNote:
+      'Obtainable, at Miele pricing. The condenser is a maintenance job rather than a part, and it is the first thing we look at on a slow T1.',
+    faq: [
+      {
+        q: 'Why does my heat-pump dryer take so long now?',
+        a: 'The condenser is almost certainly fouled with lint. It is a maintenance item that gets missed because nothing errors — cycle times just creep up. Cleaning it usually restores the original performance.',
+      },
+      {
+        q: 'Do these need a vent?',
+        a: 'No, which is why they can go where a vented dryer cannot. The trade-off is that the condenser takes on the job an exhaust duct would do, and it needs the same attention a duct would.',
+      },
+    ],
+    seo: {
+      title: 'Miele Dryer Repair Orange County | T1 Heat-Pump',
+      description:
+        'Miele T1 heat-pump dryer repair across Orange County — fouled condensers and creeping cycle times, heat-pump faults, condensate pumps. Call (949) 749-0006.',
+    },
+  },
+
+  // -------------------------------------------------------------------------
+  // Bosch
+  // -------------------------------------------------------------------------
+  {
+    brandSlug: 'bosch',
+    serviceSlug: 'dishwasher',
+    name: 'Dishwashers',
+    summary: 'E15, and the one complaint that is not a fault at all.',
+    positioning:
+      'This is the most common premium dishwasher in the county and the standard upgrade in newer Irvine, Tustin and Lake Forest kitchens. Two things are worth knowing before anything else: E15 is a symptom and not a diagnosis, and dishes coming out damp is the design working rather than a failure.',
+    lines: ['100 / 300 / 500 / 800 Series', 'Benchmark', 'Ascenta', 'SHPM / SHEM series'],
+    faults: [
+      {
+        symptom: 'E15 and the machine will not run',
+        cause:
+          'Water in the base pan has tripped the leak sensor. The code is accurate about the symptom and silent about the source — a door seal, a hose, a pump seal or the sump. Draining the pan clears the code and tells you nothing; finding the water is the job.',
+      },
+      {
+        symptom: 'Standing water in the bottom after a cycle',
+        cause:
+          'Drain pump, check valve or the drain hose loop. Bosch relies on a correctly installed high loop or air gap, and in a retrofitted kitchen that is frequently where the problem lives rather than in the machine.',
+      },
+      {
+        symptom: 'Door will not latch or the cycle will not start',
+        cause: 'The door latch and interlock assembly — a known wear item and a contained, inexpensive repair.',
+      },
+      {
+        symptom: 'Dishes coming out wet',
+        cause:
+          'Usually not a fault. Bosch dries by condensation rather than with a heating element, so plastics stay damp by design. Where it has genuinely got worse, hard water scale on the sensor or an empty rinse-aid reservoir is the more likely cause.',
+      },
+    ],
+    partsNote:
+      'Excellent availability and sensible pricing. Drain pumps, latches and seals are common enough to ride on the van, so a large share of these calls finish on the first visit.',
+    faq: [
+      {
+        q: 'What does E15 actually mean?',
+        a: 'Water reached the base pan and the float cut the machine off to stop a leak becoming a flood. It tells you water escaped, not where from. Tipping the machine to drain the pan clears the code and the fault returns, because the leak is still there.',
+      },
+      {
+        q: 'Why are my dishes still wet?',
+        a: 'Bosch dries by condensation rather than with a heating element, so damp plastics are normal and not a fault. Use rinse aid and open the door when the cycle ends. If drying has genuinely got worse over time, scale from hard water is the usual culprit.',
+      },
+    ],
+    seo: {
+      title: 'Bosch Dishwasher Repair Orange County | E15 Faults',
+      description:
+        'Bosch dishwasher repair across Orange County — E15 leak faults traced to source, drain pumps, door latches and condensation drying explained. Call (949) 749-0006.',
+    },
+  },
+  {
+    brandSlug: 'bosch',
+    serviceSlug: 'washer',
+    name: 'Washing machines',
+    summary: 'Compact machines, and the filter behind most call-outs.',
+    positioning:
+      'Bosch laundry in this county is mostly the 24-inch compact machines, which go where a full-size pair will not — condominiums, converted closets, Newport and Costa Mesa apartments. They are well built and the fault list is short, with one entry accounting for most of it.',
+    lines: ['300 / 500 / 800 Series', 'Vision', 'WAT / WAW series'],
+    faults: [
+      {
+        symptom: 'Stops with water in the drum',
+        cause: 'The pump filter behind the lower flap. Reachable without tools beyond a towel, and it is the answer most of the time.',
+      },
+      {
+        symptom: 'Water on the floor at the front',
+        cause: 'The door bellows, usually at the bottom fold where grit collects.',
+      },
+      {
+        symptom: 'Will not spin or reports imbalance',
+        cause: 'Load distribution and levelling first — compact machines are more sensitive to both than full-size ones. Then the shock absorbers.',
+      },
+    ],
+    partsNote:
+      'Good availability and sensible pricing. Pumps, bellows and shock absorbers are all obtainable quickly.',
+    faq: [
+      {
+        q: 'Are compact machines harder to repair?',
+        a: 'Not harder, but tighter. Everything is packed into a smaller cabinet, and where the machine is built into a closet the access matters more than the fault does. Tell us the installation when you book.',
+      },
+    ],
+    seo: {
+      title: 'Bosch Washer Repair Orange County | Compact Laundry',
+      description:
+        'Bosch washing machine repair across Orange County — pump filters, door bellows, imbalance on compact machines. Same-day service. Call (949) 749-0006.',
+    },
+  },
+  {
+    brandSlug: 'bosch',
+    serviceSlug: 'dryer',
+    name: 'Heat-pump dryers',
+    summary: 'No vent, a condenser instead — and it needs cleaning.',
+    positioning:
+      'Bosch heat-pump dryers need no exhaust duct, which is exactly why they end up in condominiums and converted spaces where venting was never possible. The condenser takes on the work the duct would have done, and like a duct it fouls — quietly, with no error, over months.',
+    lines: ['300 / 500 / 800 Series', 'WTG / WQB series', '24-inch compact'],
+    faults: [
+      {
+        symptom: 'Cycles getting longer and longer',
+        cause: 'The condenser fouling with lint. No error is shown, which is why this is usually reported as "it has always been slow".',
+      },
+      {
+        symptom: 'Not heating',
+        cause: 'The heat-pump circuit or its controls. Not a heating element — these do not have one in the sense a vented dryer does.',
+      },
+      {
+        symptom: 'Water collecting where it should not',
+        cause: 'The condensate pump or its float. The machine collects the water it removes, and that path can block.',
+      },
+    ],
+    partsNote:
+      'Obtainable without long waits. The condenser is maintenance rather than a part, and it is the first thing we check on a slow machine.',
+    faq: [
+      {
+        q: 'It has never dried as fast as my old dryer.',
+        a: 'Heat-pump dryers do run longer cycles than vented ones by design — that is the trade for needing no duct. But if it has got noticeably worse, the condenser is fouled and cleaning it usually brings it back.',
+      },
+    ],
+    seo: {
+      title: 'Bosch Dryer Repair Orange County | Heat-Pump',
+      description:
+        'Bosch heat-pump dryer repair across Orange County — fouled condensers and long cycles, heat-pump faults and condensate pumps. Same-day service. Call (949) 749-0006.',
+    },
+  },
+  {
+    brandSlug: 'bosch',
+    serviceSlug: 'refrigerator',
+    name: 'Refrigerators',
+    summary: 'Less common here than the dishwashers, and diagnosed conventionally.',
+    positioning:
+      'Bosch refrigeration turns up far less often in this county than the dishwashers do, usually where a whole kitchen was specified in one go. There is nothing exotic about the diagnosis — it is a conventional French-door or counter-depth machine and it fails in conventional ways.',
+    lines: ['800 Series French Door', '500 Series', 'Benchmark', 'B36 counter-depth'],
+    faults: [
+      {
+        symptom: 'No water or ice at the dispenser',
+        cause: 'The filter first, then the inlet valve, then a frozen fill tube.',
+      },
+      {
+        symptom: 'One compartment warm',
+        cause: 'The evaporator fan or the defrost circuit, with ice at the fan blade as the audible symptom.',
+      },
+      {
+        symptom: 'Running constantly',
+        cause: 'Condenser airflow, or a door gasket that has stopped sealing.',
+      },
+    ],
+    partsNote:
+      'Good through the BSH chain. Valves, fans and gaskets are obtainable without long waits.',
+    faq: [
+      {
+        q: 'Bosch is known for dishwashers. Is the refrigeration as good?',
+        a: 'It is competent and conventional, which at repair time is a compliment: no unusual architecture, well-supplied parts, and faults that behave the way a technician expects.',
+      },
+    ],
+    seo: {
+      title: 'Bosch Refrigerator Repair Orange County | Same-Day',
+      description:
+        'Bosch refrigerator repair across Orange County — dispenser and inlet valve faults, evaporator fans, defrost circuits and door gaskets. Call (949) 749-0006.',
+    },
+  },
 ];
 
 export function getBrandAppliance(brandSlug: string, serviceSlug: string) {
