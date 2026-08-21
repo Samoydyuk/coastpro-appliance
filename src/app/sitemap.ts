@@ -38,6 +38,8 @@ const STATIC_ROUTES: Array<[string, MetadataRoute.Sitemap[number]['changeFrequen
   ['services', 'weekly', 0.9],
   ['service-areas', 'monthly', 0.8],
   ['brands', 'monthly', 0.8],
+  ['same-day', 'monthly', 0.8],
+  ['sitemap', 'monthly', 0.3],
   ['error-codes', 'monthly', 0.7],
   ['book-appointment', 'monthly', 0.9],
   ['contact', 'monthly', 0.8],

@@ -32,6 +32,8 @@ export const pageUpdated: Record<string, string> = {
   gallery: '2026-08-12',
   'book-appointment': '2026-08-14',
   blog: '2026-08-14',
+  'same-day': '2026-08-21',
+  sitemap: '2026-08-21',
   brands: '2026-08-18',
   'error-codes': '2026-08-18',
   privacy: '2026-08-13',
@@ -88,8 +90,10 @@ export const serviceUpdated: Record<string, string> = {
   'oven-range': '2026-08-14',
   microwave: '2026-08-14',
   'garbage-disposal': '2026-08-14',
-  'ice-maker': '2026-08-14',
   'dryer-vent-cleaning': '2026-08-14',
+  freezer: '2026-08-21',
+  'wine-cooler': '2026-08-21',
+  cooktop: '2026-08-21',
 };
 
 /** The day the local copy for every city page was rewritten. */

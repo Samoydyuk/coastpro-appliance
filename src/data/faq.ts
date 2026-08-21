@@ -12,7 +12,7 @@ export const faqItems: FAQItem[] = [
   {
     id: "appliance-types",
     question: "What types of appliances do you repair?",
-    answer: "We repair all major household appliances including refrigerators, washers, dryers, dishwashers, ovens, ranges, cooktops, microwaves, garbage disposals and ice makers, on both gas and electric units from all major brands. We also clean dryer vents and install washers, dryers, dishwashers and garbage disposals.",
+    answer: "We repair all major household appliances including refrigerators, washers, dryers, dishwashers, ovens, ranges, cooktops, microwaves, garbage disposals, cooktops, freezers and wine coolers, on both gas and electric units from all major brands. We also clean dryer vents and install washers, dryers, dishwashers and garbage disposals.",
     category: "general",
     order: 2
   },

@@ -70,7 +70,7 @@ export const brands: ApplianceBrand[] = [
     summary: 'Built-in refrigeration, and the coil that decides most of it.',
     positioning:
       'Sub-Zero builds built-in refrigeration and very little else, which is why the units last as long as they do and why they fail in a narrow set of ways. Most models run dual refrigeration — separate sealed systems for the fresh-food and freezer compartments — so one side can be perfectly cold while the other slowly warms. That single fact rules out half of what a technician would otherwise suspect, and it is the first thing we check.',
-    categories: ['Built-in refrigerators', 'Freezer columns', 'Wine storage', 'Ice makers'],
+    categories: ['Built-in refrigerators', 'Freezer columns', 'Wine storage'],
     lines: ['Built-In (BI)', 'Integrated (IT)', 'PRO', 'Designer', 'Classic', '500 & 600 Series'],
     faults: [
       {

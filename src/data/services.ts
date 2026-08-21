@@ -46,7 +46,7 @@ export const services: Service[] = [
     estimatedTime: "1-2 hours",
     warranty: "90-day parts & labor warranty",
     brands: ["Samsung", "LG", "Whirlpool", "GE", "Frigidaire", "KitchenAid", "Sub-Zero", "Viking", "Maytag", "Kenmore"],
-    relatedServices: ["ice-maker", "freezer"],
+    relatedServices: ["freezer"],
     seo: {
       title: "Refrigerator Repair Orange County | Same-Day",
       description: "Refrigerator repair across Orange County — cooling faults, ice makers and leaks. All brands, same-day appointments, 90-day warranty. Call (949) 749-0006.",
@@ -366,55 +366,159 @@ export const services: Service[] = [
     }
   },
   {
-    id: "ice-maker",
-    slug: "ice-maker",
-    name: "Ice Maker Repair",
-    shortDescription: "Professional ice maker repair. Fix production issues, leaks, and quality problems.",
-    fullDescription: "Whether it's a built-in ice maker, standalone unit, or commercial ice machine, our technicians can repair it. We fix low ice production, poor ice quality, leaks, and mechanical failures to keep your ice flowing.",
+    id: "freezer",
+    slug: "freezer",
+    name: "Freezer Repair",
+    shortDescription: "Upright, chest and freezer column repair. Frost, warm compartments and failed defrost.",
+    fullDescription: "A freezer that is slowly warming is the appliance people notice last and lose most to — a full one holds a few hundred dollars of food. We repair upright and chest freezers, garage units and the built-in freezer columns that sit beside a refrigerator column in newer kitchens. Most of what we find is the defrost circuit rather than the compressor everyone fears.",
     icon: "Snowflake",
-    image: "/images/appliances/ice-maker.jpg",
+    image: "/images/appliances/freezer.jpg",
     commonProblems: [
       {
-        title: "No Ice Production",
-        description: "Ice maker stopped making ice completely",
-        symptoms: ["Empty bin", "No ice forming", "System not cycling"],
-        solution: "Could be water inlet valve, thermostat, or motor."
+        title: "Not Freezing Properly",
+        description: "Compartment runs above freezing or drifts warm",
+        symptoms: ["Soft ice cream", "Food thawing", "Runs constantly"],
+        solution: "Usually the defrost circuit, evaporator fan or a failed door gasket."
       },
       {
-        title: "Small or Hollow Ice",
-        description: "Ice cubes are undersized or hollow",
-        symptoms: ["Thin ice", "Hollow cubes", "Melting quickly"],
-        solution: "May be water pressure, inlet valve, or temperature issue."
+        title: "Heavy Frost Buildup",
+        description: "Ice sheeting on the walls or around the fan",
+        symptoms: ["Frost on packages", "Ice on rear wall", "Fan noise"],
+        solution: "Defrost heater, sensor or control — and sometimes just a gasket letting humid air in."
       },
       {
-        title: "Ice Tastes Bad",
-        description: "Ice has unpleasant taste or odor",
-        symptoms: ["Foul taste", "Smells bad", "Cloudy ice"],
-        solution: "Often water filter, supply line, or cleaning needed."
+        title: "Water Under the Freezer",
+        description: "Meltwater escaping instead of draining away",
+        symptoms: ["Puddle on the floor", "Ice on the base", "Damp packages"],
+        solution: "The defrost drain has frozen shut and backed up."
       },
       {
-        title: "Leaking Water",
-        description: "Water leaking from ice maker",
-        symptoms: ["Puddles", "Ice buildup", "Wet freezer"],
-        solution: "Could be inlet valve, water line, or fill tube."
+        title: "Garage Freezer Stops in Winter",
+        description: "Unit stops cycling when the garage gets cold",
+        symptoms: ["Warm in cold weather", "Fine in summer", "No fault shown"],
+        solution: "Many freezers need a garage kit to run below about 50°F — a specification issue rather than a fault."
       }
     ],
     features: [
-      "Built-in & standalone",
-      "Commercial units",
-      "All brands",
+      "Upright & chest",
+      "Freezer columns",
+      "Garage units",
       "90-day warranty",
-      "Water line service"
+      "Same-day where possible"
     ],
-    priceRange: { min: 150, max: 350, unit: "repair" },
-    estimatedTime: "1-1.5 hours",
+    priceRange: { min: 150, max: 400, unit: "repair" },
+    estimatedTime: "1-2 hours",
     warranty: "90-day parts & labor warranty",
-    brands: ["Sub-Zero", "Scotsman", "GE", "Whirlpool", "Samsung", "LG", "KitchenAid", "U-Line"],
+    brands: ["Sub-Zero", "Frigidaire", "GE", "Whirlpool", "Samsung", "LG", "Electrolux", "Thermador"],
     relatedServices: ["refrigerator"],
     seo: {
-      title: "Ice Maker Repair Orange County | All Types",
-      description: "Professional ice maker repair in Orange County. Built-in, standalone, commercial. Fix production, quality issues. Call (949) 749-0006.",
-      keywords: ["ice maker repair orange county", "ice machine repair", "sub-zero ice maker repair", "commercial ice maker repair"]
+      title: "Freezer Repair Orange County | Upright & Built-In",
+      description: "Freezer repair across Orange County — warm compartments, frost buildup, blocked defrost drains and garage units. Same-day service. Call (949) 749-0006.",
+      keywords: ["freezer repair orange county", "freezer not freezing", "freezer frost buildup", "garage freezer repair"]
+    }
+  },
+  {
+    id: "wine-cooler",
+    slug: "wine-cooler",
+    name: "Wine Cooler Repair",
+    shortDescription: "Wine storage and beverage centres. Temperature drift, condensation and noisy compressors.",
+    fullDescription: "Wine storage fails differently from a refrigerator and matters more when it does: a cabinet drifting five degrees for a fortnight can cost more than the appliance. We repair built-in and freestanding wine columns, dual-zone cabinets and undercounter beverage centres — thermoelectric and compressor units alike, which fail in entirely different ways.",
+    icon: "Wine",
+    image: "/images/appliances/wine-cooler.jpg",
+    commonProblems: [
+      {
+        title: "Temperature Drifting",
+        description: "Cabinet warmer or colder than the setting",
+        symptoms: ["Reading off setpoint", "One zone wrong", "Slow to recover"],
+        solution: "Thermostat, sensor or a fan. On dual-zone units one zone failing alone is the giveaway."
+      },
+      {
+        title: "Condensation Inside the Glass",
+        description: "Moisture on the door or shelves",
+        symptoms: ["Fogged glass", "Damp labels", "Water in the base"],
+        solution: "Door seal or the heated glass circuit that keeps the pane above dew point."
+      },
+      {
+        title: "Noisy or Vibrating",
+        description: "Hum or rattle that carries through the cabinetry",
+        symptoms: ["Buzzing", "Rattling bottles", "Louder at night"],
+        solution: "Compressor mounts, fan, or the unit sitting hard against a cabinet run."
+      },
+      {
+        title: "Thermoelectric Unit Not Cooling",
+        description: "Small unit running but never getting cold",
+        symptoms: ["Fan audible", "No cooling", "Warm to the touch"],
+        solution: "The Peltier module or its fan. These are a different repair from a compressor cabinet entirely."
+      }
+    ],
+    features: [
+      "Built-in & freestanding",
+      "Dual-zone cabinets",
+      "Undercounter units",
+      "90-day warranty",
+      "Coastal salt-air experience"
+    ],
+    priceRange: { min: 150, max: 450, unit: "repair" },
+    estimatedTime: "1-2 hours",
+    warranty: "90-day parts & labor warranty",
+    brands: ["Sub-Zero", "Thermador", "Viking", "U-Line", "Perlick", "Marvel", "Electrolux"],
+    relatedServices: ["refrigerator", "freezer"],
+    seo: {
+      title: "Wine Cooler Repair Orange County | Built-In & Dual-Zone",
+      description: "Wine cooler and beverage centre repair across Orange County — temperature drift, condensation, noisy compressors, thermoelectric units. Call (949) 749-0006.",
+      keywords: ["wine cooler repair orange county", "wine fridge repair newport beach", "sub-zero wine storage repair", "dual zone wine cooler not cooling"]
+    }
+  },
+  {
+    id: "cooktop",
+    slug: "cooktop",
+    name: "Cooktop Repair",
+    shortDescription: "Gas, electric and induction cooktops. Ignition, elements and zones that drop out.",
+    fullDescription: "A cooktop built into the counter is its own appliance with its own faults, and it is repaired separately from the oven below it even where they share a brand. We work on sealed gas burners, radiant electric surfaces and induction — the last of which fails in ways that look like the pan is wrong when it is not.",
+    icon: "Flame",
+    image: "/images/appliances/cooktop.jpg",
+    commonProblems: [
+      {
+        title: "Burner Clicks and Will Not Light",
+        description: "Ignition sparking without catching",
+        symptoms: ["Continuous clicking", "One burner only", "Smell of gas then nothing"],
+        solution: "A fouled or wet igniter, or a blocked burner port. Cleaning is often the whole repair."
+      },
+      {
+        title: "Induction Zone Drops Out",
+        description: "A zone stops mid-cook or refuses a pan",
+        symptoms: ["Works here not there", "Cuts out when hot", "Pan not recognised"],
+        solution: "A coil, its sensor or the control — zone-specific behaviour points away from the main board."
+      },
+      {
+        title: "Radiant Element Not Heating",
+        description: "One surface element dead or stuck on full",
+        symptoms: ["No heat", "Always full power", "Glowing unevenly"],
+        solution: "The element or the infinite switch behind it."
+      },
+      {
+        title: "Cracked or Chipped Glass",
+        description: "Damage to a ceramic or induction surface",
+        symptoms: ["Visible crack", "Chip at the edge", "Zone disabled"],
+        solution: "A cracked surface must be taken out of use — we quote the glass and say honestly when it approaches replacement."
+      }
+    ],
+    features: [
+      "Gas, electric & induction",
+      "Sealed burner rangetops",
+      "Downdraft units",
+      "90-day warranty",
+      "Premium brands"
+    ],
+    priceRange: { min: 150, max: 450, unit: "repair" },
+    estimatedTime: "1-2 hours",
+    warranty: "90-day parts & labor warranty",
+    brands: ["Thermador", "Wolf", "Viking", "Bosch", "GE", "KitchenAid", "Samsung", "Electrolux"],
+    relatedServices: ["oven-range"],
+    seo: {
+      title: "Cooktop Repair Orange County | Gas, Electric & Induction",
+      description: "Cooktop repair across Orange County — burners that will not light, induction zones dropping out, radiant elements and cracked glass. Call (949) 749-0006.",
+      keywords: ["cooktop repair orange county", "induction cooktop not working", "gas burner won't light", "thermador cooktop repair"]
     }
   },
   {

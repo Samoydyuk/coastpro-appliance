@@ -26,6 +26,16 @@ const nextConfig = {
         destination: '/',
         permanent: true,
       },
+      // The ice maker service page advertised standalone and commercial ice
+      // machines, which is work CoastPro does not take. Removed rather than
+      // reworded — but it was live and indexable for months, so it redirects to
+      // the refrigerator page instead of 404ing. The ice maker *inside* a
+      // refrigerator is still repaired and still described there.
+      {
+        source: '/services/ice-maker',
+        destination: '/services/refrigerator',
+        permanent: true,
+      },
     ];
   },
 }
