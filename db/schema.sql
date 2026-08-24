@@ -737,6 +737,13 @@ create unique index if not exists leads_jp_request_idx on leads (jp_request_id)
 -- connecting as the owner, which bypasses it — and a trap the first time
 -- anything connects as a narrower role. See the note at the top of this file.
 -- ---------------------------------------------------------------------------
+-- Internal traffic. Added after the console spent a month reporting the owner's
+-- own visits as an audience: 72 of 88 direct visits over thirty days, at an
+-- engagement rate no cold visitor produces.
+alter table sessions add column if not exists is_internal boolean not null default false;
+alter table visitors add column if not exists is_internal boolean not null default false;
+alter table leads    add column if not exists is_internal boolean not null default false;
+
 do $$
 declare t text;
 begin

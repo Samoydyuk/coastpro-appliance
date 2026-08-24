@@ -13,7 +13,18 @@ import type { DateRange } from '@/lib/admin/range';
  *  - Day buckets are cut in the shop's timezone, not UTC.
  */
 
-const HUMAN = `coalesce(is_bot, false) = false`;
+/**
+ * A customer: not a bot, and not us.
+ *
+ * `is_internal` was added after thirty days in which the console reported the
+ * owner's own visits as an audience — 72 of 88 direct visits, at an engagement
+ * rate no cold visitor produces, burying the sixteen real external ones.
+ *
+ * Kept as one constant so a screen cannot quietly forget half of it. The
+ * traffic-quality screen is the one place both are counted deliberately, and it
+ * spells out what it is counting.
+ */
+const HUMAN = `coalesce(is_bot, false) = false and coalesce(is_internal, false) = false and coalesce(is_internal, false) = false`;
 
 export interface Totals {
   sessions: number;
@@ -51,7 +62,7 @@ async function totalsBetween(from: Date, to: Date): Promise<Totals> {
     select count(*)::int as new_visitors
     from visitors
     where first_seen_at >= ${from} and first_seen_at < ${to}
-      and coalesce(is_bot, false) = false
+      and coalesce(is_bot, false) = false and coalesce(is_internal, false) = false
   `) as unknown as { new_visitors: number }[];
 
   const [leads] = (await sql`
@@ -128,7 +139,7 @@ export async function getDailySeries(range: DateRange): Promise<DayPoint[]> {
       select (started_at at time zone ${TZ})::date as day, count(*)::int as sessions
       from sessions
       where started_at >= ${range.from} and started_at < ${range.to}
-        and coalesce(is_bot, false) = false
+        and coalesce(is_bot, false) = false and coalesce(is_internal, false) = false
       group by 1
     ),
     lead_rows as (
@@ -205,7 +216,7 @@ export async function getChannels(range: DateRange, attribution: 'last' | 'first
       select coalesce(channel, 'unknown') as channel, count(*)::int as sessions
       from sessions
       where started_at >= ${range.from} and started_at < ${range.to}
-        and coalesce(is_bot, false) = false
+        and coalesce(is_bot, false) = false and coalesce(is_internal, false) = false
       group by 1
     ),
     lead_rows as (
@@ -293,7 +304,7 @@ export async function getCampaigns(range: DateRange, groupBy: 'campaign' | 'cont
              count(*)::int as sessions
       from sessions
       where started_at >= ${range.from} and started_at < ${range.to}
-        and coalesce(is_bot, false) = false
+        and coalesce(is_bot, false) = false and coalesce(is_internal, false) = false
       group by 1, 2
     ),
     lead_rows as (
@@ -365,7 +376,7 @@ export async function getFunnel(range: DateRange): Promise<FunnelStage[]> {
       select id, engaged_seconds, pageviews, converted
       from sessions
       where started_at >= ${range.from} and started_at < ${range.to}
-        and coalesce(is_bot, false) = false
+        and coalesce(is_bot, false) = false and coalesce(is_internal, false) = false
     ),
     acts as (
       select session_id,
@@ -474,7 +485,7 @@ export async function getPages(range: DateRange) {
       coalesce(round(avg(max_scroll)), 0)::int                           as avg_scroll
     from sessions
     where started_at >= ${range.from} and started_at < ${range.to}
-      and coalesce(is_bot, false) = false
+      and coalesce(is_bot, false) = false and coalesce(is_internal, false) = false
     group by 1
     order by sessions desc
     limit 50
@@ -486,7 +497,7 @@ export async function getPages(range: DateRange) {
       count(*)::int                            as views,
       count(distinct e.session_id)::int        as sessions
     from events e
-    join sessions s on s.id = e.session_id and coalesce(s.is_bot, false) = false
+    join sessions s on s.id = e.session_id and coalesce(s.is_bot, false) = false and coalesce(s.is_internal, false) = false
     where e.ts >= ${range.from} and e.ts < ${range.to} and e.type = 'pageview'
     group by 1
     order by views desc
@@ -521,7 +532,7 @@ export async function getGeo(range: DateRange) {
       count(*) filter (where s.converted)::int as conversions
     from sessions s
     where s.started_at >= ${range.from} and s.started_at < ${range.to}
-      and coalesce(s.is_bot, false) = false
+      and coalesce(s.is_bot, false) = false and coalesce(s.is_internal, false) = false
     group by 1, 2
     order by sessions desc
     limit 40
@@ -556,7 +567,7 @@ export async function getGeo(range: DateRange) {
       count(*) filter (where s.converted)::int as conversions
     from sessions s
     where s.started_at >= ${range.from} and s.started_at < ${range.to}
-      and coalesce(s.is_bot, false) = false
+      and coalesce(s.is_bot, false) = false and coalesce(s.is_internal, false) = false
       and s.latitude is not null and s.longitude is not null
     group by 1, 2, 3
     order by sessions desc
@@ -623,7 +634,7 @@ export async function getDevices(range: DateRange) {
       count(*) filter (where converted)::int   as conversions
     from sessions
     where started_at >= ${range.from} and started_at < ${range.to}
-      and coalesce(is_bot, false) = false
+      and coalesce(is_bot, false) = false and coalesce(is_internal, false) = false
     group by 1, 2
     order by sessions desc
     limit 30
@@ -644,6 +655,7 @@ export async function getQuality(range: DateRange) {
     select
       count(*)::int                                  as total,
       count(*) filter (where is_bot)::int            as bots,
+      count(*) filter (where is_internal)::int       as internal,
       count(*) filter (where coalesce(is_bot, false) = false
                          and pageviews <= 1
                          and engaged_seconds < 5)::int as bounced_instantly
@@ -687,6 +699,7 @@ export async function getQuality(range: DateRange) {
       total: sessions?.total ?? 0,
       bots: sessions?.bots ?? 0,
       bouncedInstantly: sessions?.bounced_instantly ?? 0,
+      internal: sessions.internal,
     },
     botReasons: botReasons.map((row) => ({ reason: row.reason, total: Number(row.total) })),
     leadQuality: leadQuality.map((row) => ({
@@ -759,7 +772,7 @@ export async function getLive() {
              order by e.ts desc limit 1) as current_path
     from sessions s
     where s.last_seen_at > now() - interval '5 minutes'
-      and coalesce(s.is_bot, false) = false
+      and coalesce(s.is_bot, false) = false and coalesce(s.is_internal, false) = false
     order by s.last_seen_at desc
     limit 50
   `) as unknown as Record<string, unknown>[];
@@ -769,7 +782,7 @@ export async function getLive() {
     from events e
     join sessions s on s.id = e.session_id
     where e.ts > now() - interval '60 minutes'
-      and coalesce(s.is_bot, false) = false
+      and coalesce(s.is_bot, false) = false and coalesce(s.is_internal, false) = false
       and e.type in ('click_phone', 'form_submit', 'form_start', 'calendly_booked', 'rage_click', 'js_error')
     order by e.ts desc
     limit 30
@@ -779,7 +792,7 @@ export async function getLive() {
     select
       (select count(*)::int from sessions
         where started_at >= date_trunc('day', now() at time zone ${TZ}) at time zone ${TZ}
-          and coalesce(is_bot, false) = false)                        as sessions,
+          and coalesce(is_bot, false) = false and coalesce(is_internal, false) = false)                        as sessions,
       (select count(*)::int from leads
         where created_at >= date_trunc('day', now() at time zone ${TZ}) at time zone ${TZ}) as leads,
       (select count(*)::int from calls

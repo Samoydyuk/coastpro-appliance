@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   ADMIN_COOKIE,
+  INTERNAL_COOKIE,
+  INTERNAL_MAX_AGE,
   SESSION_COOKIE,
   SESSION_MAX_AGE,
   VISITOR_COOKIE,
@@ -34,6 +36,20 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/api/')) return NextResponse.next();
 
   const response = NextResponse.next();
+
+  // /?cp_internal=1 marks this browser as ours; /?cp_internal=0 unmarks it.
+  // Handled here rather than in the tracker because it has to survive a visit
+  // that never runs the client script.
+  const internalFlag = request.nextUrl.searchParams.get('cp_internal');
+  if (internalFlag === '1' || internalFlag === '0') {
+    response.cookies.set(INTERNAL_COOKIE, internalFlag === '1' ? '1' : '', {
+      maxAge: internalFlag === '1' ? INTERNAL_MAX_AGE : 0,
+      path: '/',
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: false,
+    });
+  }
 
   const visitorId = request.cookies.get(VISITOR_COOKIE)?.value;
   const sessionId = request.cookies.get(SESSION_COOKIE)?.value;

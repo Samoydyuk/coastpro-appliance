@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { INTERNAL_COOKIE } from '@/lib/cookies';
 import { db, quietly } from '@/lib/db';
 import { readAttribution } from '@/lib/attribution';
 import {
@@ -72,6 +73,9 @@ export async function POST(request: NextRequest) {
 
   const userAgent = request.headers.get('user-agent');
   const bot = detectBot(userAgent);
+  // Not a bot — one of ours. Set by /?cp_internal=1, read here so the session
+  // carries it for every page of the visit.
+  const isInternal = request.cookies.get(INTERNAL_COOKIE)?.value === '1';
 
   let payload: Payload;
   try {
@@ -109,7 +113,7 @@ export async function POST(request: NextRequest) {
         referrer, referrer_domain, landing_path, landing_query,
         device, os, browser, viewport_w, screen_w, language,
         country, region, city, postal_code, latitude, longitude, timezone,
-        ip_hash, user_agent, is_bot, bot_reason
+        ip_hash, user_agent, is_bot, bot_reason, is_internal
       ) values (
         ${sessionId}, ${visitorId}, ${attribution.channel}, ${attribution.source},
         ${attribution.medium}, ${attribution.campaign}, ${attribution.content}, ${attribution.term},
@@ -125,7 +129,7 @@ export async function POST(request: NextRequest) {
         ${geo.country}, ${geo.region}, ${geo.city}, ${geo.postalCode},
         ${geo.latitude}, ${geo.longitude}, ${geo.timezone},
         ${hashIp(clientIp(request.headers))}, ${userAgent?.slice(0, 400) ?? null},
-        ${bot.isBot}, ${bot.reason}
+        ${bot.isBot}, ${bot.reason}, ${isInternal}
       )
       on conflict (id) do nothing
       returning id

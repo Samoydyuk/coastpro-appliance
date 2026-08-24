@@ -64,6 +64,12 @@ export default async function QualityPage({
             hint={percent(botShare, 0) + ' of all traffic'}
           />
           <StatTile
+            label="Our own visits"
+            value={count(quality.sessions.internal)}
+            higherIsBetter={false}
+            hint="excluded everywhere else"
+          />
+          <StatTile
             label="Instant bounces"
             value={count(quality.sessions.bouncedInstantly)}
             higherIsBetter={false}
