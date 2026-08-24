@@ -101,6 +101,24 @@ export interface BrandErrorCodes {
 export const CODE_CAVEAT =
   'Codes are not standardised between manufacturers, and they move between model years within one. Everything below is what these codes mean on the series named beside them — if your model is older or newer, treat this as a strong hint rather than a verdict, and send us a photo of the model plate when you book. That plate settles it, and it takes ten seconds.';
 
+/**
+ * The same commitment, compressed, for the ten brand pages.
+ *
+ * The full version above ran identically on every one of them, and it was not
+ * alone: a verdict legend and a block about what a visit involves repeated word
+ * for word across all ten as well. Measured, those pages shared 44% of their
+ * vocabulary with each other and 59% at the closest pair — GE and Frigidaire,
+ * two makers with nothing in common, resembling each other because so much of
+ * each page was the same paragraph.
+ *
+ * Boilerplate is not free on a set of pages whose whole argument is that they
+ * are specific. So the brand pages carry one sentence and the index carries the
+ * full explanation, which is where somebody reading about codes in general
+ * actually is.
+ */
+export const CODE_CAVEAT_SHORT =
+  'These are what the codes mean on the series named beside them. Model years differ — send a photo of the model plate when you book and that settles it.';
+
 export const brandErrorCodes: BrandErrorCodes[] = [
   {
     brandSlug: 'samsung',

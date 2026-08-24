@@ -10,7 +10,7 @@ import {
   getErrorCodesForBrand,
   serviceSlugForAppliance,
   COST_BAND_COPY,
-  CODE_CAVEAT,
+  CODE_CAVEAT_SHORT,
   VERDICT_COPY,
   type CodeVerdict,
   type ErrorCode,
@@ -269,14 +269,15 @@ export default async function BrandErrorCodesPage({ params }: CodesPageProps) {
         </div>
       </section>
 
-      {/* Said once, plainly, before any code is read. A page of codes that does
-          not admit they drift between model years is a page that will be
-          confidently wrong for somebody. */}
-      <section className="bg-cream-light border-b border-primary-500/20 py-10">
+      {/* One sentence, not the full paragraph. The long version lives on the
+          index, where somebody reading about codes in general is; repeating it
+          on all ten brand pages made them resemble each other more than it
+          made any of them honest. */}
+      <section className="bg-cream-light border-b border-primary-500/20 py-8">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl flex items-start gap-4">
-            <Info className="h-5 w-5 text-primary-500 shrink-0 mt-1.5" strokeWidth={1.5} />
-            <p className="text-lg leading-relaxed text-gray-600 max-w-prose">{CODE_CAVEAT}</p>
+            <Info className="h-5 w-5 text-primary-500 shrink-0 mt-1" strokeWidth={1.5} />
+            <p className="text-gray-600 max-w-prose">{CODE_CAVEAT_SHORT}</p>
           </div>
         </div>
       </section>
@@ -288,23 +289,6 @@ export default async function BrandErrorCodesPage({ params }: CodesPageProps) {
             <h2 className="headline text-2xl sm:text-3xl mb-6">Where the code shows up</h2>
             <p className="text-lg leading-relaxed text-gray-600 max-w-prose">{entry.howToRead}</p>
 
-            <div className="mt-12 border border-primary-500/25 bg-cream-light p-6 md:p-8">
-              <h3 className="font-heading text-[11px] font-semibold uppercase tracking-label text-ink mb-5">
-                What the labels beside each code mean
-              </h3>
-              <dl className="space-y-4">
-                {(Object.keys(VERDICT_COPY) as CodeVerdict[]).map((verdict) => (
-                  <div key={verdict} className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
-                    <dt className="shrink-0">
-                      <Badge variant={VERDICT_VARIANT[verdict]} size="sm">
-                        {VERDICT_COPY[verdict].label}
-                      </Badge>
-                    </dt>
-                    <dd className="text-gray-600">{VERDICT_COPY[verdict].meaning}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
           </div>
         </div>
       </section>
@@ -387,56 +371,6 @@ export default async function BrandErrorCodesPage({ params }: CodesPageProps) {
           </section>
         );
       })}
-
-      {/* What the visit is, in the terms the rest of the site already uses.
-          Nothing here is a new claim: every figure comes from site-config, and
-          no licence or certification is asserted anywhere on this page. */}
-      <section className="py-16 bg-cream border-t border-primary-500/20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl">
-            <div className="eyebrow mb-4">If it needs us</div>
-            <h2 className="headline text-2xl sm:text-3xl mb-8">What the visit actually is</h2>
-
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-8">
-              <div>
-                <dt className="font-heading text-[11px] font-semibold uppercase tracking-label text-primary-500 mb-2">
-                  You know when we arrive
-                </dt>
-                <dd className="text-gray-600 leading-relaxed">
-                  A {siteConfig.appointment.arrivalWindow} window and a call no later than{' '}
-                  {siteConfig.appointment.noticeMinutes} minutes before we turn up.
-                </dd>
-              </div>
-              <div>
-                <dt className="font-heading text-[11px] font-semibold uppercase tracking-label text-primary-500 mb-2">
-                  You see the fault
-                </dt>
-                <dd className="text-gray-600 leading-relaxed">
-                  A code narrows it down; the test settles it. We show you what failed before we
-                  quote anything.
-                </dd>
-              </div>
-              <div>
-                <dt className="font-heading text-[11px] font-semibold uppercase tracking-label text-primary-500 mb-2">
-                  You approve the figure first
-                </dt>
-                <dd className="text-gray-600 leading-relaxed">
-                  {siteConfig.pricing.rangeNote}
-                </dd>
-              </div>
-              <div>
-                <dt className="font-heading text-[11px] font-semibold uppercase tracking-label text-primary-500 mb-2">
-                  The ${siteConfig.serviceCall.minimum} is not a second bill
-                </dt>
-                <dd className="text-gray-600 leading-relaxed">
-                  {siteConfig.serviceCall.appliedToRepair}. Repairs carry a{' '}
-                  {siteConfig.trustSignals.warrantyDays}-day warranty.
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </div>
-      </section>
 
       {brandPage && (
         <section className="py-16 bg-cream-light border-t border-primary-500/20">
