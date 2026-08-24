@@ -140,10 +140,16 @@ export default async function CityPage({ params }: CityPageProps) {
               <MapPin className="h-3.5 w-3.5" strokeWidth={2} />
               {area.name}, {area.state}
             </div>
+            {/* The state goes in the heading, not just the eyebrow above it.
+                On most cities it reads as ordinary precision; on Orange it is
+                the difference between a page about a city and a page Google
+                keeps showing for the county that surrounds it. */}
             <h1 className="headline text-3xl sm:text-4xl md:text-5xl">
               Appliance repair
               <br />
-              <span className="headline-muted">in {area.name}.</span>
+              <span className="headline-muted">
+                in {area.name}, {area.state}.
+              </span>
             </h1>
             <div className="rule-short my-8" />
 

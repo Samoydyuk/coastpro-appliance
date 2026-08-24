@@ -111,13 +111,19 @@ export const serviceAreas: ServiceArea[] = [
     state: "CA",
     zipCodes: ["92856", "92857", "92862", "92865", "92866", "92867", "92868", "92869"],
     coordinates: { lat: 33.7879, lng: -117.8531 },
-    description: "Orange residents trust CoastPro Appliance Repair for professional service in the heart of Orange County. From Old Towne to Orange Hills, we serve all neighborhoods with same-day appointments and expert repairs on all major appliance brands.",
-    landmarks: ["Old Towne Orange", "The Outlets at Orange", "Chapman University", "Orange Hills"],
+    // Written to say CITY of Orange in every line, because the name collides
+    // with the county and this page had been absorbing the county's searches.
+    // 593 impressions and no clicks: people looking for service across the
+    // whole county were being shown a page about one city inside it. Nothing
+    // here mentions the county — the three that remain on the rendered page
+    // come from the stats band and the footer and belong on every page.
+    description: "Old Towne is one of the largest historic districts in California, and the kitchens in it were never built for the appliances now standing in them. CoastPro repairs across the City of Orange — Old Towne, Santiago Hills, Orange Park Acres and the streets around Chapman University.",
+    landmarks: ["Old Towne Orange", "Chapman University", "The Outlets at Orange", "Orange Hills", "Orange Park Acres"],
     neighboringCities: ["anaheim", "santa-ana", "tustin", "villa-park"],
     seo: {
-      title: "Appliance Repair Orange, CA | Same-Day Service",
-      description: "Expert appliance repair in Orange, CA. All major brands. Refrigerator, washer, dryer repair. Same-day service available. Call (949) 749-0006.",
-      keywords: ["appliance repair orange ca", "refrigerator repair orange", "washer repair orange ca"]
+      title: "Appliance Repair Orange, CA | Old Towne & Orange Hills",
+      description: "Appliance repair in the City of Orange — Old Towne, Santiago Hills, Orange Park Acres and Chapman University. Refrigerators, washers, dryers, ovens. Call (949) 749-0006.",
+      keywords: ["appliance repair orange ca", "appliance repair city of orange", "old towne orange appliance repair", "refrigerator repair orange ca"]
     }
   },
   {
