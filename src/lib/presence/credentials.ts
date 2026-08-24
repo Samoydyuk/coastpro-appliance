@@ -47,8 +47,22 @@ export interface MetaConnection {
   connectedAt?: string;
 }
 
+export interface SearchConsoleConnection {
+  refreshToken: string;
+  /**
+   * Google's own name for the property, passed back verbatim. Domain
+   * properties look like `sc-domain:coastpro.us` and URL-prefix ones like
+   * `https://coastpro.us/` — including the trailing slash, which the API is
+   * strict about. Never rebuilt from the site URL for that reason.
+   */
+  siteUrl: string;
+  permissionLevel?: string;
+  connectedAt?: string;
+}
+
 const GOOGLE_KEY = 'presence_google';
 const META_KEY = 'presence_meta';
+const SEARCH_CONSOLE_KEY = 'presence_search_console';
 
 async function readSetting<T>(key: string): Promise<T | null> {
   const sql = db();
@@ -106,6 +120,48 @@ export const saveGoogleConnection = (value: GoogleConnection) => writeSetting(GO
 export const clearGoogleConnection = () => clearSetting(GOOGLE_KEY);
 
 // ---------------------------------------------------------------------------
+// Search Console
+// ---------------------------------------------------------------------------
+
+/**
+ * The same Google application as the Business Profile connection, unless it is
+ * given its own. One registration covering both scopes is the ordinary case,
+ * and splitting it later needs no migration.
+ *
+ * Worth knowing: the Search Console API is enabled by ticking a box, while the
+ * Business Profile APIs sit behind an access request Google has to approve. So
+ * this half can be connected and pulling data while the other half is still
+ * waiting — which is exactly the situation here.
+ */
+export function searchConsoleAppConfigured(): boolean {
+  return Boolean(
+    (process.env.GSC_CLIENT_ID || process.env.GBP_CLIENT_ID) &&
+      (process.env.GSC_CLIENT_SECRET || process.env.GBP_CLIENT_SECRET)
+  );
+}
+
+export function searchConsoleApp(): { clientId: string; clientSecret: string } {
+  return {
+    clientId: process.env.GSC_CLIENT_ID || process.env.GBP_CLIENT_ID || '',
+    clientSecret: process.env.GSC_CLIENT_SECRET || process.env.GBP_CLIENT_SECRET || '',
+  };
+}
+
+export async function getSearchConsoleConnection(): Promise<SearchConsoleConnection | null> {
+  const stored = await readSetting<SearchConsoleConnection>(SEARCH_CONSOLE_KEY);
+  if (stored?.refreshToken && stored.siteUrl) return stored;
+
+  const refreshToken = process.env.GSC_REFRESH_TOKEN;
+  const siteUrl = (process.env.GSC_SITE_URL ?? '').trim();
+  if (!refreshToken || !siteUrl) return null;
+  return { refreshToken, siteUrl, permissionLevel: 'From environment variables' };
+}
+
+export const saveSearchConsoleConnection = (value: SearchConsoleConnection) =>
+  writeSetting(SEARCH_CONSOLE_KEY, value);
+export const clearSearchConsoleConnection = () => clearSetting(SEARCH_CONSOLE_KEY);
+
+// ---------------------------------------------------------------------------
 // Meta — Instagram and Facebook
 // ---------------------------------------------------------------------------
 
@@ -140,7 +196,7 @@ export const clearMetaConnection = () => clearSetting(META_KEY);
  * from the incoming request so a preview deployment cannot quietly become a
  * valid redirect target.
  */
-export function redirectUri(provider: 'google' | 'meta'): string {
+export function redirectUri(provider: 'google' | 'meta' | 'search-console'): string {
   const base = (process.env.NEXT_PUBLIC_SITE_URL || 'https://coastpro.us').replace(/\/$/, '');
   return `${base}/api/admin/presence/connect/${provider}/callback`;
 }

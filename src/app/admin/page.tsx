@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { parseRange } from '@/lib/admin/range';
 import { getChannels, getDailySeries, getFunnel, getOverview } from '@/lib/admin/queries';
-import { count, delta, money, percent, shortDate } from '@/lib/admin/format';
+import { count, delta, duration, money, percent, shortDate } from '@/lib/admin/format';
 import { channelLabel, isPaidChannel } from '@/lib/attribution';
 import { Empty, Hint, Panel, SetupNotice, StatTile, Table, Td, Th, Warning } from '@/components/admin/ui';
 import { Funnel, RankedBars, TimeSeries } from '@/components/admin/charts';
@@ -36,6 +36,15 @@ export default async function OverviewPage({
     const roas = current.spendCents ? current.revenueCents / current.spendCents : null;
     const leadRate = current.sessions ? current.leads / current.sessions : 0;
     const previousLeadRate = previous.sessions ? previous.leads / previous.sessions : 0;
+
+    // How a visit actually went, which is the part a visit count never says.
+    const per = (t: typeof current) => ({
+      pages: t.sessions ? t.pageviews / t.sessions : 0,
+      seconds: t.sessions ? t.engagedSeconds / t.sessions : 0,
+      bounce: t.sessions ? t.bouncedSessions / t.sessions : 0,
+    });
+    const shape = per(current);
+    const previousShape = per(previous);
 
     const paidWithoutSpend = channels.filter(
       (row) => isPaidChannel(row.channel) && row.spendCents === 0 && row.sessions > 0
@@ -133,6 +142,34 @@ export default async function OverviewPage({
             value={percent(leadRate)}
             change={delta(leadRate, previousLeadRate)}
             hint="share of visits that ask for service"
+          />
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <StatTile
+            label="Pages per visit"
+            value={current.sessions ? shape.pages.toFixed(1) : '—'}
+            change={delta(shape.pages, previousShape.pages)}
+            hint={`${count(current.pageviews)} pages seen`}
+          />
+          <StatTile
+            label="Time on site"
+            value={current.sessions ? duration(shape.seconds) : '—'}
+            change={delta(shape.seconds, previousShape.seconds)}
+            hint="average across visits"
+          />
+          <StatTile
+            label="Bounced"
+            value={current.sessions ? percent(shape.bounce, 0) : '—'}
+            change={delta(shape.bounce, previousShape.bounce)}
+            higherIsBetter={false}
+            hint="one page, gone inside 5s"
+          />
+          <StatTile
+            label="Engaged visits"
+            value={count(current.engagedSessions)}
+            change={delta(current.engagedSessions, previous.engagedSessions)}
+            hint="15s+, or read more than one page"
           />
         </div>
 

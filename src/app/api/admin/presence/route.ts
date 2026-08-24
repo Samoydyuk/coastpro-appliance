@@ -3,7 +3,12 @@ import { isDbConfigured, requireDb } from '@/lib/db';
 import { presenceChannel, writePresenceRows } from '@/lib/presence/store';
 import { importGoogleBusinessProfile } from '@/lib/presence/gbp';
 import { importMeta } from '@/lib/presence/meta';
-import { clearGoogleConnection, clearMetaConnection } from '@/lib/presence/credentials';
+import { importSearchConsole } from '@/lib/presence/gsc';
+import {
+  clearGoogleConnection,
+  clearMetaConnection,
+  clearSearchConsoleConnection,
+} from '@/lib/presence/credentials';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -62,6 +67,7 @@ export async function POST(request: NextRequest) {
   if (body.action === 'disconnect') {
     if (body.provider === 'google') await clearGoogleConnection();
     else if (body.provider === 'meta') await clearMetaConnection();
+    else if (body.provider === 'search-console') await clearSearchConsoleConnection();
     else return NextResponse.json({ error: 'Unknown provider' }, { status: 400 });
     return NextResponse.json({ ok: true });
   }
@@ -71,7 +77,8 @@ export async function POST(request: NextRequest) {
     try {
       const gbp = await importGoogleBusinessProfile(sql);
       const meta = await importMeta(sql);
-      return NextResponse.json({ ok: true, outcomes: [gbp, ...meta] });
+      const search = await importSearchConsole(sql);
+      return NextResponse.json({ ok: true, outcomes: [gbp, ...meta, search] });
     } catch (error) {
       console.error('Presence refresh failed:', error);
       return NextResponse.json({ error: 'Refresh failed' }, { status: 500 });

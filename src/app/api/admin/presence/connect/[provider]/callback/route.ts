@@ -3,6 +3,8 @@ import {
   redirectUri,
   saveGoogleConnection,
   saveMetaConnection,
+  saveSearchConsoleConnection,
+  searchConsoleApp,
 } from '@/lib/presence/credentials';
 
 export const runtime = 'nodejs';
@@ -63,6 +65,7 @@ export async function GET(
 
   try {
     if (provider === 'google') return await finishGoogle(code);
+    if (provider === 'search-console') return await finishSearchConsole(code);
     if (provider === 'meta') return await finishMeta(code);
     return back('Unknown provider.');
   } catch (error) {
@@ -240,4 +243,89 @@ async function finishMeta(code: string): Promise<NextResponse> {
 
   const both = igUsername ? `${page.name} and @${igUsername}` : `${page.name} (no Instagram linked)`;
   return back(`Meta connected: ${both}`, true);
+}
+
+// ---------------------------------------------------------------------------
+
+/**
+ * Search Console, which is the easy one.
+ *
+ * No account tree to walk and no numeric id to hunt for — the properties this
+ * account can read come back from a single call, already named the way the API
+ * wants them passed back. All this has to get right is picking the right one
+ * when there are several, and it prefers a domain property because that covers
+ * www, the bare host and both schemes at once. A URL-prefix property does not,
+ * which is how a site ends up with real traffic and an empty report.
+ */
+async function finishSearchConsole(code: string): Promise<NextResponse> {
+  const { clientId, clientSecret } = searchConsoleApp();
+
+  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      code,
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: redirectUri('search-console'),
+      grant_type: 'authorization_code',
+    }),
+  });
+  const token = (await tokenResponse.json()) as {
+    refresh_token?: string;
+    access_token?: string;
+    error_description?: string;
+  };
+
+  if (!tokenResponse.ok || !token.access_token) {
+    throw new Error(`Google refused the code: ${token.error_description ?? tokenResponse.status}`);
+  }
+  if (!token.refresh_token) {
+    throw new Error(
+      'Google returned no refresh token. Remove CoastPro from your Google account permissions and connect again.'
+    );
+  }
+
+  const sitesResponse = await fetch('https://www.googleapis.com/webmasters/v3/sites', {
+    headers: { Authorization: `Bearer ${token.access_token}` },
+  });
+  if (!sitesResponse.ok) {
+    const detail = await sitesResponse.text();
+    if (sitesResponse.status === 403) {
+      throw new Error(
+        'Google accepted the sign-in but the Search Console API is not enabled on this project. Enable it in the Cloud console and connect again.'
+      );
+    }
+    throw new Error(`Could not list Search Console properties: ${detail.slice(0, 200)}`);
+  }
+
+  const body = (await sitesResponse.json()) as {
+    siteEntry?: Array<{ siteUrl?: string; permissionLevel?: string }>;
+  };
+  const entries = (body.siteEntry ?? []).filter(
+    (entry) => entry.siteUrl && entry.permissionLevel !== 'siteUnverifiedUser'
+  );
+  if (!entries.length) {
+    throw new Error('That Google account has no verified Search Console properties.');
+  }
+
+  const host = new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://coastpro.us').hostname.replace(
+    /^www\./,
+    ''
+  );
+  const mine = entries.filter((entry) => (entry.siteUrl ?? '').includes(host));
+  const pool = mine.length ? mine : entries;
+  const chosen = pool.find((entry) => entry.siteUrl?.startsWith('sc-domain:')) ?? pool[0];
+
+  await saveSearchConsoleConnection({
+    refreshToken: token.refresh_token,
+    siteUrl: chosen.siteUrl as string,
+    permissionLevel: chosen.permissionLevel,
+    connectedAt: new Date().toISOString(),
+  });
+
+  const note = mine.length
+    ? ''
+    : ` — note this property does not mention ${host}, so it may be the wrong one`;
+  return back(`Search Console connected: ${chosen.siteUrl}${note}`, true);
 }

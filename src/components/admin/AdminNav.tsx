@@ -10,6 +10,7 @@ const SECTIONS = [
   { href: '/admin', label: 'Overview' },
   { href: '/admin/live', label: 'Live' },
   { href: '/admin/channels', label: 'Channels' },
+  { href: '/admin/search', label: 'Search' },
   { href: '/admin/funnel', label: 'Funnel' },
   { href: '/admin/leads', label: 'Leads' },
   { href: '/admin/calls', label: 'Calls' },

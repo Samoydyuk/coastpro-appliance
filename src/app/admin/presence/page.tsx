@@ -10,6 +10,8 @@ import {
 import {
   getGoogleConnection,
   getMetaConnection,
+  getSearchConsoleConnection,
+  searchConsoleAppConfigured,
   googleAppConfigured,
   metaAppConfigured,
 } from '@/lib/presence/credentials';
@@ -61,11 +63,12 @@ export default async function PresencePage({
   const failed = searchParams.error as string | undefined;
 
   try {
-    const [channels, runs, google, meta] = await Promise.all([
+    const [channels, runs, google, meta, searchConsole] = await Promise.all([
       getPresence(range),
       getPresenceImportRuns(),
       getGoogleConnection(),
       getMetaConnection(),
+      getSearchConsoleConnection(),
     ]);
 
     const live = channels.filter((c) => c.hasData);
@@ -81,6 +84,19 @@ export default async function PresencePage({
           : null,
         connectedAt: google?.connectedAt ?? null,
         setupHint: 'Set GBP_CLIENT_ID and GBP_CLIENT_SECRET first — those register the app itself.',
+      },
+      {
+        // Deliberately alongside the listings rather than on its own screen:
+        // this is the same Connect flow and the same Google account, and the
+        // Search Console API needs no approval queue, so it will usually be
+        // working long before the Business Profile half is.
+        provider: 'search-console',
+        label: 'Google Search Console',
+        appReady: searchConsoleAppConfigured(),
+        connectedAs: searchConsole ? searchConsole.siteUrl : null,
+        connectedAt: searchConsole?.connectedAt ?? null,
+        setupHint:
+          'Uses the same GBP_CLIENT_ID and GBP_CLIENT_SECRET, and needs the Search Console API switched on in the same Google Cloud project.',
       },
       {
         provider: 'meta',

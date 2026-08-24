@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export interface ConnectionState {
-  provider: 'google' | 'meta';
+  provider: 'google' | 'meta' | 'search-console';
   label: string;
   /** Whether the app itself is registered — nothing can be connected without it. */
   appReady: boolean;

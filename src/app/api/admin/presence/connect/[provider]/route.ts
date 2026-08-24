@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   googleAppConfigured,
   metaAppConfigured,
+  searchConsoleApp,
+  searchConsoleAppConfigured,
   makeState,
   redirectUri,
 } from '@/lib/presence/credentials';
@@ -22,6 +24,9 @@ export const dynamic = 'force-dynamic';
 const STATE_COOKIE = 'cp_oauth_state';
 
 const GOOGLE_SCOPE = 'https://www.googleapis.com/auth/business.manage';
+
+/** Read-only: this console never needs to submit a sitemap or request indexing. */
+const SEARCH_CONSOLE_SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly';
 
 /**
  * Reading insights needs all five. `pages_show_list` finds the Page,
@@ -63,6 +68,27 @@ export async function GET(
       // Offline plus a forced prompt, because Google only returns a refresh
       // token on the first consent — and this is exactly the flow somebody
       // runs a second time after the first token stopped working.
+      access_type: 'offline',
+      prompt: 'consent',
+      include_granted_scopes: 'true',
+      state,
+    });
+    authorizeUrl = `https://accounts.google.com/o/oauth2/v2/auth?${query}`;
+  } else if (provider === 'search-console') {
+    if (!searchConsoleAppConfigured()) {
+      return NextResponse.json(
+        {
+          error:
+            'No Google application registered. Set GBP_CLIENT_ID and GBP_CLIENT_SECRET (or GSC_CLIENT_ID and GSC_CLIENT_SECRET) once, and both Google connections can use them.',
+        },
+        { status: 400 }
+      );
+    }
+    const query = new URLSearchParams({
+      client_id: searchConsoleApp().clientId,
+      redirect_uri: redirectUri('search-console'),
+      response_type: 'code',
+      scope: SEARCH_CONSOLE_SCOPE,
       access_type: 'offline',
       prompt: 'consent',
       include_granted_scopes: 'true',

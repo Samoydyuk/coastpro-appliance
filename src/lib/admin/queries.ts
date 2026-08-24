@@ -32,6 +32,10 @@ export interface Totals {
   newVisitors: number;
   pageviews: number;
   engagedSessions: number;
+  /** Sessions that saw one page and left inside five seconds. */
+  bouncedSessions: number;
+  /** Summed engaged time, so an average can be taken against sessions. */
+  engagedSeconds: number;
   leads: number;
   qualityLeads: number;
   calls: number;
@@ -52,7 +56,11 @@ async function totalsBetween(from: Date, to: Date): Promise<Totals> {
       count(*) filter (
         where engaged_seconds >= 15 or pageviews >= 2 or converted
       )::int                                                    as engaged_sessions,
-      coalesce(sum(pageviews), 0)::int                          as pageviews
+      coalesce(sum(pageviews), 0)::int                          as pageviews,
+      count(*) filter (
+        where pageviews <= 1 and engaged_seconds < 5
+      )::int                                                    as bounced_sessions,
+      coalesce(sum(engaged_seconds), 0)::int                     as engaged_seconds
     from sessions
     where started_at >= ${from} and started_at < ${to}
       and ${sql.unsafe(HUMAN)}
@@ -97,6 +105,8 @@ async function totalsBetween(from: Date, to: Date): Promise<Totals> {
     newVisitors: newVisitors?.new_visitors ?? 0,
     pageviews: traffic?.pageviews ?? 0,
     engagedSessions: traffic?.engaged_sessions ?? 0,
+    bouncedSessions: traffic?.bounced_sessions ?? 0,
+    engagedSeconds: traffic?.engaged_seconds ?? 0,
     leads: leads?.leads ?? 0,
     qualityLeads: leads?.quality_leads ?? 0,
     calls: calls?.calls ?? 0,

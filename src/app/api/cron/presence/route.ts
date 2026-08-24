@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isDbConfigured, requireDb } from '@/lib/db';
 import { importGoogleBusinessProfile } from '@/lib/presence/gbp';
 import { importMeta } from '@/lib/presence/meta';
+import { importSearchConsole } from '@/lib/presence/gsc';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -54,7 +55,8 @@ export async function GET(request: NextRequest) {
   try {
     const gbp = await importGoogleBusinessProfile(sql);
     const meta = await importMeta(sql);
-    const outcomes = [gbp, ...meta];
+    const search = await importSearchConsole(sql);
+    const outcomes = [gbp, ...meta, search];
 
     const rows = outcomes.reduce((sum, o) => sum + o.rows, 0);
     const failures = outcomes.filter((o) => !o.ok);
