@@ -25,9 +25,19 @@ import type postgres from 'postgres';
 
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
-/** Daily, additive, and still current. Reach is people; impressions are views. */
-const IG_DAY_METRICS = ['impressions', 'reach', 'profile_views', 'website_clicks'] as const;
-const FB_DAY_METRICS = ['page_impressions', 'page_impressions_unique', 'page_views_total'] as const;
+/**
+ * Daily and additive. Both the current and the retired name for the same thing
+ * are listed together on purpose — Instagram replaced `impressions` with
+ * `views`, and asking for both means the importer keeps working across the
+ * change in either direction instead of on one side of it. Whichever name the
+ * API still answers is the one that lands.
+ */
+const IG_DAY_METRICS = ['views', 'impressions', 'reach', 'profile_views', 'website_clicks'] as const;
+const FB_DAY_METRICS = [
+  'page_impressions',
+  'page_impressions_unique',
+  'page_views_total',
+] as const;
 
 interface InsightValue {
   value?: number | Record<string, number>;
@@ -73,15 +83,27 @@ function foldInsights(data: InsightEntry[]): Map<string, Record<string, number>>
   return byDay;
 }
 
-async function graphInsights(
+/**
+ * One metric, one request.
+ *
+ * Asking for all of them together is how this used to work and it was wrong:
+ * Meta rejects the entire call when a single name in the list has been
+ * retired, so one deprecation took down every figure including the ones still
+ * being served. The file already claimed to read metrics defensively — this is
+ * the code finally doing it.
+ *
+ * A retired name resolves to null and the caller carries on. A token problem
+ * still throws, because that is not one metric failing, it is the connection.
+ */
+async function graphMetric(
   node: string,
-  metrics: readonly string[],
+  metric: string,
   since: string,
   until: string,
   token: string
-): Promise<InsightEntry[]> {
+): Promise<InsightEntry[] | null> {
   const params = new URLSearchParams({
-    metric: metrics.join(','),
+    metric,
     period: 'day',
     since,
     until,
@@ -100,10 +122,31 @@ async function graphInsights(
     if (body.error?.code === 190) {
       throw new Error(`Meta token rejected (${body.error.message ?? 'code 190'}) — it needs re-issuing.`);
     }
-    throw new Error(`Graph API ${response.status}: ${body.error?.message ?? 'unknown error'}`);
+    return null;
   }
 
   return body.data ?? [];
+}
+
+/** Every metric that still answers, and the names of those that no longer do. */
+async function graphInsights(
+  node: string,
+  metrics: readonly string[],
+  since: string,
+  until: string,
+  token: string
+): Promise<{ data: InsightEntry[]; retired: string[] }> {
+  const results = await Promise.all(
+    metrics.map(async (metric) => ({
+      metric,
+      entries: await graphMetric(node, metric, since, until, token),
+    }))
+  );
+
+  return {
+    data: results.flatMap((r) => r.entries ?? []),
+    retired: results.filter((r) => r.entries === null).map((r) => r.metric),
+  };
 }
 
 /** Followers are a running total, so they come from the node, not the series. */
@@ -140,7 +183,7 @@ export async function importMeta(sql: postgres.Sql, days?: number): Promise<Impo
   const igUser = connection.igUserId;
   if (igUser) {
     try {
-      const data = await graphInsights(igUser, IG_DAY_METRICS, from, to, token);
+      const { data, retired } = await graphInsights(igUser, IG_DAY_METRICS, from, to, token);
       const followers = await followerCount(igUser, 'followers_count', token);
       const byDay = foldInsights(data);
 
@@ -149,7 +192,8 @@ export async function importMeta(sql: postgres.Sql, days?: number): Promise<Impo
         channel: 'instagram',
         entityId: igUser,
         entityName: 'Instagram',
-        impressions: m.impressions ?? 0,
+        // Meta renamed this one; whichever name answered is the real figure.
+        impressions: m.views ?? m.impressions ?? 0,
         clicks: m.website_clicks ?? 0,
         extra: {
           reach: m.reach ?? 0,
@@ -165,6 +209,9 @@ export async function importMeta(sql: postgres.Sql, days?: number): Promise<Impo
         ok: true,
         channel: 'instagram',
         rows: await writePresenceRows(sql, rows),
+        note: retired.length
+          ? `Instagram no longer serves: ${retired.join(', ')} — those columns will read zero.`
+          : undefined,
       });
     } catch (error) {
       outcomes.push({
@@ -180,7 +227,7 @@ export async function importMeta(sql: postgres.Sql, days?: number): Promise<Impo
   const pageId = connection.pageId;
   if (pageId) {
     try {
-      const data = await graphInsights(pageId, FB_DAY_METRICS, from, to, token);
+      const { data, retired } = await graphInsights(pageId, FB_DAY_METRICS, from, to, token);
       const followers = await followerCount(pageId, 'followers_count', token);
       const byDay = foldInsights(data);
 
@@ -205,6 +252,9 @@ export async function importMeta(sql: postgres.Sql, days?: number): Promise<Impo
         ok: true,
         channel: 'facebook',
         rows: await writePresenceRows(sql, rows),
+        note: retired.length
+          ? `Facebook no longer serves: ${retired.join(', ')} — those columns will read zero.`
+          : undefined,
       });
     } catch (error) {
       outcomes.push({
