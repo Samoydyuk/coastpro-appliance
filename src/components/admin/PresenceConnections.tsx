@@ -13,6 +13,12 @@ export interface ConnectionState {
   connectedAt: string | null;
   /** What to do about it when the app is not registered. */
   setupHint: string;
+  /**
+   * Set when a key in the environment is doing the work instead of a signed-in
+   * account. Nothing here can connect or disconnect it — the buttons would be
+   * lies — so the card shows the identity and stays out of the way.
+   */
+  managedByKey?: string | null;
 }
 
 /**
@@ -58,21 +64,28 @@ export function PresenceConnections({ connections }: { connections: ConnectionSt
               {connection.label}
             </div>
             <p className="mt-0.5 truncate text-[11px] text-gray-600">
-              {!connection.appReady
-                ? connection.setupHint
-                : connection.connectedAs
-                  ? connection.connectedAs
-                  : 'Not connected'}
+              {connection.managedByKey
+                ? connection.managedByKey
+                : !connection.appReady
+                  ? connection.setupHint
+                  : connection.connectedAs
+                    ? connection.connectedAs
+                    : 'Not connected'}
             </p>
           </div>
 
           <div className="flex shrink-0 gap-2">
-            {connection.appReady && (
+            {connection.managedByKey && (
+              <span className="font-heading text-[10px] font-semibold uppercase tracking-label text-gray-500">
+                Key
+              </span>
+            )}
+            {!connection.managedByKey && connection.appReady && (
               <a href={`/api/admin/presence/connect/${connection.provider}`} className={button}>
                 {connection.connectedAs ? 'Reconnect' : 'Connect'}
               </a>
             )}
-            {connection.connectedAs && (
+            {!connection.managedByKey && connection.connectedAs && (
               <button
                 type="button"
                 disabled={busy === connection.provider}

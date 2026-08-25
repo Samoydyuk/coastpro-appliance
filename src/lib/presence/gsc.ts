@@ -1,9 +1,12 @@
+import { createSign } from 'node:crypto';
 import type postgres from 'postgres';
 import { upsertPlatformStats, type PlatformStatRow } from '@/lib/presence/store';
 import {
   getSearchConsoleConnection,
+  getSearchConsoleServiceAccount,
   searchConsoleApp,
   type SearchConsoleConnection,
+  type ServiceAccountKey,
 } from '@/lib/presence/credentials';
 import type { ImportOutcome } from '@/lib/presence/gbp';
 
@@ -44,6 +47,118 @@ interface SearchRow {
   impressions?: number;
   ctr?: number;
   position?: number;
+}
+
+const SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly';
+
+function base64url(input: Buffer | string): string {
+  return Buffer.from(input)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+/**
+ * A service account proves who it is by signing, not by being handed a token.
+ *
+ * The assertion is a JWT signed with the account's private key, which Google
+ * trades for an access token good for an hour. Nothing here expires in the way
+ * a refresh token does — the key is the credential, and it is valid until
+ * somebody deletes it in the Cloud console.
+ *
+ * Signed with the built-in crypto module rather than a JWT library. This is one
+ * header, one claim set and one signature, and it is not worth a dependency.
+ */
+async function serviceAccountToken(key: ServiceAccountKey): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const claims = {
+    iss: key.client_email,
+    scope: SCOPE,
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: now + 3600,
+  };
+
+  const signingInput = `${base64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))}.${base64url(
+    JSON.stringify(claims)
+  )}`;
+
+  const signer = createSign('RSA-SHA256');
+  signer.update(signingInput);
+  signer.end();
+
+  let signature: string;
+  try {
+    signature = base64url(signer.sign(key.private_key));
+  } catch (error) {
+    throw new Error(
+      `The service account key could not sign anything — it is probably malformed. (${
+        error instanceof Error ? error.message : String(error)
+      })`
+    );
+  }
+
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: `${signingInput}.${signature}`,
+    }),
+  });
+
+  const body = (await response.json()) as { access_token?: string; error_description?: string };
+  if (!response.ok || !body.access_token) {
+    throw new Error(
+      `Google would not accept the service account: ${body.error_description ?? response.status}`
+    );
+  }
+  return body.access_token;
+}
+
+/**
+ * Which property this account can read.
+ *
+ * Discovered rather than configured, because the failure it prevents is the
+ * quiet one: a service account that has been created but never added as a user
+ * in Search Console authenticates perfectly and returns nothing at all. Asking
+ * Google what it can see turns that into a sentence naming the address to add.
+ */
+async function discoverSite(token: string): Promise<string> {
+  const configured = (process.env.GSC_SITE_URL ?? '').trim();
+  if (configured) return configured;
+
+  const response = await fetch(`${API}/sites`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    throw new Error(`Could not list Search Console properties: ${(await response.text()).slice(0, 200)}`);
+  }
+
+  const body = (await response.json()) as {
+    siteEntry?: Array<{ siteUrl?: string; permissionLevel?: string }>;
+  };
+  const entries = (body.siteEntry ?? []).filter(
+    (entry) => entry.siteUrl && entry.permissionLevel !== 'siteUnverifiedUser'
+  );
+  if (!entries.length) {
+    throw new Error(
+      'The service account signed in but can see no properties. Add its address as a user in Search Console under Settings → Users and permissions.'
+    );
+  }
+
+  const host = new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://coastpro.us').hostname.replace(
+    /^www\./,
+    ''
+  );
+  const mine = entries.filter((entry) => (entry.siteUrl ?? '').includes(host));
+  const pool = mine.length ? mine : entries;
+  // A domain property covers www, the bare host and both schemes at once; a
+  // URL-prefix property covers exactly one of them, which is how a site ends up
+  // with real traffic and an empty report.
+  return (pool.find((entry) => entry.siteUrl?.startsWith('sc-domain:')) ?? pool[0])
+    .siteUrl as string;
 }
 
 export async function searchConsoleAccessToken(
@@ -167,12 +282,36 @@ function toStatRows(
     });
 }
 
+/**
+ * The key wins over the Connect button when both are present.
+ *
+ * Not a preference so much as an ordering that cannot surprise anybody: a
+ * service account has no expiry and no consent to withdraw, so if one has been
+ * configured it is the connection that will still be working in six months.
+ * Leaving a stale OAuth token in front of it would mean the integration breaks
+ * on a schedule for no reason anyone could see.
+ */
+async function authorise(): Promise<{ token: string; siteUrl: string; via: string }> {
+  const key = getSearchConsoleServiceAccount();
+  if (key) {
+    const token = await serviceAccountToken(key);
+    return { token, siteUrl: await discoverSite(token), via: `service account ${key.client_email}` };
+  }
+
+  const connection = await getSearchConsoleConnection();
+  if (!connection) throw new Error('Search Console is not connected.');
+  return {
+    token: await searchConsoleAccessToken(connection),
+    siteUrl: connection.siteUrl,
+    via: 'connected account',
+  };
+}
+
 export async function importSearchConsole(
   sql: postgres.Sql,
   days = 30
 ): Promise<ImportOutcome> {
-  const connection = await getSearchConsoleConnection();
-  if (!connection) {
+  if (!getSearchConsoleServiceAccount() && !(await getSearchConsoleConnection())) {
     return {
       ok: false,
       channel: CHANNEL,
@@ -185,16 +324,16 @@ export async function importSearchConsole(
   const start = new Date(end.getTime() - days * 86_400_000);
 
   try {
-    const token = await searchConsoleAccessToken(connection);
+    const { token, siteUrl } = await authorise();
 
     // Three reads rather than one three-dimensional read. Google applies its
     // privacy threshold per request, so date+query and date+page each keep rows
     // that a combined date+query+page request would drop, and the site total is
     // the only figure that includes the queries withheld from both.
     const [totals, queries, pages] = await Promise.all([
-      query(token, connection.siteUrl, ['date'], isoDay(start), isoDay(end)),
-      query(token, connection.siteUrl, ['date', 'query'], isoDay(start), isoDay(end)),
-      query(token, connection.siteUrl, ['date', 'page'], isoDay(start), isoDay(end)),
+      query(token, siteUrl, ['date'], isoDay(start), isoDay(end)),
+      query(token, siteUrl, ['date', 'query'], isoDay(start), isoDay(end)),
+      query(token, siteUrl, ['date', 'page'], isoDay(start), isoDay(end)),
     ]);
 
     const written = await upsertPlatformStats(sql, [

@@ -11,6 +11,7 @@ import {
   getGoogleConnection,
   getMetaConnection,
   getSearchConsoleConnection,
+  getSearchConsoleServiceAccount,
   searchConsoleAppConfigured,
   googleAppConfigured,
   metaAppConfigured,
@@ -63,12 +64,13 @@ export default async function PresencePage({
   const failed = searchParams.error as string | undefined;
 
   try {
-    const [channels, runs, google, meta, searchConsole] = await Promise.all([
+    const [channels, runs, google, meta, searchConsole, serviceAccount] = await Promise.all([
       getPresence(range),
       getPresenceImportRuns(),
       getGoogleConnection(),
       getMetaConnection(),
       getSearchConsoleConnection(),
+      Promise.resolve(getSearchConsoleServiceAccount()),
     ]);
 
     const live = channels.filter((c) => c.hasData);
@@ -95,6 +97,9 @@ export default async function PresencePage({
         appReady: searchConsoleAppConfigured(),
         connectedAs: searchConsole ? searchConsole.siteUrl : null,
         connectedAt: searchConsole?.connectedAt ?? null,
+        managedByKey: serviceAccount
+          ? `${serviceAccount.client_email} — add this address in Search Console under Settings → Users and permissions`
+          : null,
         setupHint:
           'Uses the same GBP_CLIENT_ID and GBP_CLIENT_SECRET, and needs the Search Console API switched on in the same Google Cloud project.',
       },

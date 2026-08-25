@@ -147,6 +147,58 @@ export function searchConsoleApp(): { clientId: string; clientSecret: string } {
   };
 }
 
+export interface ServiceAccountKey {
+  client_email: string;
+  private_key: string;
+  project_id?: string;
+}
+
+/**
+ * The way in that involves no consent screen at all.
+ *
+ * A service account is its own Google identity, so nothing is being borrowed
+ * from a person: access is granted by adding its address as a user of the
+ * Search Console property, exactly as a colleague would be added. Nothing to
+ * consent to, nothing to verify, no warning interstitial, and no token with an
+ * expiry date — which between them are every failure this integration would
+ * otherwise have had.
+ *
+ * Only Search Console. The Business Profile APIs do not accept service
+ * accounts, so that half stays on the OAuth flow whatever happens here.
+ *
+ * Accepts the key as raw JSON or base64. Raw JSON survives a Vercel
+ * environment variable intact because the newlines inside `private_key` are
+ * escaped as `\\n` rather than being real line breaks — but base64 is offered
+ * as well, because that escaping is the single most common way this is pasted
+ * in broken.
+ */
+export function getSearchConsoleServiceAccount(): ServiceAccountKey | null {
+  const raw = (process.env.GSC_SERVICE_ACCOUNT_KEY ?? '').trim();
+  if (!raw) return null;
+
+  const text = raw.startsWith('{')
+    ? raw
+    : (() => {
+        try {
+          return Buffer.from(raw, 'base64').toString('utf8');
+        } catch {
+          return '';
+        }
+      })();
+
+  try {
+    const parsed = JSON.parse(text) as ServiceAccountKey;
+    if (!parsed.client_email || !parsed.private_key) return null;
+    // A key pasted through a form that ate the escaping arrives with the
+    // literal two characters backslash-n. Repairing it here costs nothing and
+    // saves an afternoon of "invalid_grant" with no explanation.
+    parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 export async function getSearchConsoleConnection(): Promise<SearchConsoleConnection | null> {
   const stored = await readSetting<SearchConsoleConnection>(SEARCH_CONSOLE_KEY);
   if (stored?.refreshToken && stored.siteUrl) return stored;
