@@ -41,6 +41,22 @@ const PAGE_SIZE = 25_000;
 const CHANNEL = 'google_search';
 const SOURCE = 'gsc_api';
 
+/**
+ * How far back to keep reaching, and how much of it to take per night.
+ *
+ * Google keeps sixteen months and then drops the oldest day permanently, so
+ * anything not collected inside that window is gone for good — this is the one
+ * part of the console where waiting actually destroys data.
+ *
+ * Taken in chunks rather than in one run because a single request for sixteen
+ * months would sit well past the sixty seconds the function is allowed. Each
+ * night takes the fresh window plus one older slice, so the history fills
+ * itself in over about five nights and then stops widening on its own. Nobody
+ * has to remember to run anything, which was the point.
+ */
+const HISTORY_TARGET_DAYS = 480;
+const BACKFILL_CHUNK_DAYS = 90;
+
 interface SearchRow {
   keys?: string[];
   clicks?: number;
@@ -307,6 +323,39 @@ async function authorise(): Promise<{ token: string; siteUrl: string; via: strin
   };
 }
 
+/** Oldest day already collected, so a run knows whether to keep reaching back. */
+async function earliestStoredDay(sql: postgres.Sql): Promise<string | null> {
+  const [row] = (await sql`
+    select min(day)::text as day from platform_stats where channel = ${CHANNEL}
+  `) as unknown as { day: string | null }[];
+  return row?.day ?? null;
+}
+
+/** One window of every dimension, ready to be written. */
+async function readWindow(
+  sql: postgres.Sql,
+  token: string,
+  siteUrl: string,
+  startDate: string,
+  endDate: string
+): Promise<PlatformStatRow[]> {
+  // Three reads rather than one three-dimensional read. Google applies its
+  // privacy threshold per request, so date+query and date+page each keep rows
+  // that a combined date+query+page request would drop, and the site total is
+  // the only figure that includes the queries withheld from both.
+  const [totals, queries, pages] = await Promise.all([
+    query(token, siteUrl, ['date'], startDate, endDate),
+    query(token, siteUrl, ['date', 'query'], startDate, endDate),
+    query(token, siteUrl, ['date', 'page'], startDate, endDate),
+  ]);
+
+  return [
+    ...toStatRows(sql, totals, 'search_total', false),
+    ...toStatRows(sql, queries, 'search_query', true),
+    ...toStatRows(sql, pages, 'search_page', true),
+  ];
+}
+
 export async function importSearchConsole(
   sql: postgres.Sql,
   days = 30
@@ -320,29 +369,36 @@ export async function importSearchConsole(
     };
   }
 
-  const end = new Date();
-  const start = new Date(end.getTime() - days * 86_400_000);
+  const today = new Date();
+  const dayBefore = (n: number) => isoDay(new Date(today.getTime() - n * 86_400_000));
 
   try {
     const { token, siteUrl } = await authorise();
 
-    // Three reads rather than one three-dimensional read. Google applies its
-    // privacy threshold per request, so date+query and date+page each keep rows
-    // that a combined date+query+page request would drop, and the site total is
-    // the only figure that includes the queries withheld from both.
-    const [totals, queries, pages] = await Promise.all([
-      query(token, siteUrl, ['date'], isoDay(start), isoDay(end)),
-      query(token, siteUrl, ['date', 'query'], isoDay(start), isoDay(end)),
-      query(token, siteUrl, ['date', 'page'], isoDay(start), isoDay(end)),
-    ]);
+    // The recent window every night, because Google restates it.
+    let rows = await readWindow(sql, token, siteUrl, dayBefore(days), dayBefore(0));
 
-    const written = await upsertPlatformStats(sql, [
-      ...toStatRows(sql, totals, 'search_total', false),
-      ...toStatRows(sql, queries, 'search_query', true),
-      ...toStatRows(sql, pages, 'search_page', true),
-    ]);
+    // And one slice further back, until sixteen months are in hand.
+    let note: string | undefined;
+    const earliest = await earliestStoredDay(sql);
+    const horizon = dayBefore(HISTORY_TARGET_DAYS);
 
-    return { ok: true, channel: CHANNEL, rows: written };
+    if (earliest && earliest > horizon) {
+      const chunkEnd = earliest;
+      const chunkStart =
+        isoDay(new Date(Date.parse(earliest) - BACKFILL_CHUNK_DAYS * 86_400_000)) < horizon
+          ? horizon
+          : isoDay(new Date(Date.parse(earliest) - BACKFILL_CHUNK_DAYS * 86_400_000));
+
+      rows = rows.concat(await readWindow(sql, token, siteUrl, chunkStart, chunkEnd));
+      note =
+        chunkStart === horizon
+          ? `Filled history back to ${chunkStart} — the full sixteen months Google keeps.`
+          : `Reached back to ${chunkStart}; still filling towards ${horizon}.`;
+    }
+
+    const written = await upsertPlatformStats(sql, rows);
+    return { ok: true, channel: CHANNEL, rows: written, note };
   } catch (error) {
     return {
       ok: false,

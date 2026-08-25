@@ -108,6 +108,17 @@ export default async function SearchPage({
       .sort((a, b) => b.impressions - a.impressions)
       .slice(0, 15);
 
+    /**
+     * Google reports search data two to three days behind, so a range sitting
+     * inside that gap shows near-zero and reads as a catastrophe. Naming it is
+     * the difference between a lag and a panic — and on "Today" the whole range
+     * is inside the gap, which is worth saying more loudly than on a month.
+     */
+    const LAG_DAYS = 3;
+    const lagEdge = new Date(Date.now() - LAG_DAYS * 86_400_000);
+    const lagged: 'all' | 'edge' | null =
+      range.from >= lagEdge ? 'all' : range.to >= lagEdge ? 'edge' : null;
+
     const points = report.days.map((day) => ({
       label: shortDate(day.day),
       values: { impressions: day.impressions, clicks: day.clicks },
@@ -124,6 +135,14 @@ export default async function SearchPage({
             {report.lastDay ? ` · Google has data through ${report.lastDay}` : ''}
           </p>
         </div>
+
+        {report.connected && lagged !== null && (
+          <Warning>
+            {lagged === 'all'
+              ? 'Google reports search data two to three days late, and this range is almost entirely inside that gap — the near-zero figures below are the lag, not a collapse in traffic. Pick a wider range to see anything meaningful.'
+              : 'The last two or three days of this range are still filling in. Google restates them as it finalises, so the right-hand edge of the chart will rise over the next few days.'}
+          </Warning>
+        )}
 
         {!report.connected && (
           <Warning>

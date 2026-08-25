@@ -64,6 +64,8 @@ export interface ImportOutcome {
   /** Set when the importer could not run at all, as opposed to running empty. */
   skipped?: string;
   error?: string;
+  /** Anything worth reading in the run log — what a run did beyond the count. */
+  note?: string;
 }
 
 async function accessToken(connection: GoogleConnection): Promise<string> {
