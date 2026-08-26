@@ -50,9 +50,11 @@ export const siteConfig = {
    *
    * Fill each in as it goes live. Same name, same phone, same everything as
    * `contact` above — a citation that disagrees with the site is worse than no
-   * citation, and the old (949) 449-1008 number is still out there.
+   * citation, and the old (949) 449-1008 number is still out there. As of
+   * 2026-08-26 it is still first in the Instagram bio, above the current one,
+   * which is the live source everything else is copying from.
    */
-  profiles: [] as string[],
+  profiles: ['https://www.instagram.com/coastpro/'],
 
   pricing: {
     // The published range covers most jobs; premium brands and awkward
