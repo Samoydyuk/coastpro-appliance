@@ -26,8 +26,60 @@ type Status = 'off' | 'connecting' | 'ready' | 'ringing' | 'live' | 'error';
 
 interface CallerCard {
   fromDisplay: string;
-  client: { name: string; address: string | null } | null;
-  activeJob: { jobNumber: string | null; type: string | null } | null;
+  match: 'existing' | 'new' | 'multiple';
+  client: { name: string; address: string | null; phone: string | null } | null;
+  history: { jobCount: number; balanceDue: number; unpaidCount: number } | null;
+  activeJob: {
+    jobNumber: string | null;
+    type: string | null;
+    status: string | null;
+    scheduledAt: string | null;
+    appliance: string | null;
+  } | null;
+  lastJob: {
+    type: string | null;
+    diagnosis: string | null;
+    appliance: string | null;
+    completedAt: string | null;
+  } | null;
+}
+
+const EMPTY_CARD: Omit<CallerCard, 'fromDisplay'> = {
+  match: 'new',
+  client: null,
+  history: null,
+  activeJob: null,
+  lastJob: null,
+};
+
+/** "Fri 14:00" — enough to answer "are you coming today?" without a calendar. */
+function whenLabel(iso: string | null): string | null {
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleString(undefined, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
+/** A date on its own, for work that is already finished. */
+function dayLabel(iso: string | null): string | null {
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function money(amount: number): string {
+  return amount.toLocaleString(undefined, {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  });
 }
 
 /** The SDK is loaded on demand: nobody who never answers a call pays for it. */
@@ -80,6 +132,18 @@ async function requestMicrophone(): Promise<MediaStream> {
       `The microphone could not be opened${name ? ` (${name})` : ''}.`
     );
   }
+}
+
+function Chip({ tone, children }: { tone: 'neutral' | 'warn'; children: React.ReactNode }) {
+  return (
+    <span
+      className={`rounded-full px-2 py-[1px] text-[10px] font-medium ${
+        tone === 'warn' ? 'bg-[#fdf0e6] text-[#8a4b12]' : 'bg-primary-500/10 text-gray-600'
+      }`}
+    >
+      {children}
+    </span>
+  );
 }
 
 export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
@@ -188,8 +252,8 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
         setSeconds(0);
         setCaller({
           fromDisplay: request.toE164,
-          client: request.name ? { name: request.name, address: null } : null,
-          activeJob: null,
+          ...EMPTY_CARD,
+          client: request.name ? { name: request.name, address: null, phone: request.toE164 } : null,
         });
         setStatus('live');
         if (ticker.current) clearInterval(ticker.current);
@@ -468,15 +532,18 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
    * calls apart.
    */
   const lookUpCaller = async (from: string) => {
-    setCaller({ fromDisplay: 'Incoming call', client: null, activeJob: null });
+    setCaller({ fromDisplay: 'Incoming call', ...EMPTY_CARD });
     try {
       const response = await fetch(`/api/admin/dispatch/caller?from=${encodeURIComponent(from)}`);
       const body = await response.json();
       if (body?.context) {
         setCaller({
-          fromDisplay: body.context.fromDisplay ?? from,
+          fromDisplay: body.context.fromDisplay ?? 'Incoming call',
+          match: body.context.match ?? 'new',
           client: body.context.client,
+          history: body.context.history,
           activeJob: body.context.activeJob,
+          lastJob: body.context.lastJob,
         });
       }
     } catch {
@@ -614,15 +681,71 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
         ) : (
           <>
             <Dot colour={status === 'ringing' ? '#fab219' : '#0ca30c'} />
-            <div className="min-w-0">
-              <div className="truncate text-sm font-medium text-ink">
-                {caller?.client?.name ?? caller?.fromDisplay ?? 'Incoming call'}
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                <span className="truncate text-sm font-medium text-ink">
+                  {caller?.client?.name ?? caller?.fromDisplay ?? 'Incoming call'}
+                </span>
+                {/* The number they are ringing from, always — it is not always
+                    the one on their record, and the dispatcher may need to
+                    ring back on this one. */}
+                {caller?.client && caller.fromDisplay !== 'Incoming call' && (
+                  <span className="text-xs text-gray-600">{caller.fromDisplay}</span>
+                )}
+                <span className="text-[11px] text-gray-500">
+                  {status === 'ringing' ? 'Ringing' : formatDuration(seconds)}
+                </span>
+
+                {caller?.match === 'new' && caller.client === null && (
+                  <Chip tone="neutral">First time</Chip>
+                )}
+                {caller?.history && caller.history.jobCount > 0 && (
+                  <Chip tone="neutral">
+                    {caller.history.jobCount} {caller.history.jobCount === 1 ? 'job' : 'jobs'}
+                  </Chip>
+                )}
+                {/* Money is said plainly or not at all. */}
+                {caller?.history && caller.history.balanceDue > 0 && (
+                  <Chip tone="warn">
+                    Owes {money(caller.history.balanceDue)}
+                    {caller.history.unpaidCount > 1 ? ` · ${caller.history.unpaidCount} invoices` : ''}
+                  </Chip>
+                )}
+                {/* One number, several people on it: naming one of them would
+                    be a guess, so say there is a choice to make. */}
+                {caller?.match === 'multiple' && <Chip tone="warn">Several customers on this number</Chip>}
               </div>
+
               <div className="truncate text-xs text-gray-600">
-                {status === 'ringing' ? 'Ringing' : formatDuration(seconds)}
-                {caller?.client?.address ? ` · ${caller.client.address}` : ''}
-                {caller?.activeJob?.jobNumber ? ` · ${caller.activeJob.jobNumber}` : ''}
+                {caller?.client?.address ?? ''}
               </div>
+
+              {caller?.activeJob && (
+                <div className="truncate text-xs text-ink">
+                  <span className="font-medium">
+                    {caller.activeJob.jobNumber ?? 'Booked'}
+                  </span>
+                  {caller.activeJob.type ? ` · ${caller.activeJob.type}` : ''}
+                  {caller.activeJob.appliance ? ` · ${caller.activeJob.appliance}` : ''}
+                  {whenLabel(caller.activeJob.scheduledAt)
+                    ? ` · ${whenLabel(caller.activeJob.scheduledAt)}`
+                    : ''}
+                  {caller.activeJob.status
+                    ? ` · ${caller.activeJob.status.toLowerCase().replace(/_/g, ' ')}`
+                    : ''}
+                </div>
+              )}
+
+              {/* Only when there is nothing running — "what did you do for me
+                  last time" is the second question, never the first. */}
+              {!caller?.activeJob && caller?.lastJob && (
+                <div className="truncate text-xs text-gray-600">
+                  Last visit
+                  {dayLabel(caller.lastJob.completedAt) ? ` ${dayLabel(caller.lastJob.completedAt)}` : ''}
+                  {caller.lastJob.appliance ? ` · ${caller.lastJob.appliance}` : ''}
+                  {caller.lastJob.diagnosis ? ` · ${caller.lastJob.diagnosis}` : ''}
+                </div>
+              )}
             </div>
 
             <div className="ml-auto flex items-center gap-2">
