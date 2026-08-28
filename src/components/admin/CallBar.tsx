@@ -49,12 +49,47 @@ async function post(action: string, body: unknown = {}) {
   return response.json();
 }
 
+/**
+ * Ask for the microphone, and say what went wrong in words that suggest a fix.
+ *
+ * A refusal and a missing device look identical from a promise rejection, and
+ * "could not access the microphone" tells a dispatcher nothing they can act on.
+ */
+async function requestMicrophone(): Promise<MediaStream> {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error(
+      'This browser will not share a microphone with the page. Chrome, Edge or Safari over https will.'
+    );
+  }
+  try {
+    return await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    const name = (err as { name?: string })?.name;
+    if (name === 'NotAllowedError' || name === 'SecurityError') {
+      throw new Error(
+        'The microphone is blocked for this site. Click the padlock in the address bar, allow the microphone, then reload.'
+      );
+    }
+    if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+      throw new Error('No microphone found. Plug one in, or pick one in the system sound settings.');
+    }
+    if (name === 'NotReadableError') {
+      throw new Error('Another program is holding the microphone. Close it and try again.');
+    }
+    throw new Error(
+      `The microphone could not be opened${name ? ` (${name})` : ''}.`
+    );
+  }
+}
+
 export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
   const [status, setStatus] = useState<Status>('off');
   const [error, setError] = useState<string | null>(null);
   const [caller, setCaller] = useState<CallerCard | null>(null);
   const [muted, setMuted] = useState(false);
   const [seconds, setSeconds] = useState(0);
+  /** How far the connection got, so a failure can name the step it died on. */
+  const [stage, setStage] = useState<string | null>(null);
 
   const clientRef = useRef<any>(null);
   const callRef = useRef<any>(null);
@@ -65,6 +100,9 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
 
   const ringing = useRef<{ ctx: AudioContext; timer: ReturnType<typeof setInterval> } | null>(null);
   const watchdog = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wasOnDuty = useRef(false);
+  const stageRef = useRef<string | null>(null);
+  stageRef.current = stage;
   /** The business number. Dialling without it is a SIP 403 from Telnyx. */
   const lineE164 = useRef<string | null>(null);
   /** Set while an outbound call is up, so its minutes get reported. */
@@ -175,6 +213,11 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
   const goOffline = useCallback(() => {
     stopHeartbeat();
     if (!teamMemberId) return;
+    // Only if we were ever on the phones. Announcing a departure that never
+    // happened backdates presence on every page unload, which buries the one
+    // signal that says whether the desk ever connected.
+    if (!wasOnDuty.current) return;
+    wasOnDuty.current = false;
     // `keepalive` so the request survives the page going away — an unload is
     // exactly when this matters most.
     navigator.sendBeacon?.(
@@ -200,6 +243,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
     clientRef.current = null;
     goOffline();
     setStatus('off');
+    setStage(null);
     setCaller(null);
   }, [goOffline]);
 
@@ -209,22 +253,32 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
     setError(null);
 
     try {
+      /**
+       * The microphone is asked for first, before anything is awaited.
+       *
+       * Safari only opens the permission prompt while it can still see the
+       * click that caused it, and an `await` in front of this spends that
+       * click. That is what "no allow-microphone button appeared" looks like
+       * from the outside: no prompt, no error, nothing.
+       *
+       * The SDK will not ask on our behalf — `connect()` never calls
+       * `checkPermissions`, it only asks when a call is already ringing, which
+       * is the worst possible moment to discover the answer is no.
+       */
+      setStage('Asking for the microphone');
+      const micStream = await requestMicrophone();
+
       const session = await post('session', { teamMemberId });
       lineE164.current = session.lineE164 ?? null;
+      setStage('Loading the phone');
       const TelnyxRTC = await loadSdk();
 
-      /**
-       * The microphone is asked for now, not when a call arrives.
-       *
-       * Chrome shows its prompt on the first `getUserMedia`, and a prompt that
-       * appears while the phone is ringing is a prompt nobody reads — they are
-       * looking at the caller's name. Asking on "take calls here" also means a
-       * refusal is discovered at a moment when nobody is waiting on the line.
-       */
-      await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => {
-        throw new Error('The browser would not give access to the microphone.');
-      });
+      // Permission is what was wanted, not the recording. Holding this open
+      // would leave the browser's recording indicator lit and take a second
+      // capture of the same microphone alongside the call's own.
+      micStream.getTracks().forEach((track) => track.stop());
 
+      setStage('Connecting');
       const client = new TelnyxRTC({
         login_token: session.token,
         // The app needed this: direct peer-to-peer fails on some carrier
@@ -233,14 +287,26 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
       });
       clientRef.current = client;
 
+      client.on('telnyx.socket.open', () => setStage('Signing in'));
+      client.on('telnyx.socket.error', () =>
+        setStage('The connection to the phone network failed')
+      );
+
       client.on('telnyx.ready', () => {
         if (watchdog.current) clearTimeout(watchdog.current);
         watchdog.current = null;
+        setStage(null);
+        wasOnDuty.current = true;
         setStatus('ready');
         // Announce presence immediately; the interval below only keeps it
         // fresh. Waiting the first thirty seconds would leave a window where
         // the desk is connected but the server still routes past it.
-        void post('registered', { teamMemberId }).catch(() => {});
+        void post('registered', { teamMemberId }).catch((err: Error) =>
+          // Swallowing this is how a desk ends up connected but never routed
+          // to: the browser believes it is on the phones and the server has
+          // never heard of it.
+          setError(`Connected, but the server was not told: ${err.message}`)
+        );
 
         const queued = pendingDial.current;
         pendingDial.current = null;
@@ -251,7 +317,9 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
           // Guarded on the live socket, not on the tab. This is the line that
           // decides whether a call rings here or on a phone.
           if (clientRef.current?.connected) {
-            void post('heartbeat', { teamMemberId }).catch(() => {});
+            void post('heartbeat', { teamMemberId }).catch((err: Error) =>
+              setError(`Lost touch with the server: ${err.message}`)
+            );
           }
         }, 30_000);
       });
@@ -345,7 +413,13 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
       if (watchdog.current) clearTimeout(watchdog.current);
       watchdog.current = setTimeout(() => {
         setStatus((was) => (was === 'connecting' ? 'error' : was));
-        setError((was) => was ?? 'The phone network did not answer. Try again.');
+        setError(
+          (was) =>
+            was ??
+            `The phone network did not answer${
+              stageRef.current ? ` — it stopped at: ${stageRef.current}` : ''
+            }. Try again.`
+        );
       }, 15_000);
 
       await client.connect().catch((err: unknown) => {
@@ -440,8 +514,9 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
 
   const answer = () => {
     try {
-      // The element is passed here because `remoteElement` belongs to a call,
-      // not to the client — setting it on the client does nothing at all.
+      // Named on the call itself. The client carries a default, but a call
+      // that connects to silence is invisible in every log, so this says it
+      // where it cannot be missed.
       callRef.current?.answer({ remoteElement: 'coastpro-call-audio' });
     } catch {
       setError('Could not pick that up.');
@@ -479,12 +554,12 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
             >
               Take calls here
             </button>
-            <span className="text-xs text-gray-600">
+            <span className={`text-xs ${error ? 'text-[#b3261e]' : 'text-gray-600'}`}>
               {error ?? 'Calls are going to the phone.'}
             </span>
           </>
         ) : status === 'connecting' ? (
-          <span className="text-xs text-gray-600">Connecting the phone…</span>
+          <span className="text-xs text-gray-600">{stage ?? 'Connecting the phone'}…</span>
         ) : status === 'ready' ? (
           <>
             <Dot colour="#0ca30c" />
