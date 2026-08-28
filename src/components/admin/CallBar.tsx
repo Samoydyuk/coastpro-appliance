@@ -459,13 +459,16 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
   /**
    * Who is ringing.
    *
-   * The number is a hint. It comes off an undocumented field on the SDK's call
-   * object, in whatever shape the SIP invite carried, so the request is made
-   * whether or not we managed to read one — the server knows which call is
-   * ringing at this desk and does not need to be told.
+   * The number the SDK reports is never the customer's: the server dials this
+   * desk *from* the business line, so the invite says CoastPro's own number
+   * whoever is calling. Showing it would tell the dispatcher they are being
+   * rung by themselves, so nothing is claimed until the server says who it is.
+   *
+   * It is still passed along, where it serves only to tell two simultaneous
+   * calls apart.
    */
   const lookUpCaller = async (from: string) => {
-    setCaller({ fromDisplay: from || 'Incoming call', client: null, activeJob: null });
+    setCaller({ fromDisplay: 'Incoming call', client: null, activeJob: null });
     try {
       const response = await fetch(`/api/admin/dispatch/caller?from=${encodeURIComponent(from)}`);
       const body = await response.json();
