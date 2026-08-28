@@ -710,6 +710,24 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
   }, [placeCall]);
 
   /**
+   * Do not let a call be lost to a stray click.
+   *
+   * Everything inside the console navigates without reloading, so a call
+   * survives being carried from screen to screen. Leaving the console
+   * altogether — a typed address, a bookmark, closing the tab — cannot be made
+   * survivable, so it is worth one question first.
+   */
+  useEffect(() => {
+    if (status !== 'live' && status !== 'ringing') return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [status]);
+
+  /**
    * Tell the call buttons on every record that there is a desk here.
    *
    * Only when there really is one. Marking the page regardless turned every
