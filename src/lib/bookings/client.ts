@@ -234,6 +234,31 @@ export interface JobLineItem {
   isExcluded: boolean;
 }
 
+export interface JobPhoto {
+  id: string;
+  category: 'BEFORE' | 'DURING' | 'AFTER' | 'ISSUE' | 'DOCUMENT' | 'GENERAL';
+  caption: string | null;
+  takenAt: string;
+  showOnDocument: boolean;
+}
+
+export interface JobDocument {
+  id: string;
+  type: 'ESTIMATE' | 'INVOICE';
+  documentNumber: string;
+  subtotalCents: number;
+  taxCents: number;
+  totalCents: number;
+  taxRate: number;
+  sentAt: string | null;
+  viewedAt: string | null;
+  paidAt: string | null;
+  signedAt: string | null;
+  signerName: string | null;
+  voidedAt: string | null;
+  createdAt: string;
+}
+
 export interface JobDetail {
   id: string;
   jobNumber: string | null;
@@ -261,6 +286,8 @@ export interface JobDetail {
   company: { id: string; name: string } | null;
   assignedTo: { id: string; name: string } | null;
   lineItems: JobLineItem[];
+  photos: JobPhoto[];
+  documents: JobDocument[];
 }
 
 // ---------------------------------------------------------------------------
@@ -362,4 +389,79 @@ export async function bookJob(input: BookJobInput): Promise<{ requestId: string;
 
 export async function getJob(id: string): Promise<{ job: JobDetail }> {
   return call(`/v1/jobs/${encodeURIComponent(id)}`);
+}
+
+/**
+ * The bytes of one photo.
+ *
+ * Returned as a Buffer rather than a URL: the console proxies these to the
+ * browser itself, so the plugin key never reaches a page and JobPocket's
+ * bucket address never appears in a document the browser can read.
+ */
+export async function getJobPhoto(
+  jobId: string,
+  photoId: string
+): Promise<{ body: ArrayBuffer; contentType: string }> {
+  const config = await operationsConfig();
+  if (!config) throw notConfigured();
+
+  const response = await fetch(
+    `${config.baseUrl}/v1/jobs/${encodeURIComponent(jobId)}/photos/${encodeURIComponent(photoId)}`,
+    {
+      headers: { Authorization: `Bearer ${config.apiKey}` },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(15_000),
+    }
+  ).catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new OperationsApiError(`Could not reach JobPocket: ${message}`, 0, 'unreachable');
+  });
+
+  if (!response.ok) {
+    throw new OperationsApiError(
+      `JobPocket answered ${response.status} for that photo.`,
+      response.status,
+      response.status === 401 || response.status === 403 ? 'rejected' : 'unreachable'
+    );
+  }
+
+  return {
+    body: await response.arrayBuffer(),
+    contentType: response.headers.get('content-type') ?? 'image/jpeg',
+  };
+}
+
+/** The estimate or invoice as HTML, exactly as the customer receives it. */
+export async function getDocumentHtml(documentId: string): Promise<string> {
+  const config = await operationsConfig();
+  if (!config) throw notConfigured();
+
+  const response = await fetch(
+    `${config.baseUrl}/v1/documents/${encodeURIComponent(documentId)}/html`,
+    { headers: { Authorization: `Bearer ${config.apiKey}` }, cache: 'no-store' }
+  );
+
+  if (!response.ok) {
+    throw new OperationsApiError(
+      `JobPocket answered ${response.status} for that document.`,
+      response.status,
+      response.status === 401 || response.status === 403 ? 'rejected' : 'unreachable'
+    );
+  }
+
+  return response.text();
+}
+
+export async function rescheduleJob(
+  jobId: string,
+  body: { scheduledAt: string; estimatedDuration?: number | null }
+): Promise<{
+  ok: true;
+  job: { id: string; scheduledAt: string | null; estimatedDuration: number | null };
+  warning?: { type: string; jobType?: string; scheduledAt?: string };
+}> {
+  return call(`/v1/jobs/${encodeURIComponent(jobId)}/schedule`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
 }

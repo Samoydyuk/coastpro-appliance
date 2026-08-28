@@ -4,6 +4,8 @@ import { getJob, OperationsApiError } from '@/lib/bookings/client';
 import { dateTime, money, relativeTime } from '@/lib/admin/format';
 import { timeOfDay } from '@/lib/bookings/month';
 import { Empty, Hint, Panel, SetupNotice, StatusPill, Table, Td, Th, Warning } from '@/components/admin/ui';
+import type { JobPhoto } from '@/lib/bookings/client';
+import { RescheduleForm } from '@/components/admin/RescheduleForm';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +37,19 @@ export default async function JobPage({ params }: { params: { id: string } }) {
   }
 
   const billable = job.lineItems.filter((item) => !item.isExcluded);
+
+  // Scans of signed paper live under the same category as any other document
+  // photograph, so they are split out by that category rather than by guessing
+  // from a caption.
+  const scans = job.photos.filter((photo) => photo.category === 'DOCUMENT');
+  const workPhotos = job.photos.filter((photo) => photo.category !== 'DOCUMENT');
+  const PHOTO_GROUPS: { key: JobPhoto['category']; label: string }[] = [
+    { key: 'BEFORE', label: 'Before' },
+    { key: 'DURING', label: 'During' },
+    { key: 'AFTER', label: 'After' },
+    { key: 'ISSUE', label: 'The problem' },
+    { key: 'GENERAL', label: 'Other' },
+  ];
 
   return (
     <div className="space-y-6">
@@ -115,6 +130,32 @@ export default async function JobPage({ params }: { params: { id: string } }) {
             </dl>
           </Panel>
 
+          <Panel title="Photos" subtitle={`${workPhotos.length} from the visit`}>
+            {workPhotos.length === 0 ? (
+              <Empty>No photos on this job.</Empty>
+            ) : (
+              <div className="space-y-5">
+                {PHOTO_GROUPS.map((group) => {
+                  const inGroup = workPhotos.filter((photo) => photo.category === group.key);
+                  if (inGroup.length === 0) return null;
+
+                  return (
+                    <div key={group.key}>
+                      <div className="mb-2 font-heading text-[10px] uppercase tracking-label text-gray-500">
+                        {group.label} · {inGroup.length}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                        {inGroup.map((photo) => (
+                          <PhotoTile key={photo.id} jobId={job.id} photo={photo} />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Panel>
+
           {(job.notes || job.diagnosis || job.resolution) && (
             <Panel title="What happened">
               {job.diagnosis && <Para label="Diagnosis">{job.diagnosis}</Para>}
@@ -125,6 +166,70 @@ export default async function JobPage({ params }: { params: { id: string } }) {
         </div>
 
         <div className="space-y-4">
+          <Panel title="Move this visit" subtitle="The only thing changed from here">
+            <RescheduleForm
+              jobId={job.id}
+              canMove={job.status !== 'CANCELLED' && job.status !== 'PAID'}
+            />
+            <Hint>
+              Status, prices and payment are changed in the app. Finishing a job closes the
+              technician&apos;s time entry and can start a follow-up message, so it belongs where
+              the work happens.
+            </Hint>
+          </Panel>
+
+          <Panel title="Estimates & invoices">
+            {job.documents.length === 0 ? (
+              <Empty>Nothing has been billed on this job yet.</Empty>
+            ) : (
+              <ul className="space-y-3">
+                {job.documents.map((doc) => (
+                  <li key={doc.id}>
+                    <a
+                      href={`/api/admin/documents/${doc.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block rounded-card border border-primary-500/20 p-3 transition-colors hover:border-ink"
+                    >
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="font-medium text-ink">{doc.documentNumber}</span>
+                        <span className="tabular-nums text-sm text-ink">
+                          {money(doc.totalCents)}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 text-xs text-gray-500">
+                        {doc.type === 'INVOICE' ? 'Invoice' : 'Estimate'}
+                        {doc.voidedAt
+                          ? ' · voided'
+                          : doc.paidAt
+                            ? ` · paid ${dateTime(doc.paidAt)}`
+                            : doc.signedAt
+                              ? ` · signed ${dateTime(doc.signedAt)}`
+                              : doc.sentAt
+                                ? ` · sent ${dateTime(doc.sentAt)}`
+                                : ' · not sent'}
+                      </div>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+
+          {scans.length > 0 && (
+            <Panel title="Scans" subtitle="Signed paper from the visit">
+              <div className="grid grid-cols-2 gap-2">
+                {scans.map((photo) => (
+                  <PhotoTile key={photo.id} jobId={job.id} photo={photo} />
+                ))}
+              </div>
+              <Hint>
+                Internal. These are the paper documents scanned on the job, not something the
+                customer is shown.
+              </Hint>
+            </Panel>
+          )}
+
           <Panel title="Customer">
             <dl className="space-y-3">
               <Field label="Name">{job.client?.name ?? '—'}</Field>
@@ -175,6 +280,40 @@ export default async function JobPage({ params }: { params: { id: string } }) {
         cost to buy is deliberately not carried here.
       </Hint>
     </div>
+  );
+}
+
+/**
+ * One photograph.
+ *
+ * Served through this site rather than linked from JobPocket's bucket: those
+ * URLs carry no signature and no expiry, so one that escaped would keep working
+ * for good. The proxy also takes the metadata off, because a photo taken in
+ * somebody's kitchen carries the coordinates of that kitchen.
+ */
+function PhotoTile({ jobId, photo }: { jobId: string; photo: JobPhoto }) {
+  const src = `/api/admin/jobs/${jobId}/photo/${photo.id}`;
+
+  return (
+    <a
+      href={src}
+      target="_blank"
+      rel="noreferrer"
+      className="block overflow-hidden rounded-card border border-primary-500/20 transition-colors hover:border-ink"
+    >
+      {/* Plain <img>: next/image would want the bucket in remotePatterns, and
+          the whole point is that the bucket is never named to the browser. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={photo.caption ?? 'Job photo'}
+        loading="lazy"
+        className="aspect-[4/3] w-full bg-cream-dark object-cover"
+      />
+      {photo.caption && (
+        <div className="truncate px-2 py-1 text-[11px] text-gray-600">{photo.caption}</div>
+      )}
+    </a>
   );
 }
 
