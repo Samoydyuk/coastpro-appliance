@@ -491,15 +491,24 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
     return () => window.removeEventListener('coastpro:call', onRequest);
   }, [placeCall]);
 
-  /** Tell the call buttons on every record that there is a desk here. */
+  /**
+   * Tell the call buttons on every record that there is a desk here.
+   *
+   * Only when there really is one. Marking the page regardless turned every
+   * phone number in the console into a live-looking "call" button with nothing
+   * behind it — the exact failure CallButton falls back to a plain link to
+   * avoid.
+   */
   useEffect(() => {
+    if (!teamMemberId) return;
     document.documentElement.dataset.coastproPhone = 'on';
     return () => {
       delete document.documentElement.dataset.coastproPhone;
     };
-  }, []);
+  }, [teamMemberId]);
 
-  // Leaving the desk, however the tab goes.
+  // Leaving the desk, however the tab goes: closed, navigated away from, or
+  // this component taken off the page.
   useEffect(() => {
     const onLeave = () => goOffline();
     window.addEventListener('pagehide', onLeave);
@@ -507,6 +516,16 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
       window.removeEventListener('pagehide', onLeave);
       stopHeartbeat();
       stopRinging();
+      // Without this the socket outlives the bar: the desk stays present, the
+      // server keeps routing calls to it, and there is no longer any Answer
+      // button on the page to press.
+      try {
+        clientRef.current?.disconnect();
+      } catch {
+        /* a connection that is already gone is the state we wanted */
+      }
+      clientRef.current = null;
+      goOffline();
     };
   }, [goOffline, stopHeartbeat, stopRinging]);
 

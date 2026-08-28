@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { AdminNav, AdminRangeBar } from '@/components/admin/AdminNav';
 import { CallBar } from '@/components/admin/CallBar';
 import { getSeat } from '@/lib/dispatch/client';
+import { currentAdmin } from '@/lib/admin-guard';
 
 export const metadata = {
   title: 'CoastPro admin',
@@ -18,9 +19,17 @@ export const metadata = {
  * tabs was already seventeen wide and fighting the date controls for space.
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  // The sign-in page lives under this layout, so this runs for anonymous
+  // visitors too. Without the check the seat's id was served in the public
+  // HTML of /admin/login, along with a call bar offering to put a stranger on
+  // the business line.
+  const admin = await currentAdmin();
+
   // A seat that is not in the ring group would show a bar that never rings, so
   // the bar appears only once calls can actually arrive.
-  const desk = await getSeat().catch(() => ({ seat: null, ringing: false }));
+  const desk = admin
+    ? await getSeat().catch(() => ({ seat: null, ringing: false }))
+    : { seat: null, ringing: false };
   return (
     <div className="flex min-h-screen flex-col bg-[#f2f0eb]">
       <header className="border-b border-primary-500/20 bg-[#fcfcfb]">

@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { readAdminToken } from '@/lib/admin-token';
 import { ADMIN_COOKIE } from '@/lib/cookies';
@@ -63,6 +64,20 @@ export async function requireAdmin(
   }
 
   return { sub: claims.sub };
+}
+
+/**
+ * The signed-in admin, for a server component that has no `Request`.
+ *
+ * Pages under `/admin` render for anyone who asks — the sign-in page most of
+ * all — so anything the layout puts on the page is public until this says
+ * otherwise. Returns null rather than redirecting: the middleware owns where an
+ * unauthenticated visitor goes, and two opinions about that is one too many.
+ */
+export async function currentAdmin(): Promise<AdminIdentity | null> {
+  const token = cookies().get(ADMIN_COOKIE)?.value ?? null;
+  const claims = token ? await readAdminToken(token) : null;
+  return claims ? { sub: claims.sub } : null;
 }
 
 /**
