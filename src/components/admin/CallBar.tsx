@@ -206,6 +206,8 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
   /** How far the connection got, so a failure can name the step it died on. */
   const [stage, setStage] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(true);
+  /** Something worth knowing that is not a failure. */
+  const [notice, setNotice] = useState<string | null>(null);
 
   const clientRef = useRef<any>(null);
   const callRef = useRef<any>(null);
@@ -373,6 +375,9 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
     if (!teamMemberId) return;
     setStatus('connecting');
     setError(null);
+    // Cleared here rather than on ready: the resume path sets its notice after
+    // connecting, and clearing it there would be a race with this handler.
+    if (!options?.resuming) setNotice(null);
 
     try {
       /**
@@ -384,11 +389,19 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
        * from the outside: no prompt, no error, nothing.
        *
        * The SDK will not ask on our behalf — `connect()` never calls
-       * `checkPermissions`, it only asks when a call is already ringing, which
-       * is the worst possible moment to discover the answer is no.
+       * `checkPermissions`, it only asks when a call is already ringing.
+       *
+       * Skipped when a shift is being restored, because there is no click to
+       * spend: the page just loaded. Connecting needs no microphone at all —
+       * only answering does, and that has a button behind it. Demanding one
+       * here is what kept sending the dispatcher back to pressing the button
+       * after every reload.
        */
-      setStage('Asking for the microphone');
-      const micStream = await requestMicrophone();
+      let micStream: MediaStream | null = null;
+      if (!options?.resuming) {
+        setStage('Asking for the microphone');
+        micStream = await requestMicrophone();
+      }
 
       const session = await post('session', { teamMemberId });
       lineE164.current = session.lineE164 ?? null;
@@ -398,7 +411,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
       // Permission is what was wanted, not the recording. Holding this open
       // would leave the browser's recording indicator lit and take a second
       // capture of the same microphone alongside the call's own.
-      micStream.getTracks().forEach((track) => track.stop());
+      micStream?.getTracks().forEach((track) => track.stop());
 
       setStage('Connecting');
       const client = new TelnyxRTC({
@@ -644,19 +657,25 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
       } catch {
         return;
       }
+      if (!cancelled) await connect({ resuming: true });
 
+      /**
+       * Say so if the first call will interrupt itself to ask for a microphone.
+       *
+       * Not a failure — the prompt appears on Answer, which is a click, and it
+       * works. But a dispatcher should know before the phone rings, not while
+       * somebody is waiting on the line.
+       */
       try {
         const permission = await navigator.permissions?.query({
           name: 'microphone' as PermissionName,
         });
-        // Safari has no such query and throws; falling through and trying is
-        // correct there, because a remembered grant needs no gesture.
-        if (permission && permission.state !== 'granted') return;
+        if (!cancelled && permission && permission.state !== 'granted') {
+          setNotice('The microphone will be asked for on the first call.');
+        }
       } catch {
-        /* no permissions API — try anyway */
+        /* Safari has no such query; the prompt on Answer works there anyway */
       }
-
-      if (!cancelled) void connect({ resuming: true });
     };
 
     void resume();
@@ -781,7 +800,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
           <>
             <Dot colour="#0ca30c" />
             <span className="text-xs text-gray-600">
-              On duty — calls ring here and on the phone.
+              {notice ?? 'On duty — calls ring here and on the phone.'}
             </span>
             <button
               type="button"
