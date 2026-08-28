@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getCalendar, OperationsApiError, type CalendarJob } from '@/lib/bookings/client';
 import { getServices } from '@/lib/jobpocket';
 import { BookJobForm } from '@/components/admin/BookJobForm';
+import { NotConnected } from '@/components/admin/NotConnected';
 import { parseMonth, monthWindow, buildWeeks, dayKey, timeOfDay, WEEKDAY_LABELS } from '@/lib/bookings/month';
 import { money } from '@/lib/admin/format';
 import { Empty, Hint, Panel, SetupNotice, Warning } from '@/components/admin/ui';
@@ -43,7 +44,9 @@ export default async function CalendarPage({
   const view = parseMonth(typeof searchParams.month === 'string' ? searchParams.month : undefined);
 
   let jobs: CalendarJob[] = [];
+  let ownBusiness: string | null = null;
   let failure: string | null = null;
+  let unconfigured = false;
 
   // The public list, so the form offers the same services the booking page
   // does. It needs no key and fails to an empty list.
@@ -51,12 +54,14 @@ export default async function CalendarPage({
 
   try {
     const window = monthWindow(view);
-    ({ jobs } = await getCalendar(window.from, window.to));
+    ({ jobs, ownBusiness } = await getCalendar(window.from, window.to));
   } catch (error) {
     if (error instanceof OperationsApiError) {
-      // Shown in place rather than replacing the page: the month still draws,
-      // and the owner can read what to do about it.
-      failure = error.message;
+      // A missing key is a setup step, not a fault: drawing an empty month for
+      // it would say "no work booked", which is a different and much more
+      // alarming sentence than "not connected".
+      if (error.code === 'not_configured') unconfigured = true;
+      else failure = error.message;
     } else {
       return <SetupNotice error={error} />;
     }
@@ -74,6 +79,22 @@ export default async function CalendarPage({
   const weeks = buildWeeks(view);
   const booked = jobs.length;
   const value = jobs.reduce((sum, job) => sum + job.totalCents, 0);
+
+  /**
+   * Whose name each visit is under.
+   *
+   * Dispatched work carries the dispatcher's brand and own work carries none,
+   * so on an account that does both this is the difference between "my week"
+   * and "somebody's week". Shown only when there is more than one name in the
+   * month — a calendar that says CoastPro on every single row has told you
+   * nothing and taken up space doing it.
+   */
+  const brandOf = (job: CalendarJob) => job.brand?.name ?? ownBusiness ?? 'Own work';
+  const brands = [...new Set(jobs.map(brandOf))];
+  const showBrand = brands.length > 1;
+
+  const brandColour = (name: string) =>
+    SERIES[Math.max(0, brands.indexOf(name)) % SERIES.length];
 
   return (
     <div className="space-y-6">
@@ -100,6 +121,9 @@ export default async function CalendarPage({
 
       {failure && <Warning>{failure}</Warning>}
 
+      {unconfigured ? (
+        <NotConnected what="Jobs and bookings" />
+      ) : (
       <Panel title={view.label} subtitle="Straight from JobPocket — the same jobs the app shows">
         {/* The grid scrolls rather than the page: a month is wide, and a
             horizontally scrolling page loses the navigation with it. */}
@@ -153,8 +177,17 @@ export default async function CalendarPage({
                           <div className="truncate text-[11px] font-medium text-ink">
                             {timeOfDay(job.scheduledAt)} {job.clientName ?? 'No name'}
                           </div>
-                          {job.type && (
-                            <div className="truncate text-[10px] text-gray-600">{job.type}</div>
+                          {showBrand ? (
+                            <div
+                              className="truncate text-[10px] font-medium"
+                              style={{ color: brandColour(brandOf(job)) }}
+                            >
+                              {brandOf(job)}
+                            </div>
+                          ) : (
+                            job.type && (
+                              <div className="truncate text-[10px] text-gray-600">{job.type}</div>
+                            )
                           )}
                         </div>
                       ))}
@@ -180,13 +213,31 @@ export default async function CalendarPage({
           </div>
         )}
       </Panel>
+      )}
 
+      {showBrand && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          {brands.map((name) => (
+            <span key={name} className="flex items-center gap-1.5 text-xs text-gray-600">
+              <span
+                aria-hidden
+                className="inline-block h-2 w-2 rounded-full"
+                style={{ backgroundColor: brandColour(name) }}
+              />
+              {name} · {jobs.filter((j) => brandOf(j) === name).length}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {!unconfigured && (
       <Panel
         title="Book a visit"
         subtitle="Somebody rang — put it in the diary"
       >
         <BookJobForm services={services.map((s) => ({ id: s.id, name: s.name }))} />
       </Panel>
+      )}
 
       <Hint>
         This is a live view of JobPocket, not a copy — accept a request here or in the app and both

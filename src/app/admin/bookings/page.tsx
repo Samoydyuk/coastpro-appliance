@@ -21,6 +21,7 @@ import {
   Warning,
 } from '@/components/admin/ui';
 import { channelColor } from '@/components/admin/palette';
+import { NotConnected } from '@/components/admin/NotConnected';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,11 +52,15 @@ export default async function BookingsPage({
   let requests: BookingRequestSummary[] = [];
   let nextCursor: string | null = null;
   let failure: string | null = null;
+  let unconfigured = false;
 
   try {
     ({ requests, nextCursor } = await listBookingRequests({ status: status || undefined, cursor }));
   } catch (error) {
-    if (error instanceof OperationsApiError) failure = error.message;
+    if (error instanceof OperationsApiError) {
+      if (error.code === 'not_configured') unconfigured = true;
+      else failure = error.message;
+    }
     else return <SetupNotice error={error} />;
   }
 

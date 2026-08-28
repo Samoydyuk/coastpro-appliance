@@ -78,20 +78,37 @@ export function forgetOperationsConfig(): void {
  * The console shows this message verbatim. "Something went wrong" tells nobody
  * whether to paste a new key, wait, or call somebody.
  */
+export type OperationsFailure =
+  /** No key has been pasted yet — a setup step, not a fault. */
+  | 'not_configured'
+  /** The key was rejected: rotated, revoked, or the wrong scope. */
+  | 'rejected'
+  /** JobPocket could not be reached, or answered with something unusable. */
+  | 'unreachable';
+
 export class OperationsApiError extends Error {
   readonly status: number;
+  /**
+   * Why it failed, in the terms a screen needs to decide what to draw.
+   * "Not connected yet" and "connected but broken" look identical if all you
+   * have is a message, and drawing an empty month for the first one reads as
+   * "no work booked" — which is a different and much more alarming sentence.
+   */
+  readonly code: OperationsFailure;
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, code: OperationsFailure) {
     super(message);
     this.name = 'OperationsApiError';
     this.status = status;
+    this.code = code;
   }
 }
 
 function notConfigured(): OperationsApiError {
   return new OperationsApiError(
     'No bookings key yet. Mint an "operations" key in JobPocket and paste it into Settings.',
-    0
+    0,
+    'not_configured'
   );
 }
 
@@ -115,7 +132,7 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new OperationsApiError(`Could not reach JobPocket: ${message}`, 0);
+    throw new OperationsApiError(`Could not reach JobPocket: ${message}`, 0, 'unreachable');
   }
 
   if (!response.ok) {
@@ -124,17 +141,23 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
     if (response.status === 401) {
       throw new OperationsApiError(
         'JobPocket rejected the bookings key. It was probably rotated — paste the new one in Settings.',
-        401
+        401,
+        'rejected'
       );
     }
     if (response.status === 403) {
       throw new OperationsApiError(
         body?.error ??
           'That key is not allowed to read bookings. Check it is the "operations" key, not the website one.',
-        403
+        403,
+        'rejected'
       );
     }
-    throw new OperationsApiError(body?.error ?? `JobPocket answered ${response.status}.`, response.status);
+    throw new OperationsApiError(
+      body?.error ?? `JobPocket answered ${response.status}.`,
+      response.status,
+      'unreachable'
+    );
   }
 
   return (await response.json()) as T;
@@ -191,6 +214,13 @@ export interface CalendarJob {
   estimatedDuration: number | null;
   totalCents: number;
   type: string | null;
+  company: { id: string; name: string } | null;
+  /**
+   * Whose name the work is done under. Null means the contractor's own —
+   * dispatched work carries the dispatcher's brand, and on this account that
+   * is most of the calendar.
+   */
+  brand: { id: string; name: string } | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -232,7 +262,10 @@ export async function declineRequest(id: string): Promise<{ ok: true }> {
   });
 }
 
-export async function getCalendar(from: string, to: string): Promise<{ jobs: CalendarJob[]; timezone: string }> {
+export async function getCalendar(
+  from: string,
+  to: string
+): Promise<{ jobs: CalendarJob[]; timezone: string; ownBusiness: string | null }> {
   const params = new URLSearchParams({ from, to });
   return call(`/v1/calendar?${params.toString()}`);
 }
