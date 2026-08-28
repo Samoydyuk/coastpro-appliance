@@ -63,6 +63,45 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const startedAt = useRef<number>(0);
 
+  const ringing = useRef<{ ctx: AudioContext; timer: ReturnType<typeof setInterval> } | null>(null);
+  const watchdog = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /**
+   * A ring, generated rather than fetched.
+   *
+   * A dispatcher looking at another screen has to hear the call, and shipping
+   * an audio file for two notes is not worth a request or a cache entry.
+   */
+  const startRinging = useCallback(() => {
+    if (ringing.current) return;
+    try {
+      const ctx = new AudioContext();
+      const beep = () => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+      };
+      beep();
+      ringing.current = { ctx, timer: setInterval(beep, 2500) };
+    } catch {
+      // No audio context is a quieter phone, not a broken one.
+    }
+  }, []);
+
+  const stopRinging = useCallback(() => {
+    if (!ringing.current) return;
+    clearInterval(ringing.current.timer);
+    void ringing.current.ctx.close().catch(() => {});
+    ringing.current = null;
+  }, []);
+
   const stopHeartbeat = useCallback(() => {
     if (heartbeat.current) clearInterval(heartbeat.current);
     heartbeat.current = null;
@@ -80,6 +119,8 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
   }, [teamMemberId, stopHeartbeat]);
 
   const disconnect = useCallback(() => {
+    if (watchdog.current) clearTimeout(watchdog.current);
+    watchdog.current = null;
     try {
       callRef.current?.hangup();
     } catch {
@@ -106,16 +147,33 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
       const session = await post('session', { teamMemberId });
       const TelnyxRTC = await loadSdk();
 
-      const client = new TelnyxRTC({ login_token: session.token });
+      /**
+       * The microphone is asked for now, not when a call arrives.
+       *
+       * Chrome shows its prompt on the first `getUserMedia`, and a prompt that
+       * appears while the phone is ringing is a prompt nobody reads — they are
+       * looking at the caller's name. Asking on "take calls here" also means a
+       * refusal is discovered at a moment when nobody is waiting on the line.
+       */
+      await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => {
+        throw new Error('The browser would not give access to the microphone.');
+      });
+
+      const client = new TelnyxRTC({
+        login_token: session.token,
+        // The app needed this: direct peer-to-peer fails on some carrier
+        // networks and the call connects to silence. A relay always works.
+        forceRelayCandidate: true,
+      });
       clientRef.current = client;
 
-      // Where the far end's audio actually comes out. Without an element the
-      // SDK has nowhere to attach the remote track and the call is silent —
-      // connected, metered, and useless.
-      client.remoteElement = 'coastpro-call-audio';
-
       client.on('telnyx.ready', () => {
+        if (watchdog.current) clearTimeout(watchdog.current);
+        watchdog.current = null;
         setStatus('ready');
+        // Announce presence immediately; the interval below only keeps it
+        // fresh. Waiting the first thirty seconds would leave a window where
+        // the desk is connected but the server still routes past it.
         void post('registered', { teamMemberId }).catch(() => {});
 
         stopHeartbeat();
@@ -138,7 +196,18 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
         // The socket is the presence signal; without it the server must stop
         // sending calls here immediately.
         stopHeartbeat();
-        setStatus((was) => (was === 'live' || was === 'ringing' ? was : 'off'));
+        setStatus((was) => {
+          if (was === 'live' || was === 'ringing') return was;
+          // Closing before ever reaching ready is a failure, not an idle desk,
+          // and it has to say so — a bar that quietly reads "off" is how a
+          // dispatcher ends up believing they are on the phones when they
+          // are not.
+          if (was === 'connecting') {
+            setError('The phone network closed the connection. Try again.');
+            return 'error';
+          }
+          return 'off';
+        });
       });
 
       client.on('telnyx.notification', (notification: any) => {
@@ -149,10 +218,16 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
           case 'ringing':
             callRef.current = call;
             setStatus('ringing');
+            startRinging();
             void lookUpCaller(call.options?.remoteCallerNumber ?? '');
             break;
           case 'active':
             callRef.current = call;
+            // Belt and braces on the audio. `answer()` is given the element
+            // too, but a call that connects to silence is the failure that
+            // took two weeks to find on iOS, and it is invisible in every log.
+            stopRinging();
+            attachAudio(call);
             startedAt.current = Date.now();
             setSeconds(0);
             setStatus('live');
@@ -164,6 +239,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
             break;
           case 'hangup':
           case 'destroy':
+            stopRinging();
             if (ticker.current) clearInterval(ticker.current);
             ticker.current = null;
             callRef.current = null;
@@ -174,12 +250,45 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
         }
       });
 
-      client.connect();
+      /**
+       * A connection that never arrives must say so.
+       *
+       * `connect()` resolves when the socket opens, not when the SIP
+       * registration succeeds, so a bad token leaves the bar sitting on
+       * "connecting" for ever. Silence here reads as "it is working", which is
+       * the worst thing this component could claim.
+       */
+      if (watchdog.current) clearTimeout(watchdog.current);
+      watchdog.current = setTimeout(() => {
+        setStatus((was) => (was === 'connecting' ? 'error' : was));
+        setError((was) => was ?? 'The phone network did not answer. Try again.');
+      }, 15_000);
+
+      await client.connect().catch((err: unknown) => {
+        throw new Error(
+          err instanceof Error ? err.message : 'Could not reach the phone network.'
+        );
+      });
     } catch (err) {
+      if (watchdog.current) clearTimeout(watchdog.current);
+      watchdog.current = null;
       setError(err instanceof Error ? err.message : 'Could not start the phone.');
       setStatus('error');
     }
-  }, [teamMemberId, stopHeartbeat]);
+  }, [teamMemberId, stopHeartbeat, startRinging, stopRinging]);
+
+  /** Put the far end's audio into the page's own element. */
+  const attachAudio = (call: any) => {
+    const element = audioRef.current;
+    const stream = call?.remoteStream;
+    if (!element || !stream) return;
+    element.srcObject = stream;
+    void element.play().catch(() => {
+      // Autoplay policy: the answer was a click, so this should not happen —
+      // but a muted call is worse than a noisy console.
+      setError('The browser blocked the call audio. Click the page and try again.');
+    });
+  };
 
   const lookUpCaller = async (from: string) => {
     setCaller({ fromDisplay: from || 'Unknown number', client: null, activeJob: null });
@@ -206,14 +315,17 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
     return () => {
       window.removeEventListener('pagehide', onLeave);
       stopHeartbeat();
+      stopRinging();
     };
-  }, [goOffline, stopHeartbeat]);
+  }, [goOffline, stopHeartbeat, stopRinging]);
 
   if (!teamMemberId) return null;
 
   const answer = () => {
     try {
-      callRef.current?.answer();
+      // The element is passed here because `remoteElement` belongs to a call,
+      // not to the client — setting it on the client does nothing at all.
+      callRef.current?.answer({ remoteElement: 'coastpro-call-audio' });
     } catch {
       setError('Could not pick that up.');
     }
