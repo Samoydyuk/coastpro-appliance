@@ -361,8 +361,12 @@ export async function importSearchConsole(
   days = 30
 ): Promise<ImportOutcome> {
   if (!getSearchConsoleServiceAccount() && !(await getSearchConsoleConnection())) {
+    // `ok: true` with a reason, matching the other importers. Not connected is
+    // a state, not a failure — reporting it as one marked every nightly run
+    // failed, and since there was no error to print the log read
+    // "google_search: undefined", which says nothing to anybody.
     return {
-      ok: false,
+      ok: true,
       channel: CHANNEL,
       rows: 0,
       skipped: 'Search Console is not connected.',

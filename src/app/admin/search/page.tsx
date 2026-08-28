@@ -14,6 +14,7 @@ import {
   Warning,
 } from '@/components/admin/ui';
 import { TimeSeries } from '@/components/admin/charts';
+import { SearchRefresh } from '@/components/admin/SearchRefresh';
 import { SERIES, STATUS } from '@/components/admin/palette';
 
 export const dynamic = 'force-dynamic';
@@ -135,6 +136,8 @@ export default async function SearchPage({
             {report.lastDay ? ` · Google has data through ${report.lastDay}` : ''}
           </p>
         </div>
+
+        <SearchRefresh lastDay={report.lastDay} />
 
         {report.connected && lagged !== null && (
           <Warning>
