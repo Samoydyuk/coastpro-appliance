@@ -236,3 +236,53 @@ export async function getCalendar(from: string, to: string): Promise<{ jobs: Cal
   const params = new URLSearchParams({ from, to });
   return call(`/v1/calendar?${params.toString()}`);
 }
+
+export interface BookJobInput {
+  externalId: string;
+  name: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  service?: string;
+  description?: string;
+  /** When to turn up. Applied at the accept step, not at the lead step — see below. */
+  scheduledStart?: string;
+  scheduledEnd?: string;
+}
+
+/**
+ * Booking a job from the console: file the request, then accept it.
+ *
+ * There is deliberately no third endpoint for this. A job booked by hand and a
+ * job accepted from the website should be the same kind of job, made the same
+ * way, or the two will slowly stop resembling each other — different numbering,
+ * a different idea of what an appliance is, one of them missing from a report.
+ *
+ * The time is applied at the *accept* step rather than sent with the lead. The
+ * lead endpoint re-checks a requested time against public availability and
+ * refuses one that is taken, which is right for a customer and wrong for the
+ * owner: somebody putting a visit in their own diary is not bound by the
+ * windows their booking page happens to be offering.
+ */
+export async function bookJob(input: BookJobInput): Promise<{ requestId: string; jobId: string }> {
+  const lead = await call<{ leadId: string; duplicate: boolean }>('/v1/leads', {
+    method: 'POST',
+    body: JSON.stringify({
+      externalId: input.externalId,
+      name: input.name,
+      phone: input.phone,
+      email: input.email || undefined,
+      address: input.address ? { line1: input.address } : undefined,
+      service: input.service || undefined,
+      description: input.description || undefined,
+      attribution: { landingUrl: 'https://coastpro.us/admin/calendar' },
+    }),
+  });
+
+  const accepted = await acceptRequest(lead.leadId, {
+    ...(input.scheduledStart ? { scheduledStart: input.scheduledStart } : {}),
+    ...(input.scheduledEnd ? { scheduledEnd: input.scheduledEnd } : {}),
+  });
+
+  return { requestId: lead.leadId, jobId: accepted.jobId };
+}

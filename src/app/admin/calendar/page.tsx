@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { getCalendar, OperationsApiError, type CalendarJob } from '@/lib/bookings/client';
+import { getServices } from '@/lib/jobpocket';
+import { BookJobForm } from '@/components/admin/BookJobForm';
 import { parseMonth, monthWindow, buildWeeks, dayKey, timeOfDay, WEEKDAY_LABELS } from '@/lib/bookings/month';
 import { money } from '@/lib/admin/format';
 import { Empty, Hint, Panel, SetupNotice, Warning } from '@/components/admin/ui';
@@ -42,6 +44,10 @@ export default async function CalendarPage({
 
   let jobs: CalendarJob[] = [];
   let failure: string | null = null;
+
+  // The public list, so the form offers the same services the booking page
+  // does. It needs no key and fails to an empty list.
+  const services = await getServices().catch(() => []);
 
   try {
     const window = monthWindow(view);
@@ -173,6 +179,13 @@ export default async function CalendarPage({
             </Empty>
           </div>
         )}
+      </Panel>
+
+      <Panel
+        title="Book a visit"
+        subtitle="Somebody rang — put it in the diary"
+      >
+        <BookJobForm services={services.map((s) => ({ id: s.id, name: s.name }))} />
       </Panel>
 
       <Hint>
