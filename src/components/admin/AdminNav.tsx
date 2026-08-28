@@ -13,6 +13,8 @@ const SECTIONS = [
   { href: '/admin/search', label: 'Search' },
   { href: '/admin/funnel', label: 'Funnel' },
   { href: '/admin/leads', label: 'Leads' },
+  { href: '/admin/bookings', label: 'Bookings' },
+  { href: '/admin/calendar', label: 'Calendar' },
   { href: '/admin/calls', label: 'Calls' },
   { href: '/admin/pages', label: 'Pages' },
   { href: '/admin/geo', label: 'Geography' },

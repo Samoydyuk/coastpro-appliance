@@ -90,6 +90,23 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }>
   won: { bg: '#e3f3e3', text: '#06600d', label: 'Won' },
   lost: { bg: '#f4e6e6', text: '#8f2323', label: 'Lost' },
   spam: { bg: '#eceae6', text: '#635c56', label: 'Spam' },
+
+  // Booking requests, as JobPocket names them. Without these the pill fell back
+  // to grey with the raw enum in it — "PENDING" shouted at the reader in a
+  // column where every other row said something in English.
+  PENDING: { bg: '#fdf2e3', text: '#8a5a12', label: 'Waiting' },
+  ACCEPTED: { bg: '#e6f4ec', text: '#0b5c34', label: 'Accepted' },
+  DECLINED: { bg: '#f4e6e6', text: '#8f2323', label: 'Declined' },
+  CANCELLED: { bg: '#eceae6', text: '#635c56', label: 'Cancelled' },
+
+  // And the job it becomes.
+  SCHEDULED: { bg: '#e8f1fd', text: '#1c5cab', label: 'Scheduled' },
+  IN_PROGRESS: { bg: '#fdf2e3', text: '#8a5a12', label: 'In progress' },
+  PAUSED: { bg: '#eceae6', text: '#635c56', label: 'Paused' },
+  COMPLETED: { bg: '#e6f4ec', text: '#0b5c34', label: 'Completed' },
+  INVOICED: { bg: '#e8f1fd', text: '#1c5cab', label: 'Invoiced' },
+  PAID: { bg: '#e3f3e3', text: '#06600d', label: 'Paid' },
+  DRAFT: { bg: '#eceae6', text: '#635c56', label: 'Draft' },
 };
 
 export function StatusPill({ status }: { status: string }) {
