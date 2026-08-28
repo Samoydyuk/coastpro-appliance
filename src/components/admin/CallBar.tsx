@@ -42,6 +42,16 @@ interface CallerCard {
     appliance: string | null;
     completedAt: string | null;
   } | null;
+  recentJobs: Array<{
+    id: string;
+    jobNumber: string | null;
+    type: string | null;
+    appliance: string | null;
+    status: string;
+    paymentStatus: string;
+    total: number;
+    at: string | null;
+  }>;
 }
 
 const EMPTY_CARD: Omit<CallerCard, 'fromDisplay'> = {
@@ -50,7 +60,31 @@ const EMPTY_CARD: Omit<CallerCard, 'fromDisplay'> = {
   history: null,
   activeJob: null,
   lastJob: null,
+  recentJobs: [],
 };
+
+/** Plain words for a status nobody says out loud as SCREAMING_SNAKE. */
+function humanise(value: string): string {
+  return value.toLowerCase().replace(/_/g, ' ');
+}
+
+/**
+ * Whether a status is worth a second look.
+ *
+ * Only two things on a job history make a dispatcher change what they say:
+ * work that is still open, and money that never arrived.
+ */
+function jobTone(status: string): 'warn' | 'good' | 'neutral' {
+  if (status === 'COMPLETED' || status === 'PAID' || status === 'INVOICED') return 'good';
+  if (status === 'CANCELLED' || status === 'DRAFT') return 'neutral';
+  return 'warn';
+}
+
+function payTone(status: string): 'warn' | 'good' | 'neutral' {
+  if (status === 'PAID' || status === 'FREE') return 'good';
+  if (status === 'REFUNDED' || status === 'WRITTEN_OFF') return 'neutral';
+  return 'warn';
+}
 
 /** "Fri 14:00" — enough to answer "are you coming today?" without a calendar. */
 function whenLabel(iso: string | null): string | null {
@@ -87,6 +121,15 @@ async function loadSdk() {
   const mod = await import('@telnyx/webrtc');
   return mod.TelnyxRTC;
 }
+
+/**
+ * Remembers that this desk is on the phones.
+ *
+ * Being on duty is a shift, not a page. A reload used to drop the dispatcher
+ * off the phones without saying so — and worse, calls carried on being routed
+ * here for the rest of the presence window, ringing a tab that had no idea.
+ */
+const ON_DUTY_KEY = 'coastpro:dispatch-on-duty';
 
 async function post(action: string, body: unknown = {}) {
   const response = await fetch(`/api/admin/dispatch/${action}`, {
@@ -134,13 +177,21 @@ async function requestMicrophone(): Promise<MediaStream> {
   }
 }
 
-function Chip({ tone, children }: { tone: 'neutral' | 'warn'; children: React.ReactNode }) {
+const CHIP_TONES = {
+  warn: 'bg-[#fdf0e6] text-[#8a4b12]',
+  good: 'bg-[#e8f3e8] text-[#1f5c22]',
+  neutral: 'bg-primary-500/10 text-gray-600',
+} as const;
+
+function Chip({
+  tone,
+  children,
+}: {
+  tone: keyof typeof CHIP_TONES;
+  children: React.ReactNode;
+}) {
   return (
-    <span
-      className={`rounded-full px-2 py-[1px] text-[10px] font-medium ${
-        tone === 'warn' ? 'bg-[#fdf0e6] text-[#8a4b12]' : 'bg-primary-500/10 text-gray-600'
-      }`}
-    >
+    <span className={`rounded-full px-2 py-[1px] text-[10px] font-medium ${CHIP_TONES[tone]}`}>
       {children}
     </span>
   );
@@ -154,6 +205,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
   const [seconds, setSeconds] = useState(0);
   /** How far the connection got, so a failure can name the step it died on. */
   const [stage, setStage] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(true);
 
   const clientRef = useRef<any>(null);
   const callRef = useRef<any>(null);
@@ -291,6 +343,12 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
   }, [teamMemberId, stopHeartbeat]);
 
   const disconnect = useCallback(() => {
+    // Leaving on purpose is the one thing that ends the shift.
+    try {
+      localStorage.removeItem(ON_DUTY_KEY);
+    } catch {
+      /* nothing to forget */
+    }
     if (watchdog.current) clearTimeout(watchdog.current);
     watchdog.current = null;
     try {
@@ -311,7 +369,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
     setCaller(null);
   }, [goOffline]);
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (options?: { resuming?: boolean }) => {
     if (!teamMemberId) return;
     setStatus('connecting');
     setError(null);
@@ -361,6 +419,11 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
         watchdog.current = null;
         setStage(null);
         wasOnDuty.current = true;
+        try {
+          localStorage.setItem(ON_DUTY_KEY, '1');
+        } catch {
+          /* private browsing: the shift simply will not survive a reload */
+        }
         setStatus('ready');
         // Announce presence immediately; the interval below only keeps it
         // fresh. Waiting the first thirty seconds would leave a window where
@@ -502,6 +565,13 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
     } catch (err) {
       if (watchdog.current) clearTimeout(watchdog.current);
       watchdog.current = null;
+      // A shift being restored on page load failed quietly: nobody asked for
+      // this just now, so an alarming red line about it would be noise. The
+      // button comes back and says the desk is off, which is true.
+      if (options?.resuming) {
+        setStatus('off');
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Could not start the phone.');
       setStatus('error');
     }
@@ -544,6 +614,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
           history: body.context.history,
           activeJob: body.context.activeJob,
           lastJob: body.context.lastJob,
+          recentJobs: body.context.recentJobs ?? [],
         });
       }
     } catch {
@@ -554,6 +625,48 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
   useEffect(() => {
     connectRef.current = connect;
   }, [connect]);
+
+  /**
+   * Come back on the phones after a reload.
+   *
+   * Only when the microphone is already ours. Asking for it without a click is
+   * refused outright by some browsers, and an admin page that greeted the
+   * dispatcher with a failed connection every morning would be worse than the
+   * button they are trying to avoid pressing.
+   */
+  useEffect(() => {
+    if (!teamMemberId) return;
+    let cancelled = false;
+
+    const resume = async () => {
+      try {
+        if (localStorage.getItem(ON_DUTY_KEY) !== '1') return;
+      } catch {
+        return;
+      }
+
+      try {
+        const permission = await navigator.permissions?.query({
+          name: 'microphone' as PermissionName,
+        });
+        // Safari has no such query and throws; falling through and trying is
+        // correct there, because a remembered grant needs no gesture.
+        if (permission && permission.state !== 'granted') return;
+      } catch {
+        /* no permissions API — try anyway */
+      }
+
+      if (!cancelled) void connect({ resuming: true });
+    };
+
+    void resume();
+    return () => {
+      cancelled = true;
+    };
+    // Deliberately once per desk: this restores a shift, it does not follow
+    // state. `connect` is stable for a given teamMemberId.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamMemberId]);
 
   /**
    * Any record can ask for a call.
@@ -653,7 +766,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
           <>
             <button
               type="button"
-              onClick={connect}
+              onClick={() => void connect()}
               className="h-8 rounded-card bg-ink px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-cream"
             >
               Take calls here
@@ -784,6 +897,58 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
           </>
         )}
       </div>
+
+      {/* The customer's last visits, under the bar rather than in it — five
+          rows do not belong on a strip, and this is the thing a dispatcher
+          reads while the phone is still ringing. */}
+      {(status === 'ringing' || status === 'live') && caller?.recentJobs?.length ? (
+        <div className="border-b border-primary-500/15 bg-[#fcfcfb] px-5 pb-2">
+          <button
+            type="button"
+            onClick={() => setHistoryOpen((open) => !open)}
+            className="font-heading text-[10px] uppercase tracking-label text-gray-500 hover:text-ink"
+          >
+            {historyOpen ? '▾' : '▸'} Last {caller.recentJobs.length}{' '}
+            {caller.recentJobs.length === 1 ? 'job' : 'jobs'}
+          </button>
+
+          {historyOpen && (
+            <div className="mt-1 overflow-x-auto">
+              <table className="w-full min-w-[560px] border-collapse text-xs">
+                <tbody>
+                  {caller.recentJobs.map((job) => (
+                    <tr key={job.id} className="border-t border-primary-500/10">
+                      <td className="whitespace-nowrap py-1 pr-3 text-gray-500">
+                        {dayLabel(job.at) ?? '—'}
+                      </td>
+                      <td className="whitespace-nowrap py-1 pr-3">
+                        <a
+                          href={`/admin/calendar/${job.id}`}
+                          className="font-medium text-ink hover:text-primary-600"
+                        >
+                          {job.jobNumber ?? 'Job'}
+                        </a>
+                      </td>
+                      <td className="py-1 pr-3 text-gray-600">
+                        {[job.type, job.appliance].filter(Boolean).join(' · ') || '—'}
+                      </td>
+                      <td className="whitespace-nowrap py-1 pr-2">
+                        <Chip tone={jobTone(job.status)}>{humanise(job.status)}</Chip>
+                      </td>
+                      <td className="whitespace-nowrap py-1 pr-3">
+                        <Chip tone={payTone(job.paymentStatus)}>{humanise(job.paymentStatus)}</Chip>
+                      </td>
+                      <td className="whitespace-nowrap py-1 text-right text-gray-600">
+                        {job.total > 0 ? money(job.total) : ''}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ) : null}
     </>
   );
 }
