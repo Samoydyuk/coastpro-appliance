@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { AdminNav, AdminRangeBar } from '@/components/admin/AdminNav';
+import { CallBar } from '@/components/admin/CallBar';
+import { getSeat } from '@/lib/dispatch/client';
 
 export const metadata = {
   title: 'CoastPro admin',
@@ -15,7 +17,10 @@ export const metadata = {
  * CoastPro is run from and the list of places to go keeps growing — a row of
  * tabs was already seventeen wide and fighting the date controls for space.
  */
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  // A seat that is not in the ring group would show a bar that never rings, so
+  // the bar appears only once calls can actually arrive.
+  const desk = await getSeat().catch(() => ({ seat: null, ringing: false }));
   return (
     <div className="flex min-h-screen flex-col bg-[#f2f0eb]">
       <header className="border-b border-primary-500/20 bg-[#fcfcfb]">
@@ -48,6 +53,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
       </header>
+
+      <CallBar teamMemberId={desk.ringing ? desk.seat?.id ?? null : null} />
 
       <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col lg:flex-row">
         <AdminNav />

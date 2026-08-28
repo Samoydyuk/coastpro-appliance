@@ -9,6 +9,24 @@ const nextConfig = {
       },
     ],
   },
+  /**
+   * The console can now ask for a microphone, so it should be the only thing
+   * that can. Without this any page that manages to frame the admin could
+   * prompt in its name.
+   */
+  async headers() {
+    return [
+      {
+        source: '/admin/:path*',
+        headers: [
+          { key: 'Permissions-Policy', value: 'microphone=(self), camera=(), geolocation=()' },
+          { key: 'Referrer-Policy', value: 'same-origin' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+        ],
+      },
+    ];
+  },
+
   async redirects() {
     return [
       {

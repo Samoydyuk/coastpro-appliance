@@ -7,6 +7,8 @@ import { siteConfig } from '@/data/site-config';
 import { Empty, Hint, Panel, SetupNotice, Table, Td, Th } from '@/components/admin/ui';
 import { NumberEditor, RetireNumberButton } from '@/components/admin/NumberEditor';
 import { IntegrationKeyEditor } from '@/components/admin/IntegrationKeyEditor';
+import { DispatchSetup } from '@/components/admin/DispatchSetup';
+import { getSeat } from '@/lib/dispatch/client';
 import { STATUS } from '@/components/admin/palette';
 
 export const dynamic = 'force-dynamic';
@@ -18,6 +20,7 @@ export default async function SettingsPage() {
       string | boolean | Date | null
     >[];
     const jobPocket = await jobPocketConfig();
+    const desk = await getSeat().catch(() => ({ seat: null, ringing: false }));
 
     const integrations = [
       {
@@ -149,6 +152,13 @@ export default async function SettingsPage() {
               </li>
             ))}
           </ul>
+        </Panel>
+
+        <Panel
+          title="Answering calls here"
+          subtitle="Take the business number at a desk instead of on the phone"
+        >
+          <DispatchSetup seat={desk.seat} ringing={desk.ringing} />
         </Panel>
 
         <Panel

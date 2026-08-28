@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@telnyx/webrtc": "^2.27.10",
     "clsx": "^2.1.0",
     "lucide-react": "^0.344.0",
     "next": "^14.2.0",
