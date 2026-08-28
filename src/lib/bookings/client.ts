@@ -223,6 +223,46 @@ export interface CalendarJob {
   brand: { id: string; name: string } | null;
 }
 
+export interface JobLineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPriceCents: number;
+  totalCents: number;
+  category: string | null;
+  partNumber: string | null;
+  isExcluded: boolean;
+}
+
+export interface JobDetail {
+  id: string;
+  jobNumber: string | null;
+  status: string;
+  paymentStatus: string;
+  type: string | null;
+  address: string | null;
+  notes: string | null;
+  diagnosis: string | null;
+  resolution: string | null;
+  appliance: { brand: string | null; model: string | null } | null;
+  scheduledAt: string | null;
+  scheduledEnd: string | null;
+  estimatedDuration: number | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  paidAt: string | null;
+  createdAt: string;
+  subtotalCents: number;
+  taxCents: number;
+  totalCents: number;
+  taxRate: number;
+  client: { id: string; name: string; phone: string | null; email: string | null } | null;
+  brand: { id: string; name: string } | null;
+  company: { id: string; name: string } | null;
+  assignedTo: { id: string; name: string } | null;
+  lineItems: JobLineItem[];
+}
+
 // ---------------------------------------------------------------------------
 // Calls
 // ---------------------------------------------------------------------------
@@ -318,4 +358,8 @@ export async function bookJob(input: BookJobInput): Promise<{ requestId: string;
   });
 
   return { requestId: lead.leadId, jobId: accepted.jobId };
+}
+
+export async function getJob(id: string): Promise<{ job: JobDetail }> {
+  return call(`/v1/jobs/${encodeURIComponent(id)}`);
 }

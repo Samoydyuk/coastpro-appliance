@@ -168,9 +168,10 @@ export default async function CalendarPage({
 
                     <div className="space-y-1">
                       {dayJobs.slice(0, 3).map((job) => (
-                        <div
+                        <Link
                           key={job.id}
-                          className="rounded-card border-l-2 bg-cream-dark/40 px-1.5 py-1"
+                          href={`/admin/calendar/${job.id}`}
+                          className="block rounded-card border-l-2 bg-cream-dark/40 px-1.5 py-1 transition-colors hover:bg-cream-dark"
                           style={{ borderLeftColor: statusColour(job.status) }}
                           title={`${job.jobNumber ?? ''} ${job.status}${job.address ? ` · ${job.address}` : ''}`}
                         >
@@ -189,7 +190,7 @@ export default async function CalendarPage({
                               <div className="truncate text-[10px] text-gray-600">{job.type}</div>
                             )
                           )}
-                        </div>
+                        </Link>
                       ))}
                       {dayJobs.length > 3 && (
                         <div className="px-1.5 text-[10px] text-gray-500">
@@ -225,6 +226,12 @@ export default async function CalendarPage({
                 style={{ backgroundColor: brandColour(name) }}
               />
               {name} · {jobs.filter((j) => brandOf(j) === name).length}
+              {(() => {
+                const earned = jobs
+                  .filter((j) => brandOf(j) === name)
+                  .reduce((sum, j) => sum + j.totalCents, 0);
+                return earned > 0 ? <span className="tabular-nums"> · {money(earned)}</span> : null;
+              })()}
             </span>
           ))}
         </div>
