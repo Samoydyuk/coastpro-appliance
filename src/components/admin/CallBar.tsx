@@ -357,7 +357,15 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
             callRef.current = call;
             setStatus('ringing');
             startRinging();
-            void lookUpCaller(call.options?.remoteCallerNumber ?? '');
+            // `remoteCallerNumber` is not in the SDK's own typings; the other
+            // two are what it falls back to when an invite is shaped
+            // differently. Any of them is only a hint, so none is required.
+            void lookUpCaller(
+              call.options?.remoteCallerNumber ??
+                call.options?.callerNumber ??
+                call.options?.remoteCallerName ??
+                ''
+            );
             break;
           case 'active':
             callRef.current = call;
@@ -448,9 +456,16 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
     });
   };
 
+  /**
+   * Who is ringing.
+   *
+   * The number is a hint. It comes off an undocumented field on the SDK's call
+   * object, in whatever shape the SIP invite carried, so the request is made
+   * whether or not we managed to read one — the server knows which call is
+   * ringing at this desk and does not need to be told.
+   */
   const lookUpCaller = async (from: string) => {
-    setCaller({ fromDisplay: from || 'Unknown number', client: null, activeJob: null });
-    if (!from) return;
+    setCaller({ fromDisplay: from || 'Incoming call', client: null, activeJob: null });
     try {
       const response = await fetch(`/api/admin/dispatch/caller?from=${encodeURIComponent(from)}`);
       const body = await response.json();
