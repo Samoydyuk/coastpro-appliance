@@ -9,6 +9,7 @@ function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -20,7 +21,7 @@ function LoginForm() {
       const response = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password, code }),
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null);
@@ -52,8 +53,22 @@ function LoginForm() {
         autoComplete="current-password"
         value={password}
         onChange={(event) => setPassword(event.target.value)}
-        error={error ?? undefined}
         required
+      />
+
+      {/* inputMode numeric so phones open the number pad; one-time-code lets
+          both iOS and password managers fill it without being asked. */}
+      <Input
+        name="code"
+        label="Authenticator code"
+        helperText="Six digits from your authenticator app"
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        maxLength={6}
+        placeholder="000000"
+        value={code}
+        onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
+        error={error ?? undefined}
       />
 
       <Button type="submit" className="w-full" isLoading={busy}>

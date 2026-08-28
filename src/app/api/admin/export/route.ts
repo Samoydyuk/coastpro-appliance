@@ -3,6 +3,7 @@ import { parseRange } from '@/lib/admin/range';
 import { getCalls, getChannels, getLeads, getSpend } from '@/lib/admin/queries';
 import { toCsv } from '@/lib/admin/format';
 import { channelLabel } from '@/lib/attribution';
+import { requireAdmin } from '@/lib/admin-guard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -13,6 +14,10 @@ export const dynamic = 'force-dynamic';
  * their accounts.
  */
 export async function GET(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
+
+
   const params = request.nextUrl.searchParams;
   const range = parseRange({
     range: params.get('range') ?? undefined,

@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireDb } from '@/lib/db';
 import { CHANNELS } from '@/lib/attribution';
+import { requireAdmin } from '@/lib/admin-guard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
+
+
   try {
     const sql = requireDb();
     const body = (await request.json()) as {
@@ -46,6 +51,10 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
+
+
   try {
     const sql = requireDb();
     const id = request.nextUrl.searchParams.get('id');

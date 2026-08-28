@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { describePhotos, GenerationError } from '@/lib/marketing/generate';
 import { requireDb } from '@/lib/db';
 import { forgetPublishedArticles } from '@/lib/marketing/published';
+import { requireAdmin } from '@/lib/admin-guard';
 
 /**
  * Describe the photographs again, from the photographs.
@@ -18,6 +19,10 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
+
+
   const body = (await request.json().catch(() => null)) as { jobId?: string } | null;
   if (!body?.jobId) {
     return NextResponse.json({ error: 'Missing job.' }, { status: 400 });

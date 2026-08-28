@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { requireDb } from '@/lib/db';
 import { forgetPublishedArticles } from '@/lib/marketing/published';
+import { requireAdmin } from '@/lib/admin-guard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -17,6 +18,10 @@ export const dynamic = 'force-dynamic';
  * always "what was live in March", and a deleted row cannot answer it.
  */
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
+
+
   const body = (await request.json().catch(() => null)) as {
     jobId?: string;
     channel?: string;

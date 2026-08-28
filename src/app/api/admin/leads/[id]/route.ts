@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireDb } from '@/lib/db';
 import { flushConversionQueue, queueWonConversion } from '@/lib/conversions';
 import { clientIp, hashIp } from '@/lib/tracking';
+import { requireAdmin } from '@/lib/admin-guard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -13,6 +14,9 @@ const STATUSES = ['new', 'contacted', 'booked', 'won', 'lost', 'spam'];
  * place a human judgement enters the data.
  */
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
+
   try {
     const sql = requireDb();
     const body = (await request.json()) as {

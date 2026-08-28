@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin-guard';
 import {
   redirectUri,
   saveGoogleConnection,
@@ -48,6 +49,12 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { provider: string } }
 ) {
+  // The provider redirects the owner's own browser here, so their session
+  // cookie rides along; without it there is nobody to attach the account to.
+  if ((await requireAdmin(request)) instanceof Response) {
+    return NextResponse.redirect(new URL('/admin/login?next=/admin/presence', request.url));
+  }
+
   const provider = params.provider;
   const code = request.nextUrl.searchParams.get('code');
   const state = request.nextUrl.searchParams.get('state');

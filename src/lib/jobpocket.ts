@@ -1,4 +1,5 @@
 import { db, quietly } from '@/lib/db';
+import { openSecret } from '@/lib/secrets';
 import { queueWonConversion, flushConversionQueue } from '@/lib/conversions';
 
 /**
@@ -75,7 +76,9 @@ export async function jobPocketConfig(): Promise<JobPocketConfig | null> {
     if (!row?.value?.apiKey) return null;
     return {
       baseUrl: row.value.baseUrl || DEFAULT_BASE_URL,
-      apiKey: row.value.apiKey,
+      // Sealed at rest since the console started showing customers; an
+      // unsealed value from before that passes through untouched.
+      apiKey: openSecret(row.value.apiKey),
       enabled: row.value.enabled !== false,
     };
   });

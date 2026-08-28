@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveVoice, DEFAULT_VOICE, type BrandVoice } from '@/lib/marketing/voice';
+import { requireAdmin } from '@/lib/admin-guard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /** The house voice, and the short list of business facts a draft may state. */
 export async function PATCH(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
+
+
   const body = (await request.json().catch(() => null)) as Partial<BrandVoice> | null;
   if (!body) return NextResponse.json({ error: 'Nothing to save.' }, { status: 400 });
 

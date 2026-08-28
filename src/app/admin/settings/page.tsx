@@ -2,9 +2,11 @@ import { getTrackingNumbers } from '@/lib/admin/queries';
 import { channelLabel } from '@/lib/attribution';
 import { googleAdsConfigured, metaConfigured } from '@/lib/conversions';
 import { jobPocketConfig } from '@/lib/jobpocket';
+import { secretsConfigured } from '@/lib/secrets';
 import { siteConfig } from '@/data/site-config';
 import { Empty, Hint, Panel, SetupNotice, Table, Td, Th } from '@/components/admin/ui';
 import { NumberEditor, RetireNumberButton } from '@/components/admin/NumberEditor';
+import { IntegrationKeyEditor } from '@/components/admin/IntegrationKeyEditor';
 import { STATUS } from '@/components/admin/palette';
 
 export const dynamic = 'force-dynamic';
@@ -63,6 +65,28 @@ export default async function SettingsPage() {
       },
     ];
 
+    /**
+     * Stated plainly, because a protection nobody knows is off is not a
+     * protection. Each of these is one environment variable away from on, and
+     * until it is, this panel says so in red.
+     */
+    const protections = [
+      {
+        name: 'Code from an authenticator app',
+        ready: Boolean(process.env.ADMIN_TOTP_SECRET),
+        detail: process.env.ADMIN_TOTP_SECRET
+          ? 'Signing in needs the password and a six-digit code.'
+          : 'ADMIN_TOTP_SECRET is not set — the password on its own opens everything here.',
+      },
+      {
+        name: 'Keys sealed in the database',
+        ready: secretsConfigured(),
+        detail: secretsConfigured()
+          ? 'A copy of the database does not reveal the JobPocket keys.'
+          : 'SETTINGS_ENCRYPTION_KEY is not set — keys would sit in the database in plain text.',
+      },
+    ];
+
     return (
       <div className="space-y-6">
         <div>
@@ -96,6 +120,42 @@ export default async function SettingsPage() {
               </li>
             ))}
           </ul>
+        </Panel>
+
+        <Panel
+          title="Who can get in"
+          subtitle="This console shows customers' names, addresses and the week's schedule"
+        >
+          <ul className="divide-y divide-primary-500/10">
+            {protections.map((entry) => (
+              <li key={entry.name} className="flex items-start gap-3 py-3">
+                <span
+                  aria-hidden
+                  className="mt-1.5 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: entry.ready ? STATUS.good : STATUS.critical }}
+                />
+                <div>
+                  <p className="text-sm font-medium text-ink">
+                    {entry.name}
+                    <span
+                      className="ml-2 font-heading text-[10px] uppercase tracking-label"
+                      style={{ color: entry.ready ? '#006300' : '#8f2323' }}
+                    >
+                      {entry.ready ? 'on' : 'off'}
+                    </span>
+                  </p>
+                  <p className="mt-0.5 text-xs text-gray-600">{entry.detail}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+
+        <Panel
+          title="JobPocket keys"
+          subtitle="Paste a key here when you mint or rotate one"
+        >
+          <IntegrationKeyEditor />
         </Panel>
 
         <Panel

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { fetchMarketingPhoto } from '@/lib/marketing/client';
 import { marketingPhotoExists } from '@/lib/marketing/queries';
+import { requireAdmin } from '@/lib/admin-guard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -17,7 +18,10 @@ export const dynamic = 'force-dynamic';
  * Everything under /api/admin is behind the console sign-in already, in the
  * middleware, so there is no auth check to repeat here.
  */
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: { id: string } }) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
+
   // Only a photo we have already been told about, so this cannot be used to
   // walk the id space of an API the console is otherwise a narrow window onto.
   if (!(await marketingPhotoExists(params.id).catch(() => false))) {

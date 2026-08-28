@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server';
 import { refreshMarketingJobs } from '@/lib/marketing/queries';
 import { MarketingApiError } from '@/lib/marketing/client';
+import { requireAdmin } from '@/lib/admin-guard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /** Pull the released jobs from JobPocket into the console's own copy. */
-export async function POST() {
+export async function POST(request: Request) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
+
+
   try {
     const { jobs, photos } = await refreshMarketingJobs();
     return NextResponse.json({ ok: true, jobs, photos });

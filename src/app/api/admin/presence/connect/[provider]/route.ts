@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin-guard';
 import {
   googleAppConfigured,
   metaAppConfigured,
@@ -45,6 +46,12 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { provider: string } }
 ) {
+  // This arrives as a top-level navigation, so an unauthenticated caller is
+  // sent to sign in — a JSON 401 would render as a blank page of text.
+  if ((await requireAdmin(request)) instanceof Response) {
+    return NextResponse.redirect(new URL('/admin/login?next=/admin/presence', request.url));
+  }
+
   const provider = params.provider;
   const state = makeState();
 

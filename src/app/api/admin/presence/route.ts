@@ -4,6 +4,7 @@ import { presenceChannel, writePresenceRows } from '@/lib/presence/store';
 import { importGoogleBusinessProfile } from '@/lib/presence/gbp';
 import { importMeta } from '@/lib/presence/meta';
 import { importSearchConsole } from '@/lib/presence/gsc';
+import { requireAdmin } from '@/lib/admin-guard';
 import {
   clearGoogleConnection,
   clearMetaConnection,
@@ -39,6 +40,10 @@ function clamp(value: unknown): number {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
+
+
   let body: {
     action?: 'save' | 'refresh' | 'disconnect';
     day?: string;

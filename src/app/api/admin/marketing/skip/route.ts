@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { skipJob } from '@/lib/marketing/queries';
+import { requireAdmin } from '@/lib/admin-guard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -13,6 +14,10 @@ export const dynamic = 'force-dynamic';
  * is what keeps "nothing written" a useful filter.
  */
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
+
+
   const body = (await request.json().catch(() => null)) as {
     jobId?: string;
     channel?: string;

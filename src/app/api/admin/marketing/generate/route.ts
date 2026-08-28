@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generate, GenerationError } from '@/lib/marketing/generate';
 import { SanitizerRefusal } from '@/lib/marketing/sanitize';
+import { requireAdmin } from '@/lib/admin-guard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -8,6 +9,10 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
+
+
   const body = (await request.json().catch(() => null)) as {
     jobId?: string;
     channel?: string;

@@ -3,12 +3,17 @@ import { revalidatePath } from 'next/cache';
 import { requireDb } from '@/lib/db';
 import { setPhotoSelection } from '@/lib/marketing/queries';
 import { forgetPublishedArticles } from '@/lib/marketing/published';
+import { requireAdmin } from '@/lib/admin-guard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /** Which pictures go out with a piece, and in what order. */
 export async function PATCH(request: NextRequest) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
+
+
   const body = (await request.json().catch(() => null)) as {
     jobId?: string;
     selection?: Array<{ photoId: string; selected: boolean; sortOrder: number; altText?: string | null }>;

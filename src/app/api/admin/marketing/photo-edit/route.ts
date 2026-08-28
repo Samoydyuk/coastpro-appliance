@@ -3,6 +3,7 @@ import { createHash } from 'crypto';
 import { revalidatePath } from 'next/cache';
 import { requireDb } from '@/lib/db';
 import { forgetPublishedArticles } from '@/lib/marketing/published';
+import { requireAdmin } from '@/lib/admin-guard';
 
 /**
  * The edited copy of a photograph: cropped, and with whatever was drawn on it.
@@ -30,6 +31,10 @@ export const maxDuration = 60;
 const MAX_IMAGE_CHARS = 3_000_000;
 
 export async function POST(request: Request) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
+
+
   const body = (await request.json().catch(() => null)) as {
     jobId?: string;
     photoId?: string;

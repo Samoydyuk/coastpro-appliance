@@ -33,8 +33,13 @@ export const INTERNAL_MAX_AGE = 60 * 60 * 24 * 730;
 export const VISITOR_MAX_AGE = 60 * 60 * 24 * 730;
 /** Thirty minutes of inactivity ends a visit, matching what ad platforms do. */
 export const SESSION_MAX_AGE = 60 * 30;
-/** Admin stays signed in for a working week. */
-export const ADMIN_MAX_AGE = 60 * 60 * 24 * 7;
+/**
+ * A day. It used to be a working week, which was a fair trade when the console
+ * held visit counts. It now shows customers' names, addresses and the week's
+ * schedule, and a week-long session is a week in which a borrowed or forgotten
+ * laptop is still signed in.
+ */
+export const ADMIN_MAX_AGE = 60 * 60 * 24;
 
 export function newId(): string {
   return crypto.randomUUID().replace(/-/g, '');

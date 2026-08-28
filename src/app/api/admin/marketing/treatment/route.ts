@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { requireDb } from '@/lib/db';
 import { analysePhotos, TreatmentError, type Treatment } from '@/lib/marketing/treatment';
 import { forgetPublishedArticles } from '@/lib/marketing/published';
+import { requireAdmin } from '@/lib/admin-guard';
 
 /**
  * The Field Journal treatment for a job's photographs.
@@ -31,6 +32,10 @@ async function republish(jobId: string): Promise<void> {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
+
+
   const body = (await request.json().catch(() => null)) as { jobId?: string } | null;
   if (!body?.jobId) return NextResponse.json({ error: 'Missing job.' }, { status: 400 });
 
@@ -47,6 +52,10 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  const auth = await requireAdmin(request);
+  if (auth instanceof Response) return auth;
+
+
   const body = (await request.json().catch(() => null)) as {
     jobId?: string;
     photos?: Array<{ photoId: string; treatment: Treatment | null; approved?: boolean }>;

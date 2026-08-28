@@ -1,4 +1,5 @@
 import { db, quietly } from '@/lib/db';
+import { openSecret } from '@/lib/secrets';
 
 /**
  * Reading finished work out of JobPocket, for content.
@@ -59,7 +60,7 @@ export async function marketingConfig(): Promise<MarketingConfig | null> {
       select value from settings where key = 'jobpocket_marketing'
     `) as unknown as { value: { apiKey?: string; baseUrl?: string } }[];
     if (!row?.value?.apiKey) return null;
-    return { baseUrl: row.value.baseUrl || baseUrl, apiKey: row.value.apiKey };
+    return { baseUrl: row.value.baseUrl || baseUrl, apiKey: openSecret(row.value.apiKey) };
   });
 
   cached = { at: Date.now(), value: value ?? null };
