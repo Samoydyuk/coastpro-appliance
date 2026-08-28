@@ -16,6 +16,7 @@ import {
 } from '@/components/admin/ui';
 import { channelColor } from '@/components/admin/palette';
 import { BookingActions } from '@/components/admin/BookingActions';
+import { CallButton } from '@/components/admin/CallButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,9 +78,7 @@ export default async function BookingRequestPage({ params }: { params: { id: str
           <Panel title="Contact" subtitle="Shown here and nowhere else in this console">
             <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
               <Field label="Phone">
-                <a href={`tel:${request.clientPhone}`} className="text-ink hover:text-primary-600">
-                  {request.clientPhone}
-                </a>
+                <CallButton phone={request.clientPhone} name={request.clientName ?? ''} />
               </Field>
               <Field label="Email">
                 {request.clientEmail ? (

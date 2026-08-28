@@ -7,6 +7,7 @@ import { Empty, Hint, Panel, SetupNotice, StatusPill, Table, Td, Th, Warning } f
 import type { JobPhoto } from '@/lib/bookings/client';
 import { RescheduleForm } from '@/components/admin/RescheduleForm';
 import { AssignForm } from '@/components/admin/AssignForm';
+import { CallButton } from '@/components/admin/CallButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -250,9 +251,11 @@ export default async function JobPage({ params }: { params: { id: string } }) {
               <Field label="Name">{job.client?.name ?? '—'}</Field>
               <Field label="Phone">
                 {job.client?.phone ? (
-                  <a href={`tel:${job.client.phone}`} className="text-ink hover:text-primary-600">
-                    {job.client.phone}
-                  </a>
+                  <CallButton
+                    phone={job.client.phone}
+                    name={job.client.name ?? ''}
+                    clientId={job.client.id}
+                  />
                 ) : (
                   '—'
                 )}

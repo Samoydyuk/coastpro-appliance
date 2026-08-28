@@ -65,6 +65,12 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
 
   const ringing = useRef<{ ctx: AudioContext; timer: ReturnType<typeof setInterval> } | null>(null);
   const watchdog = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** The business number. Dialling without it is a SIP 403 from Telnyx. */
+  const lineE164 = useRef<string | null>(null);
+  /** Set while an outbound call is up, so its minutes get reported. */
+  const outbound = useRef<{ callId: string; answered: boolean } | null>(null);
+  /** A number asked for before the desk was on the phones. */
+  const pendingDial = useRef<{ toE164: string; name: string; clientId?: string } | null>(null);
 
   /**
    * A ring, generated rather than fetched.
@@ -101,6 +107,65 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
     void ringing.current.ctx.close().catch(() => {});
     ringing.current = null;
   }, []);
+
+  /**
+   * Dialling out from a record.
+   *
+   * Held in a ref so `connect` can drain a queued number without the two
+   * functions depending on each other.
+   */
+  const connectRef = useRef<(() => Promise<void>) | null>(null);
+
+  const placeCall = useCallback(
+    async (request: { toE164: string; name: string; clientId?: string }) => {
+      if (!teamMemberId) return;
+
+      // Not on the phones yet: remember the number and go on. The caller asked
+      // to ring somebody, not to be told about a socket.
+      if (!clientRef.current?.connected) {
+        pendingDial.current = request;
+        setStatus((was) => (was === 'connecting' ? was : 'connecting'));
+        await connectRef.current?.();
+        return;
+      }
+
+      try {
+        const { callId } = await post('outbound', {
+          teamMemberId,
+          toE164: request.toE164,
+          ...(request.clientId ? { clientId: request.clientId } : {}),
+        });
+        outbound.current = { callId, answered: false };
+
+        const call = clientRef.current.newCall({
+          destinationNumber: request.toE164,
+          // Without this Telnyx answers SIP 403 "Caller Origination Number is
+          // Invalid", and the customer would not recognise the number anyway.
+          callerNumber: lineE164.current ?? undefined,
+          callerName: 'CoastPro',
+          remoteElement: 'coastpro-call-audio',
+        });
+        callRef.current = call;
+        startedAt.current = Date.now();
+        setSeconds(0);
+        setCaller({
+          fromDisplay: request.toE164,
+          client: request.name ? { name: request.name, address: null } : null,
+          activeJob: null,
+        });
+        setStatus('live');
+        if (ticker.current) clearInterval(ticker.current);
+        ticker.current = setInterval(
+          () => setSeconds(Math.floor((Date.now() - startedAt.current) / 1000)),
+          1000
+        );
+      } catch (err) {
+        outbound.current = null;
+        setError(err instanceof Error ? err.message : 'That call would not go through.');
+      }
+    },
+    [teamMemberId]
+  );
 
   const stopHeartbeat = useCallback(() => {
     if (heartbeat.current) clearInterval(heartbeat.current);
@@ -145,6 +210,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
 
     try {
       const session = await post('session', { teamMemberId });
+      lineE164.current = session.lineE164 ?? null;
       const TelnyxRTC = await loadSdk();
 
       /**
@@ -175,6 +241,10 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
         // fresh. Waiting the first thirty seconds would leave a window where
         // the desk is connected but the server still routes past it.
         void post('registered', { teamMemberId }).catch(() => {});
+
+        const queued = pendingDial.current;
+        pendingDial.current = null;
+        if (queued) void placeCall(queued);
 
         stopHeartbeat();
         heartbeat.current = setInterval(() => {
@@ -223,6 +293,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
             break;
           case 'active':
             callRef.current = call;
+            if (outbound.current) outbound.current.answered = true;
             // Belt and braces on the audio. `answer()` is given the element
             // too, but a call that connects to silence is the failure that
             // took two weeks to find on iOS, and it is invisible in every log.
@@ -240,6 +311,19 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
           case 'hangup':
           case 'destroy':
             stopRinging();
+            if (outbound.current) {
+              // Minutes are metered here because nothing else sees the end of a
+              // call the browser dialled itself — the server never placed it.
+              const spent = startedAt.current
+                ? Math.round((Date.now() - startedAt.current) / 1000)
+                : 0;
+              void post('ended', {
+                callId: outbound.current.callId,
+                answered: outbound.current.answered,
+                durationSec: spent,
+              }).catch(() => {});
+              outbound.current = null;
+            }
             if (ticker.current) clearInterval(ticker.current);
             ticker.current = null;
             callRef.current = null;
@@ -307,6 +391,39 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
       // The number alone is still enough to answer with.
     }
   };
+
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
+
+  /**
+   * Any record can ask for a call.
+   *
+   * A window event rather than a context, because the pages that show a phone
+   * number are server components — a provider would drag every one of them
+   * over the client boundary for the sake of one button.
+   */
+  useEffect(() => {
+    const onRequest = (event: Event) => {
+      const detail = (event as CustomEvent).detail ?? {};
+      if (!detail.toE164) return;
+      void placeCall({
+        toE164: String(detail.toE164),
+        name: String(detail.name ?? ''),
+        ...(detail.clientId ? { clientId: String(detail.clientId) } : {}),
+      });
+    };
+    window.addEventListener('coastpro:call', onRequest);
+    return () => window.removeEventListener('coastpro:call', onRequest);
+  }, [placeCall]);
+
+  /** Tell the call buttons on every record that there is a desk here. */
+  useEffect(() => {
+    document.documentElement.dataset.coastproPhone = 'on';
+    return () => {
+      delete document.documentElement.dataset.coastproPhone;
+    };
+  }, []);
 
   // Leaving the desk, however the tab goes.
   useEffect(() => {
