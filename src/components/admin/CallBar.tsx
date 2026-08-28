@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
@@ -941,12 +942,17 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
                         {dayLabel(job.at) ?? '—'}
                       </td>
                       <td className="whitespace-nowrap py-1 pr-3">
-                        <a
+                        {/* A Link, emphatically not an anchor. A plain href
+                            reloads the page, which takes this component down
+                            with it and hangs up on the customer mid-sentence —
+                            the call lives in the layout precisely so that
+                            reading a job does not end it. */}
+                        <Link
                           href={`/admin/calendar/${job.id}`}
                           className="font-medium text-ink hover:text-primary-600"
                         >
                           {job.jobNumber ?? 'Job'}
-                        </a>
+                        </Link>
                       </td>
                       <td className="py-1 pr-3 text-gray-600">
                         {[job.type, job.appliance].filter(Boolean).join(' · ') || '—'}
