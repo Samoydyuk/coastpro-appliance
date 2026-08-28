@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getJob, OperationsApiError } from '@/lib/bookings/client';
+import { getJob, getTeam, OperationsApiError } from '@/lib/bookings/client';
 import { dateTime, money, relativeTime } from '@/lib/admin/format';
 import { timeOfDay } from '@/lib/bookings/month';
 import { Empty, Hint, Panel, SetupNotice, StatusPill, Table, Td, Th, Warning } from '@/components/admin/ui';
 import type { JobPhoto } from '@/lib/bookings/client';
 import { RescheduleForm } from '@/components/admin/RescheduleForm';
+import { AssignForm } from '@/components/admin/AssignForm';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +36,12 @@ export default async function JobPage({ params }: { params: { id: string } }) {
     }
     return <SetupNotice error={error} />;
   }
+
+  // A board without lanes is still a board; a job card that will not draw
+  // because the roster failed is not.
+  const team = await getTeam()
+    .then((r) => r.members)
+    .catch(() => []);
 
   const billable = job.lineItems.filter((item) => !item.isExcluded);
 
@@ -166,7 +173,15 @@ export default async function JobPage({ params }: { params: { id: string } }) {
         </div>
 
         <div className="space-y-4">
-          <Panel title="Move this visit" subtitle="The only thing changed from here">
+          <Panel title="Who is going" subtitle="They are told as soon as you save">
+            <AssignForm
+              jobId={job.id}
+              team={team}
+              current={job.assignedTo ? [job.assignedTo.id] : []}
+            />
+          </Panel>
+
+          <Panel title="Move this visit">
             <RescheduleForm
               jobId={job.id}
               canMove={job.status !== 'CANCELLED' && job.status !== 'PAID'}

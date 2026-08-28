@@ -142,3 +142,70 @@ export function buildWeeks(view: MonthView, today = todayInShopTz()): DayCell[][
 }
 
 export const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+// ---------------------------------------------------------------------------
+// Weeks and days
+//
+// All three views share one anchor date in the query string rather than each
+// carrying its own, so switching from a week to the day you were looking at
+// lands on that day instead of on today.
+// ---------------------------------------------------------------------------
+
+/** `YYYY-MM-DD` shifted by whole days, without touching a timezone. */
+export function shiftDay(key: string, days: number): string {
+  const [y, m, d] = key.split('-').map(Number);
+  const shifted = new Date(Date.UTC(y, m - 1, d + days));
+  return shifted.toISOString().slice(0, 10);
+}
+
+/** Sunday-first, matching the month grid. */
+export function weekOf(key: string): { key: string; label: string; isToday: boolean }[] {
+  const [y, m, d] = key.split('-').map(Number);
+  const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  const start = shiftDay(key, -weekday);
+  const today = todayInShopTz();
+
+  return Array.from({ length: 7 }, (_, i) => {
+    const dayKeyValue = shiftDay(start, i);
+    const [yy, mm, dd] = dayKeyValue.split('-').map(Number);
+    return {
+      key: dayKeyValue,
+      label: new Intl.DateTimeFormat('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'UTC',
+      }).format(new Date(Date.UTC(yy, mm - 1, dd))),
+      isToday: dayKeyValue === today,
+    };
+  });
+}
+
+/** A window wide enough to hold the local day, whatever the offset. */
+export function dayWindow(key: string): { from: string; to: string } {
+  const [y, m, d] = key.split('-').map(Number);
+  const noon = Date.UTC(y, m - 1, d, 12);
+  return {
+    from: new Date(noon - 36 * 3_600_000).toISOString(),
+    to: new Date(noon + 36 * 3_600_000).toISOString(),
+  };
+}
+
+export function weekWindow(days: { key: string }[]): { from: string; to: string } {
+  return { from: dayWindow(days[0].key).from, to: dayWindow(days[days.length - 1].key).to };
+}
+
+/** The long label above a day board. */
+export function dayLabel(key: string): string {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(y, m - 1, d)));
+}
+
+export function isDayKey(value: string | undefined): value is string {
+  return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value));
+}

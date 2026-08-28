@@ -215,6 +215,8 @@ export interface CalendarJob {
   totalCents: number;
   type: string | null;
   company: { id: string; name: string } | null;
+  /** Who is going. Empty means nobody has it yet — the lane read first. */
+  assignees: { id: string; name: string }[];
   /**
    * Whose name the work is done under. Null means the contractor's own —
    * dispatched work carries the dispatcher's brand, and on this account that
@@ -463,5 +465,26 @@ export async function rescheduleJob(
   return call(`/v1/jobs/${encodeURIComponent(jobId)}/schedule`, {
     method: 'PATCH',
     body: JSON.stringify(body),
+  });
+}
+
+export interface TeamMemberSummary {
+  id: string;
+  name: string;
+  role: string;
+  isYou: boolean;
+}
+
+export async function getTeam(): Promise<{ members: TeamMemberSummary[] }> {
+  return call('/v1/team');
+}
+
+export async function assignJob(
+  jobId: string,
+  teamMemberIds: string[]
+): Promise<{ ok: true; assigned: string[]; newlyAdded: string[] }> {
+  return call(`/v1/jobs/${encodeURIComponent(jobId)}/assignee`, {
+    method: 'PATCH',
+    body: JSON.stringify({ teamMemberIds }),
   });
 }
