@@ -23,6 +23,7 @@ export const core = {
   'nav.stuck': 'Stuck',
   'nav.dispatchers': 'Dispatchers',
   'nav.technicians': 'Technicians',
+  'nav.ihord': 'Reconciliation',
   'nav.payments': 'Payments',
   'nav.channels': 'Channels',
   'nav.spend': 'Ad spend',

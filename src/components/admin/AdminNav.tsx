@@ -65,6 +65,9 @@ const GROUPS: Group[] = [
       { href: '/admin/money/dispatchers', label: 'nav.dispatchers', ranged: true },
       { href: '/admin/money/technicians', label: 'nav.technicians', ranged: true },
       { href: '/admin/money/payments', label: 'nav.payments', ranged: true },
+      // Not ranged: it carries its own period, because the useful windows here
+      // are the dispatcher's own and not the console's.
+      { href: '/admin/money/ihord', label: 'nav.ihord' },
     ],
   },
   {

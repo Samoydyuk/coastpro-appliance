@@ -27,6 +27,7 @@ export const core: Record<keyof typeof source, string> = {
   'nav.stuck': 'Зависло',
   'nav.dispatchers': 'Диспетчери',
   'nav.technicians': 'Техніки',
+  'nav.ihord': 'Звірка',
   'nav.payments': 'Платежі',
   'nav.channels': 'Канали',
   'nav.spend': 'Витрати на рекламу',
