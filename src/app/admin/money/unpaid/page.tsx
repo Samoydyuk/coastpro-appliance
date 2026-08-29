@@ -5,6 +5,7 @@ import { OperationsApiError } from '@/lib/bookings/client';
 import { Empty, Hint, Panel, SetupNotice, StatTile, Table, Td, Th, Warning } from '@/components/admin/ui';
 import { NotConnected } from '@/components/admin/NotConnected';
 import { RankedBars } from '@/components/admin/charts';
+import { Pager } from '@/components/admin/Pager';
 import { STATUS } from '@/components/admin/palette';
 
 export const dynamic = 'force-dynamic';
@@ -21,13 +22,20 @@ function ageColour(days: number): string {
   return days > 90 ? AGE_COLOURS[3]! : days > 60 ? AGE_COLOURS[2]! : days > 30 ? AGE_COLOURS[1]! : AGE_COLOURS[0]!;
 }
 
-export default async function UnpaidPage() {
+export default async function UnpaidPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  const bucket = (searchParams.bucket as string) || undefined;
+  const offset = Number(searchParams.offset ?? 0) || 0;
+
   let report: Awaited<ReturnType<typeof getUnpaid>> | null = null;
   let unconfigured = false;
   let failure: string | null = null;
 
   try {
-    report = await getUnpaid();
+    report = await getUnpaid({ bucket, offset });
   } catch (error) {
     if (error instanceof OperationsApiError) {
       if (error.code === 'not_configured') unconfigured = true;
@@ -118,6 +126,22 @@ export default async function UnpaidPage() {
         ) : (
           <Empty>Nothing outstanding. Everything finished has been paid for.</Empty>
         )}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {/* The chart shows the shape; these open it. */}
+          {[{ k: '', l: 'All' }, { k: 'current', l: 'Under 30' }, { k: 'days30', l: '31–60' }, { k: 'days60', l: '61–90' }, { k: 'days90', l: 'Over 90' }].map((band) => (
+            <Link
+              key={band.k || 'all'}
+              href={band.k ? `/admin/money/unpaid?bucket=${band.k}` : '/admin/money/unpaid'}
+              className={`rounded-card border px-3 py-1.5 font-heading text-[10px] font-semibold uppercase tracking-label transition-colors ${
+                (bucket ?? '') === band.k
+                  ? 'border-ink bg-ink text-cream'
+                  : 'border-primary-500/25 text-gray-600 hover:border-ink hover:text-ink'
+              }`}
+            >
+              {band.l}
+            </Link>
+          ))}
+        </div>
         <Hint>
           There is no date window on this page on purpose. A debt does not stop existing because the
           report was narrowed to last week, and the oldest ones are the only ones that need a
@@ -181,9 +205,13 @@ export default async function UnpaidPage() {
             </tbody>
           </Table>
         )}
-        {report.truncated ? (
-          <Hint>Only the oldest are listed. The totals above cover every unpaid invoice.</Hint>
-        ) : null}
+        <Pager
+          base={`/admin/money/unpaid${bucket ? `?bucket=${bucket}` : ''}`}
+          offset={report.offset}
+          shown={report.jobs.length}
+          total={report.total}
+          hasMore={report.hasMore}
+        />
         <Hint>
           A debt that has been given up on is not outstanding and is not here — writing one off in
           the app takes it out of this list and books the loss in the period the decision was made.

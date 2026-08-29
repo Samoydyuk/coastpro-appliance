@@ -7,6 +7,7 @@ import { Empty, Hint, Panel, SetupNotice, StatTile, Table, Td, Th, Warning } fro
 import { NotConnected } from '@/components/admin/NotConnected';
 import { RankedBars } from '@/components/admin/charts';
 import { paymentColor, STATUS } from '@/components/admin/palette';
+import { Pager } from '@/components/admin/Pager';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,12 +28,15 @@ export default async function PaymentsPage({
     to: searchParams.to as string,
   });
 
+  const method = (searchParams.method as string) || undefined;
+  const offset = Number(searchParams.offset ?? 0) || 0;
+
   let report: Awaited<ReturnType<typeof getPayments>> | null = null;
   let unconfigured = false;
   let failure: string | null = null;
 
   try {
-    report = await getPayments(range.from, range.to);
+    report = await getPayments(range.from, range.to, { method, offset });
   } catch (error) {
     if (error instanceof OperationsApiError) {
       if (error.code === 'not_configured') unconfigured = true;
@@ -107,7 +111,10 @@ export default async function PaymentsPage({
         </Warning>
       )}
 
-      <Panel title="How it arrived" subtitle="Only payments that went through">
+      <Panel
+        title="How it arrived"
+        subtitle={method ? `Showing ${methodLabel(method)} only` : 'Only payments that went through'}
+      >
         {totals.byMethod.length === 0 ? (
           <Empty>Nothing was taken in this window.</Empty>
         ) : (
@@ -121,6 +128,21 @@ export default async function PaymentsPage({
             }))}
           />
         )}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {[{ m: '', l: 'All' }, ...totals.byMethod.map((row) => ({ m: row.method, l: methodLabel(row.method) }))].map((option) => (
+            <Link
+              key={option.m || 'all'}
+              href={`/admin/money/payments?range=${range.key}${option.m ? `&method=${option.m}` : ''}`}
+              className={`rounded-card border px-3 py-1.5 font-heading text-[10px] font-semibold uppercase tracking-label transition-colors ${
+                (method ?? '') === option.m
+                  ? 'border-ink bg-ink text-cream'
+                  : 'border-primary-500/25 text-gray-600 hover:border-ink hover:text-ink'
+              }`}
+            >
+              {option.l}
+            </Link>
+          ))}
+        </div>
       </Panel>
 
       <Panel
@@ -191,9 +213,13 @@ export default async function PaymentsPage({
             </tbody>
           </Table>
         )}
-        {report.truncated ? (
-          <Hint>Only the most recent are listed. The totals above cover the whole window.</Hint>
-        ) : null}
+        <Pager
+          base={`/admin/money/payments?range=${range.key}${method ? `&method=${method}` : ''}`}
+          offset={report.offset}
+          shown={report.payments.length}
+          total={report.total}
+          hasMore={report.hasMore}
+        />
         <Hint>
           Dated by when the money arrived, not when the invoice was raised. A voided payment keeps
           its amount here so it can be accounted for, and is struck through because it is in no

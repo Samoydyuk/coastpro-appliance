@@ -92,6 +92,10 @@ export interface ProfitReport {
   costPerJobCents: number;
   breakEvenRevenueCents: number;
   breakEvenTicketCents: number;
+  /** What the business made, before anything is drawn out of it. */
+  businessEarningsCents: number;
+  /** What it must take to cover the standing costs, the draw aside. */
+  breakEvenBeforeOwnerPayCents: number;
   /** One sentence, written by JobPocket, about what the numbers mean. */
   verdict: string;
   dataQuality: {
@@ -103,6 +107,7 @@ export interface ProfitReport {
   previous: {
     period: { from: string; to: string };
     waterfall: Waterfall;
+    businessEarningsCents: number;
     netMarginPct: number;
     jobs: number;
   } | null;
@@ -152,12 +157,26 @@ export interface UnpaidReport {
   overdue: { totalCents: number; ownShareCents: number; jobs: number };
   aging: Record<'current' | 'days30' | 'days60' | 'days90', { cents: number; jobs: number }>;
   jobs: UnpaidJob[];
-  truncated: boolean;
+  bucket: string | null;
+  offset: number;
+  total: number;
+  hasMore: boolean;
 }
 
-/** No window: a debt does not stop existing because a report was narrowed. */
-export async function getUnpaid(): Promise<UnpaidReport> {
-  return call('/v1/reports/unpaid');
+/**
+ * No window: a debt does not stop existing because a report was narrowed.
+ *
+ * `bucket` opens one band of the ageing chart. The totals stay whole whichever
+ * band is open — narrowing the list must not quietly narrow the debt.
+ */
+export async function getUnpaid(
+  options: { bucket?: string; offset?: number } = {}
+): Promise<UnpaidReport> {
+  const query = new URLSearchParams();
+  if (options.bucket) query.set('bucket', options.bucket);
+  if (options.offset) query.set('offset', String(options.offset));
+  const suffix = query.toString();
+  return call(`/v1/reports/unpaid${suffix ? `?${suffix}` : ''}`);
 }
 
 export interface TechnicianRow {
@@ -207,11 +226,21 @@ export interface PaymentsReport {
     };
   };
   payments: PaymentRow[];
-  truncated: boolean;
+  method: string | null;
+  offset: number;
+  total: number;
+  hasMore: boolean;
 }
 
-export async function getPayments(from: Date, to: Date): Promise<PaymentsReport> {
-  return call(`/v1/reports/payments?${window(from, to)}`);
+export async function getPayments(
+  from: Date,
+  to: Date,
+  options: { method?: string; offset?: number } = {}
+): Promise<PaymentsReport> {
+  const extra =
+    (options.method ? `&method=${encodeURIComponent(options.method)}` : '') +
+    (options.offset ? `&offset=${options.offset}` : '');
+  return call(`/v1/reports/payments?${window(from, to)}${extra}`);
 }
 
 export interface TrendPoint {
@@ -281,13 +310,20 @@ export interface DrilldownJob extends StuckJob {
 export async function getJobs(
   from: Date,
   to: Date,
-  filters: { brandId?: string; techId?: string; status?: string; paymentStatus?: string } = {}
+  filters: {
+    brandId?: string;
+    techId?: string;
+    status?: string;
+    paymentStatus?: string;
+    offset?: number;
+  } = {}
 ): Promise<{
   period: Period;
   scope: Scope;
   filters: Record<string, string | null>;
   totals: { jobs: number; billedCents: number; ownShareCents: number };
   jobs: DrilldownJob[];
+  offset: number;
   hasMore: boolean;
 }> {
   const extra = Object.entries(filters)

@@ -1,4 +1,5 @@
 import { parseRange } from '@/lib/admin/range';
+import Link from 'next/link';
 import { getChannels } from '@/lib/admin/queries';
 import { MoneyBasis } from '@/components/admin/MoneyBasis';
 import { count, money, percent } from '@/lib/admin/format';
@@ -39,6 +40,7 @@ function Line({
   deduction = false,
   strong = false,
   note,
+  href,
 }: {
   label: string;
   cents: number;
@@ -46,12 +48,23 @@ function Line({
   deduction?: boolean;
   strong?: boolean;
   note?: string;
+  /** Where the jobs behind this line live, when there are any. */
+  href?: string;
 }) {
   const negative = strong && cents < 0;
   return (
     <tr className={strong ? 'border-t-2 border-primary-500/30' : undefined}>
       <Td className={strong ? 'font-semibold text-ink' : undefined}>
-        {label}
+        {href ? (
+          <Link
+            href={href}
+            className="text-ink underline decoration-primary-500/40 underline-offset-2 hover:text-primary-600"
+          >
+            {label}
+          </Link>
+        ) : (
+          label
+        )}
         {note ? <span className="ml-2 text-[11px] text-gray-500">{note}</span> : null}
       </Td>
       <Td numeric className={strong ? 'font-semibold' : undefined}>
@@ -131,7 +144,11 @@ export default async function MoneyPage({
   const billed = w.billedCents;
   const dispatchersCut = billed - w.netRevenueCents;
   const previous = profit.previous;
-  const profitDelta = previous ? w.netProfitCents - previous.waterfall.netProfitCents : null;
+  // Measured on what the business made, not on net profit: the owner's draw is
+  // a distribution of the answer rather than a cost against it.
+  const profitDelta = previous
+    ? profit.businessEarningsCents - previous.businessEarningsCents
+    : null;
 
   const points = (trend?.points ?? []).map((point) => ({
     label: bucketLabel(point.bucket),
@@ -149,8 +166,8 @@ export default async function MoneyPage({
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
-          label="Net profit"
-          value={money(w.netProfitCents)}
+          label="What the business made"
+          value={money(profit.businessEarningsCents)}
           emphasis
           // Never a percentage: a loss that shrank from −$500 to −$100 divides
           // out to "▼ 80%" in red, which is the opposite of what happened.
@@ -191,18 +208,18 @@ export default async function MoneyPage({
         <StatTile label="Parts" value={money(w.partsCostCents)} higherIsBetter={false} />
         <StatTile
           label="Running costs"
-          value={money(w.recordedExpensesCents + w.overheadCents + w.ownerPayCents)}
+          value={money(w.recordedExpensesCents + w.overheadCents)}
           higherIsBetter={false}
-          hint="expenses, overhead and your own pay"
+          hint="expenses and overhead"
         />
         <StatTile
           label="Break-even"
-          value={money(profit.breakEvenRevenueCents)}
+          value={money(profit.breakEvenBeforeOwnerPayCents)}
           higherIsBetter={false}
           hint={
-            w.netRevenueCents >= profit.breakEvenRevenueCents
-              ? `${money(w.netRevenueCents - profit.breakEvenRevenueCents)} clear`
-              : `${money(profit.breakEvenRevenueCents - w.netRevenueCents)} short`
+            w.netRevenueCents >= profit.breakEvenBeforeOwnerPayCents
+              ? `${money(w.netRevenueCents - profit.breakEvenBeforeOwnerPayCents)} clear`
+              : `${money(profit.breakEvenBeforeOwnerPayCents - w.netRevenueCents)} short`
           }
         />
       </div>
@@ -217,7 +234,12 @@ export default async function MoneyPage({
             </tr>
           </thead>
           <tbody>
-            <Line label="Billed to customers" cents={billed} billed={billed} />
+            <Line
+              label="Billed to customers"
+              cents={billed}
+              billed={billed}
+              href={`/admin/money/jobs?range=${range.key}&title=${encodeURIComponent('Billed')}&back=/admin/money`}
+            />
             <Line
               label="Dispatchers' share"
               cents={dispatchersCut}
@@ -225,7 +247,13 @@ export default async function MoneyPage({
               deduction
               note="what the companies sending you work keep"
             />
-            <Line label="Own revenue" cents={w.netRevenueCents} billed={billed} strong />
+            <Line
+              label="Own revenue"
+              cents={w.netRevenueCents}
+              billed={billed}
+              strong
+              href={`/admin/money/jobs?range=${range.key}&title=${encodeURIComponent('Own revenue')}&back=/admin/money`}
+            />
             <Line label="Parts" cents={w.partsCostCents} billed={billed} deduction />
             <Line label="Expenses" cents={w.recordedExpensesCents} billed={billed} deduction />
             {w.fuelFromMileageCents > 0 && (
@@ -247,14 +275,19 @@ export default async function MoneyPage({
               />
             )}
             <Line label="Overhead" cents={w.overheadCents} billed={billed} deduction />
-            <Line label="Your own pay" cents={w.ownerPayCents} billed={billed} deduction />
-            <Line label="Net profit" cents={w.netProfitCents} billed={billed} strong />
+            <Line
+              label="What the business made"
+              cents={profit.businessEarningsCents}
+              billed={billed}
+              strong
+            />
           </tbody>
         </Table>
         <Hint>
-          A table rather than a chart, because the question is whether it adds up, and that is read
-          rather than eyeballed. Every figure is worked out by JobPocket — the console formats them
-          and calculates nothing, so this page and the app cannot drift apart.
+          This is what the business made, not what is left after paying yourself — a draw is a
+          share of the answer, not a cost against it. Every figure is worked out by JobPocket; the
+          console formats them and calculates nothing, so this page and the app cannot drift apart.
+          Underlined lines open onto the jobs behind them.
         </Hint>
       </Panel>
 

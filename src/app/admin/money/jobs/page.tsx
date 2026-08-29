@@ -5,6 +5,7 @@ import { getJobs } from '@/lib/money/client';
 import { OperationsApiError } from '@/lib/bookings/client';
 import { Empty, Hint, Panel, SetupNotice, StatTile, StatusPill, Table, Td, Th, Warning } from '@/components/admin/ui';
 import { NotConnected } from '@/components/admin/NotConnected';
+import { Pager } from '@/components/admin/Pager';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +31,7 @@ export default async function JobsPage({
     techId: (searchParams.techId as string) || undefined,
     status: (searchParams.status as string) || undefined,
     paymentStatus: (searchParams.paymentStatus as string) || undefined,
+    offset: Number(searchParams.offset ?? 0) || 0,
   };
   const backTo = (searchParams.back as string) || '/admin/money';
 
@@ -136,9 +138,18 @@ export default async function JobsPage({
             </tbody>
           </Table>
         )}
-        {report.hasMore ? (
-          <Hint>Only the first {report.jobs.length} are shown. Narrow the dates to see the rest.</Hint>
-        ) : null}
+        <Pager
+          // Everything that got us here, minus the page marker — otherwise
+          // paging forward twice compounds the offset onto itself.
+          base={`/admin/money/jobs?${new URLSearchParams(
+            Object.entries(searchParams).flatMap(([key, value]) =>
+              key !== 'offset' && typeof value === 'string' && value ? [[key, value] as [string, string]] : []
+            )
+          ).toString()}`}
+          offset={report.offset}
+          shown={report.jobs.length}
+          hasMore={report.hasMore}
+        />
         <Hint>
           Billed is what the customer was charged; kept is what survives the dispatcher&apos;s
           share. On split work they are different numbers, and the difference is the whole reason
