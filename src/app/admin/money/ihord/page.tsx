@@ -79,8 +79,11 @@ function PaidHow({
   media?: JobPaperwork;
   t: ReturnType<typeof serverTranslator>;
 }) {
+  // Optional throughout: this page and the API deploy separately, and a field
+  // that has not shipped yet must read as "unknown", never as a crash.
+  const methods = media?.methods ?? [];
   if (!media) return <span className="text-gray-300">—</span>;
-  if (media.methods.length === 0) {
+  if (methods.length === 0) {
     return (
       <span style={{ color: STATUS.warning }} className="text-[11px] font-medium">
         {t('ihord.unpaidHere')}
@@ -91,7 +94,7 @@ function PaidHow({
     const words = method.toLowerCase().replace(/_/g, ' ');
     return words.charAt(0).toUpperCase() + words.slice(1);
   };
-  return <span className="text-[11px]">{media.methods.map(label).join(', ')}</span>;
+  return <span className="text-[11px]">{methods.map(label).join(', ')}</span>;
 }
 
 export default async function IhordPage({
@@ -173,7 +176,13 @@ export default async function IhordPage({
     );
   }
 
-  const { money: m, counts, jobs, payouts } = report;
+  // Defaulted rather than destructured bare: the service and this page ship
+  // separately, and a missing list should draw an empty table, not a stack
+  // trace behind a digest nobody can read.
+  const m = report.money ?? {};
+  const counts = report.counts ?? { notSettled: 0, jobPocketJobs: 0, rowsClaimed: 0, rowsParsed: 0 };
+  const jobs = report.jobs ?? [];
+  const payouts = report.payouts ?? [];
 
   /**
    * Which of these visits have a photograph and which have a paper scan.
