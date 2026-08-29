@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getChannels } from '@/lib/admin/queries';
 import { MoneyBasis } from '@/components/admin/MoneyBasis';
 import { count, money, percent } from '@/lib/admin/format';
-import { getProfit, getTrend, type Waterfall } from '@/lib/money/client';
+import { getProfit, getTrend, getBreakdown, type Waterfall } from '@/lib/money/client';
 import { OperationsApiError } from '@/lib/bookings/client';
 import { Empty, Hint, Panel, SetupNotice, StatTile, Table, Td, Th, Warning } from '@/components/admin/ui';
 import { NotConnected } from '@/components/admin/NotConnected';
@@ -41,6 +41,7 @@ function Line({
   strong = false,
   note,
   href,
+  detail,
 }: {
   label: string;
   cents: number;
@@ -50,22 +51,49 @@ function Line({
   note?: string;
   /** Where the jobs behind this line live, when there are any. */
   href?: string;
+  /**
+   * What this line is made of, opened in place.
+   *
+   * A native `<details>` rather than a click handler: these pages are server
+   * components, and a disclosure is the one piece of interaction the browser
+   * already does without shipping any JavaScript to do it.
+   */
+  detail?: React.ReactNode;
 }) {
   const negative = strong && cents < 0;
+  const name = href ? (
+    <Link
+      href={href}
+      className="text-ink underline decoration-primary-500/40 underline-offset-2 hover:text-primary-600"
+    >
+      {label}
+    </Link>
+  ) : (
+    label
+  );
+
   return (
     <tr className={strong ? 'border-t-2 border-primary-500/30' : undefined}>
       <Td className={strong ? 'font-semibold text-ink' : undefined}>
-        {href ? (
-          <Link
-            href={href}
-            className="text-ink underline decoration-primary-500/40 underline-offset-2 hover:text-primary-600"
-          >
-            {label}
-          </Link>
+        {detail ? (
+          <details className="group">
+            <summary className="cursor-pointer list-none marker:content-none">
+              <span className="mr-1 inline-block text-[10px] text-gray-400 transition-transform group-open:rotate-90">
+                ▸
+              </span>
+              {name}
+              {note ? <span className="ml-2 text-[11px] text-gray-500">{note}</span> : null}
+            </summary>
+            <div className="mt-2 rounded-card border border-primary-500/15 bg-[#f8f7f4] p-3">
+              {detail}
+            </div>
+          </details>
         ) : (
-          label
+          <>
+            {name}
+            {note ? <span className="ml-2 text-[11px] text-gray-500">{note}</span> : null}
+          </>
         )}
-        {note ? <span className="ml-2 text-[11px] text-gray-500">{note}</span> : null}
       </Td>
       <Td numeric className={strong ? 'font-semibold' : undefined}>
         {/* Deductions are not alarming, they are arithmetic. Only a loss earns
@@ -78,6 +106,41 @@ function Line({
         {billed > 0 ? percent(Math.abs(cents) / billed, 0) : '—'}
       </Td>
     </tr>
+  );
+}
+
+/** A few rows inside a disclosure — deliberately plainer than the main tables. */
+function Rows({
+  rows,
+}: {
+  rows: Array<{ key: string; left: string; middle?: string; right: string; href?: string }>;
+}) {
+  if (rows.length === 0) {
+    return <p className="text-xs text-gray-500">Nothing recorded against this line.</p>;
+  }
+  return (
+    <table className="w-full text-xs">
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.key} className="border-b border-primary-500/10 last:border-0">
+            <td className="py-1 pr-3">
+              {row.href ? (
+                <Link
+                  href={row.href}
+                  className="text-ink underline decoration-primary-500/40 underline-offset-2 hover:text-primary-600"
+                >
+                  {row.left}
+                </Link>
+              ) : (
+                row.left
+              )}
+            </td>
+            <td className="py-1 pr-3 text-gray-500">{row.middle ?? ''}</td>
+            <td className="py-1 text-right tabular-nums">{row.right}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
@@ -100,15 +163,20 @@ export default async function MoneyPage({
 
   let profit: Awaited<ReturnType<typeof getProfit>> | null = null;
   let trend: Awaited<ReturnType<typeof getTrend>> | null = null;
+  let breakdown: Awaited<ReturnType<typeof getBreakdown>> | null = null;
   let unconfigured = false;
   let failure: string | null = null;
 
   try {
-    [profit, trend] = await Promise.all([
+    [profit, trend, breakdown] = await Promise.all([
       getProfit(range.from, range.to),
       // Days for a short window, months for a long one. Thirty daily points
       // read as a trend; thirty monthly ones read as a history.
       getTrend(range.from, range.to, range.days > 92 ? 'month' : 'day').catch(() => null),
+      // The rows behind the lines that are not made of jobs. Fetched with the
+      // rest rather than on click, so opening one costs nothing and works
+      // without a line of client JavaScript.
+      getBreakdown(range.from, range.to).catch(() => null),
     ]);
   } catch (error) {
     if (error instanceof OperationsApiError) {
@@ -254,8 +322,43 @@ export default async function MoneyPage({
               strong
               href={`/admin/money/jobs?range=${range.key}&title=${encodeURIComponent('Own revenue')}&back=/admin/money`}
             />
-            <Line label="Parts" cents={w.partsCostCents} billed={billed} deduction />
-            <Line label="Expenses" cents={w.recordedExpensesCents} billed={billed} deduction />
+            <Line
+              label="Parts"
+              cents={w.partsCostCents}
+              billed={billed}
+              deduction
+              note={breakdown ? `${count(breakdown.parts.jobs)} jobs carried parts` : undefined}
+              detail={
+                breakdown ? (
+                  <Rows
+                    rows={breakdown.parts.rows.slice(0, 25).map((row) => ({
+                      key: row.id,
+                      left: row.jobNumber ?? 'Job',
+                      middle: row.clientName ?? '',
+                      right: money(row.partsCents),
+                      href: `/admin/calendar/${row.id}`,
+                    }))}
+                  />
+                ) : undefined
+              }
+            />
+            <Line
+              label="Expenses"
+              cents={w.recordedExpensesCents}
+              billed={billed}
+              deduction
+              detail={
+                breakdown ? (
+                  <Rows
+                    rows={breakdown.expenses.rows.map((row) => ({
+                      key: row.category,
+                      left: row.category.charAt(0) + row.category.slice(1).toLowerCase(),
+                      right: money(row.cents),
+                    }))}
+                  />
+                ) : undefined
+              }
+            />
             {w.fuelFromMileageCents > 0 && (
               <Line
                 label="Fuel"
@@ -272,9 +375,40 @@ export default async function MoneyPage({
                 billed={billed}
                 deduction
                 note="debts given up on in this window"
+                detail={
+                  breakdown ? (
+                    <Rows
+                      rows={breakdown.writtenOff.rows.map((row) => ({
+                        key: row.id,
+                        left: row.jobNumber ?? 'Job',
+                        middle: [row.clientName, row.reason].filter(Boolean).join(' · '),
+                        right: money(row.ownShareCents),
+                        href: `/admin/calendar/${row.id}`,
+                      }))}
+                    />
+                  ) : undefined
+                }
               />
             )}
-            <Line label="Overhead" cents={w.overheadCents} billed={billed} deduction />
+            <Line
+              label="Overhead"
+              cents={w.overheadCents}
+              billed={billed}
+              deduction
+              note="standing costs, shared across the days you picked"
+              detail={
+                breakdown ? (
+                  <Rows
+                    rows={breakdown.overhead.rows.map((row) => ({
+                      key: row.id,
+                      left: row.name,
+                      middle: `${money(row.amountCents)} ${row.cadence.toLowerCase()}`,
+                      right: money(row.inPeriodCents),
+                    }))}
+                  />
+                ) : undefined
+              }
+            />
             <Line
               label="What the business made"
               cents={profit.businessEarningsCents}

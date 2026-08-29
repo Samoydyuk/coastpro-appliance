@@ -332,3 +332,36 @@ export async function getJobs(
     .join('');
   return call(`/v1/reports/jobs?${window(from, to)}${extra}`);
 }
+
+export interface Breakdown {
+  period: Period;
+  parts: {
+    totalCents: number;
+    jobs: number;
+    rows: Array<{
+      id: string; jobNumber: string | null; clientName: string | null;
+      at: string | null; totalCents: number; partsCents: number;
+    }>;
+  };
+  expenses: { totalCents: number; rows: Array<{ category: string; cents: number }> };
+  overhead: {
+    rows: Array<{
+      id: string; name: string; cadence: string;
+      amountCents: number;
+      /** Its share of the window — what the waterfall actually counted. */
+      inPeriodCents: number;
+    }>;
+  };
+  writtenOff: {
+    rows: Array<{
+      id: string; jobNumber: string | null; clientName: string | null;
+      at: string | null; reason: string | null;
+      totalCents: number; ownShareCents: number;
+    }>;
+  };
+}
+
+/** What each line of the descent is made of. */
+export async function getBreakdown(from: Date, to: Date): Promise<Breakdown> {
+  return call(`/v1/reports/breakdown?${window(from, to)}`);
+}

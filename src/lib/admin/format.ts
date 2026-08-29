@@ -1,23 +1,52 @@
-/** Presentation helpers shared by every admin screen. */
+import { SHOP_TIMEZONE } from '@/lib/admin/range';
+import { type Lang, numberLocale } from '@/lib/i18n';
 
-export function money(cents: number | null | undefined): string {
+/**
+ * Presentation helpers shared by every admin screen.
+ *
+ * Two rules hold here.
+ *
+ * **Every date is the shop's date.** Without an explicit `timeZone` these read
+ * in whatever zone the process happens to run in — UTC on the server — so a job
+ * finished at five in the afternoon in California was being dated to the next
+ * day. The window in `range.ts` has always been careful about this; the
+ * formatting was not, and the two disagreed.
+ *
+ * **Money stays in dollars whatever the language.** A Ukrainian reader wants
+ * Ukrainian months, not hryvnia: the business bills in USD and translating the
+ * currency would be inventing a number.
+ */
+
+export function money(cents: number | null | undefined, lang: Lang = 'en'): string {
   if (cents === null || cents === undefined) return '—';
   const dollars = cents / 100;
-  return dollars.toLocaleString('en-US', {
+  return dollars.toLocaleString(numberLocale(lang), {
     style: 'currency',
     currency: 'USD',
+    // Without this a Ukrainian locale writes "36,00 USD" and the dollar sign
+    // disappears from a screen that is entirely about dollars.
+    currencyDisplay: 'narrowSymbol',
     maximumFractionDigits: dollars >= 1000 ? 0 : 2,
   });
 }
 
-export function count(value: number | null | undefined): string {
+export function count(value: number | null | undefined, lang: Lang = 'en'): string {
   if (value === null || value === undefined) return '—';
-  return Math.round(value).toLocaleString('en-US');
+  return Math.round(value).toLocaleString(numberLocale(lang));
 }
 
-export function percent(value: number | null | undefined, digits = 1): string {
+export function percent(
+  value: number | null | undefined,
+  digits = 1,
+  lang: Lang = 'en'
+): string {
   if (value === null || value === undefined || !Number.isFinite(value)) return '—';
-  return `${(value * 100).toFixed(digits)}%`;
+  // Through Intl rather than toFixed, or this is the one number on the screen
+  // still using a full stop while everything beside it uses a comma.
+  return `${(value * 100).toLocaleString(numberLocale(lang), {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  })}%`;
 }
 
 export function duration(seconds: number | null | undefined): string {
@@ -32,19 +61,27 @@ export function duration(seconds: number | null | undefined): string {
   return `${rest}s`;
 }
 
-export function shortDate(value: string | Date): string {
+export function shortDate(value: string | Date, lang: Lang = 'en'): string {
   const date = typeof value === 'string' ? new Date(value) : value;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString(numberLocale(lang), {
+    month: 'short',
+    day: 'numeric',
+    timeZone: SHOP_TIMEZONE,
+  });
 }
 
-export function dateTime(value: string | Date | null | undefined): string {
+export function dateTime(value: string | Date | null | undefined, lang: Lang = 'en'): string {
   if (!value) return '—';
   const date = typeof value === 'string' ? new Date(value) : value;
-  return date.toLocaleString('en-US', {
+  return date.toLocaleString(numberLocale(lang), {
     month: 'short',
     day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
+    // Kept to the shop's clock in both languages. Switching to 24-hour with
+    // the language would be a product decision wearing a formatting hat.
+    hour12: true,
+    timeZone: SHOP_TIMEZONE,
   });
 }
 
