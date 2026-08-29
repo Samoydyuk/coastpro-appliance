@@ -57,6 +57,8 @@ const GROUPS: Group[] = [
       // on an ageing report hides the ninety-day debts, which are the only ones
       // that matter.
       { href: '/admin/money/unpaid', label: 'Unpaid' },
+      // Also not ranged: a job that stalled in June is still stalled today.
+      { href: '/admin/money/stuck', label: 'Stuck' },
       { href: '/admin/money/dispatchers', label: 'Dispatchers', ranged: true },
       { href: '/admin/money/technicians', label: 'Technicians', ranged: true },
       { href: '/admin/money/payments', label: 'Payments', ranged: true },
@@ -224,6 +226,68 @@ function RangeButtons({
   );
 }
 
+/**
+ * Any two dates, not only the presets.
+ *
+ * `parseRange` has understood `range=custom&from=&to=` from the beginning and
+ * nothing has ever been able to set it — the presets were the only way in, so
+ * "last quarter" or "the month my accountant is asking about" was unreachable.
+ *
+ * Both dates are pushed together. Sending one at a time would render a page
+ * against half a window on the way through.
+ */
+function CustomRange({
+  from,
+  to,
+  onPick,
+}: {
+  from: string;
+  to: string;
+  onPick: (from: string, to: string) => void;
+}) {
+  const [start, setStart] = useState(from);
+  const [end, setEnd] = useState(to);
+  const changed = start && end && (start !== from || end !== to);
+
+  const field =
+    'h-[26px] rounded-card border border-primary-500/25 bg-[#fcfcfb] px-2 text-[11px] text-ink';
+
+  return (
+    <div className="flex items-center gap-1">
+      <input
+        type="date"
+        aria-label="From"
+        value={start}
+        max={end || undefined}
+        onChange={(event) => setStart(event.target.value)}
+        className={field}
+      />
+      <span className="text-[10px] text-gray-500">to</span>
+      <input
+        type="date"
+        aria-label="To"
+        value={end}
+        min={start || undefined}
+        onChange={(event) => setEnd(event.target.value)}
+        className={field}
+      />
+      <button
+        type="button"
+        disabled={!changed}
+        onClick={() => onPick(start, end)}
+        className={cn(
+          'rounded-card border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-label transition-colors',
+          changed
+            ? 'border-ink bg-ink text-cream'
+            : 'border-primary-500/20 text-gray-400'
+        )}
+      >
+        Apply
+      </button>
+    </div>
+  );
+}
+
 /** The date window, shown only on the screens that are read through one. */
 function RangeBarInner() {
   const pathname = usePathname();
@@ -239,8 +303,22 @@ function RangeBarInner() {
     router.push(`${pathname}?${next.toString()}`);
   };
 
+  const setCustom = (from: string, to: string) => {
+    const next = new URLSearchParams(params.toString());
+    next.set('range', 'custom');
+    next.set('from', from);
+    next.set('to', to);
+    next.delete('offset');
+    router.push(`${pathname}?${next.toString()}`);
+  };
+
   return (
-    <div className="hidden justify-end pb-4 lg:flex">
+    <div className="hidden flex-wrap items-center justify-end gap-3 pb-4 lg:flex">
+      <CustomRange
+        from={params.get('from') ?? ''}
+        to={params.get('to') ?? ''}
+        onPick={setCustom}
+      />
       <RangeButtons range={params.get('range') ?? '30d'} setRange={setRange} />
     </div>
   );

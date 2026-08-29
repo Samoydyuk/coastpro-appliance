@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { parseRange } from '@/lib/admin/range';
 import { count, money, percent } from '@/lib/admin/format';
 import { getByCompany } from '@/lib/money/client';
@@ -149,7 +150,12 @@ export default async function DispatchersPage({
               {rows.map((row) => (
                 <tr key={row.brandId ?? 'own'}>
                   <Td>
-                    {row.name}
+                    <Link
+                      href={`/admin/money/jobs?range=${range.key}&brandId=${row.brandId ?? 'own'}&title=${encodeURIComponent(row.name)}&back=/admin/money/dispatchers`}
+                      className="text-ink underline decoration-primary-500/40 underline-offset-2 hover:text-primary-600"
+                    >
+                      {row.name}
+                    </Link>
                     {row.revenueSharePct !== null ? (
                       <span className="ml-2 text-[11px] text-gray-500">
                         {row.revenueSharePct}%{row.reimbursesParts ? ', parts back' : ''}

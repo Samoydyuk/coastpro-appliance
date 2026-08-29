@@ -235,3 +235,64 @@ export async function getTrend(
 ): Promise<{ period: Period; granularity: string; points: TrendPoint[] }> {
   return call(`/v1/reports/trend?${window(from, to)}&granularity=${granularity}`);
 }
+
+export interface StuckJob {
+  id: string;
+  jobNumber: string | null;
+  status: string;
+  paymentStatus: string;
+  type: string | null;
+  clientName: string | null;
+  brandName: string;
+  totalCents: number;
+  scheduledAt: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+}
+
+export interface StuckGroup {
+  key: string;
+  title: string;
+  /** Why this is worth doing something about, in JobPocket's own words. */
+  why: string;
+  noun: string;
+  jobs: number;
+  valueCents: number;
+  rows: StuckJob[];
+}
+
+/**
+ * Work that has stopped moving.
+ *
+ * The categories come from JobPocket's checks catalogue, not from this console
+ * — the same list the phone watches, so the two cannot disagree about what
+ * counts as unscanned or never invoiced.
+ */
+export async function getStuck(): Promise<{ asOf: string; scope: Scope; groups: StuckGroup[] }> {
+  return call('/v1/reports/stuck');
+}
+
+export interface DrilldownJob extends StuckJob {
+  ownShareCents: number;
+}
+
+/** Whatever a report row was made of. */
+export async function getJobs(
+  from: Date,
+  to: Date,
+  filters: { brandId?: string; techId?: string; status?: string; paymentStatus?: string } = {}
+): Promise<{
+  period: Period;
+  scope: Scope;
+  filters: Record<string, string | null>;
+  totals: { jobs: number; billedCents: number; ownShareCents: number };
+  jobs: DrilldownJob[];
+  hasMore: boolean;
+}> {
+  const extra = Object.entries(filters)
+    .filter(([, value]) => value)
+    .map(([key, value]) => `&${key}=${encodeURIComponent(String(value))}`)
+    .join('');
+  return call(`/v1/reports/jobs?${window(from, to)}${extra}`);
+}

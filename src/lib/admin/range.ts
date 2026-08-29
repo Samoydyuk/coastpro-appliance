@@ -14,6 +14,9 @@ export const RANGE_PRESETS = [
   { key: '30d', label: 'Last 30 days', days: 30 },
   { key: '90d', label: 'Last 90 days', days: 90 },
   { key: 'mtd', label: 'Month to date', days: 0 },
+  // A profit and loss is read by calendar month; "last 30 days" never lines up
+  // with anything an accountant will hand back.
+  { key: 'last_month', label: 'Last month', days: 0 },
   { key: 'all', label: 'All time', days: 3650 },
 ] as const;
 
@@ -89,6 +92,32 @@ export function parseRange(params: { range?: string; from?: string; to?: string 
       to: now,
       previousFrom: previousStart,
       previousTo: monthStart,
+      days,
+    };
+  }
+
+  /**
+   * The month that has finished, whole.
+   *
+   * Compared against the month before it rather than a rolling window, so both
+   * sides are complete months — a partial month next to a whole one reads as a
+   * collapse every time it is looked at before the 20th.
+   */
+  if (key === 'last_month') {
+    const monthStart = new Date(today);
+    monthStart.setDate(1);
+    const from = new Date(monthStart);
+    from.setMonth(from.getMonth() - 1);
+    const previousFrom = new Date(from);
+    previousFrom.setMonth(previousFrom.getMonth() - 1);
+    const days = Math.max(1, Math.round((monthStart.getTime() - from.getTime()) / 86_400_000));
+    return {
+      key,
+      label: from.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+      from,
+      to: new Date(monthStart.getTime() - 1),
+      previousFrom,
+      previousTo: from,
       days,
     };
   }

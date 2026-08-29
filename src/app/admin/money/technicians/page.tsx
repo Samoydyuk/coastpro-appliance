@@ -119,6 +119,7 @@ export default async function TechniciansPage({
                 <Th numeric>Revenue</Th>
                 <Th numeric>Avg ticket</Th>
                 <Th numeric>Avg booked</Th>
+                <Th />
               </tr>
             </thead>
             <tbody>
@@ -143,6 +144,16 @@ export default async function TechniciansPage({
                   <Td numeric>{money(row.avgTicketCents)}</Td>
                   <Td numeric className="text-gray-600">
                     {row.avgEstimatedMinutes ? `${row.avgEstimatedMinutes} min` : '—'}
+                  </Td>
+                  <Td numeric>
+                    {row.techId ? (
+                      <Link
+                        href={`/admin/money/jobs?range=${range.key}&techId=${row.techId}&title=${encodeURIComponent(row.name)}&back=/admin/money/technicians`}
+                        className="text-[11px] text-gray-500 underline underline-offset-2 hover:text-ink"
+                      >
+                        jobs
+                      </Link>
+                    ) : null}
                   </Td>
                 </tr>
               ))}
