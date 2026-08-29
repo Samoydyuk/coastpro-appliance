@@ -12,8 +12,14 @@ import { OperationsApiError } from '@/lib/bookings/client';
  */
 
 const DEFAULT_BASE = 'https://jobpocket-ihord-sync-production.up.railway.app';
-/** Scraping two sites is slow; the service caches, but the first call is not. */
-const TIMEOUT_MS = 60_000;
+/**
+ * Short on purpose.
+ *
+ * The service never scrapes while we wait — it answers with what it has and
+ * refreshes behind. So this only has to cover a JSON read, and a long timeout
+ * here would just be a slower way to hit the serverless limit and die.
+ */
+const TIMEOUT_MS = 10_000;
 
 export interface ReconciledJob {
   jobNumber: string;
@@ -31,6 +37,10 @@ export interface ReconciledJob {
 }
 
 export interface Reconciliation {
+  /** True while the first scrape for this window is still running. */
+  building?: boolean;
+  /** How old the figures are, in seconds. Null when nothing is held yet. */
+  ageSec?: number | null;
   builtAt: string;
   period: string;
   label: string | null;
@@ -56,7 +66,10 @@ export interface Reconciliation {
   jobs: ReconciledJob[];
 }
 
-export async function getReconciliation(period = 'all'): Promise<Reconciliation> {
+/** What the service holds right now — never a wait for a scrape. */
+export async function getReconciliation(
+  period = 'all'
+): Promise<Reconciliation | { building: true; ageSec: null }> {
   const key = process.env.IHORD_RECONCILIATION_KEY;
   if (!key) {
     throw new OperationsApiError(

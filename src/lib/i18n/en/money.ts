@@ -12,6 +12,11 @@
  * already lives in `core.ts`. Only what is missing is here.
  */
 export const money = {
+  'ihord.buildingTitle': 'Gathering the figures',
+  'ihord.buildingBody': 'Both sets of books are being read. It takes about a minute the first time for a window, and is instant afterwards.',
+  'ihord.buildingRetry': 'Check again',
+  'ihord.age': 'These figures were gathered {minutes} minutes ago. A fresh read is already running behind this page.',
+
   'profile.title': 'Technician picture',
   'profile.noWork': 'No finished work in this window.',
   'profile.partsRate': 'Parts recorded',

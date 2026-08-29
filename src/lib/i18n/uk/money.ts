@@ -10,6 +10,11 @@ import type { money as source } from '../en/money';
  * Платежі, Виставлено, Лишилось, Робота, Клієнт.
  */
 export const money: Record<keyof typeof source, string> = {
+  'ihord.buildingTitle': 'Збираю дані',
+  'ihord.buildingBody': 'Читаю обидві книги. Перший раз для періоду це близько хвилини, далі — миттєво.',
+  'ihord.buildingRetry': 'Перевірити ще раз',
+  'ihord.age': 'Ці числа зібрано {minutes} хв тому. Свіже читання вже йде у фоні.',
+
   'profile.title': 'Картина техніка',
   'profile.noWork': 'За цей період завершених робіт немає.',
   'profile.partsRate': 'Запчастини записано',

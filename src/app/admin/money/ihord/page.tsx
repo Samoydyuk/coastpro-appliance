@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { count, money, shortDate } from '@/lib/admin/format';
-import { getReconciliation } from '@/lib/ihord/client';
+import { getReconciliation, type Reconciliation } from '@/lib/ihord/client';
 import { getJobMedia, type JobPaperwork } from '@/lib/money/client';
 import { OperationsApiError } from '@/lib/bookings/client';
 import { Empty, Hint, Panel, SetupNotice, StatTile, Table, Td, Th, Warning } from '@/components/admin/ui';
@@ -102,12 +102,18 @@ export default async function IhordPage({
   const t = serverTranslator();
   const period = (searchParams.period as string) || 'thisMonth';
 
-  let report: Awaited<ReturnType<typeof getReconciliation>> | null = null;
+  let report: Reconciliation | null = null;
+  let building = false;
   let failure: string | null = null;
   let unconfigured = false;
 
   try {
-    report = await getReconciliation(period);
+    const answer = await getReconciliation(period);
+    // Nothing held yet: the first scrape of this window has just started.
+    // Saying so beats a spinner that never resolves, and beats a page that
+    // waits for two websites and is killed by the platform first.
+    if (!('builtAt' in answer)) building = true;
+    else report = answer;
   } catch (error) {
     if (error instanceof OperationsApiError) {
       if (error.code === 'not_configured') unconfigured = true;
@@ -140,6 +146,23 @@ export default async function IhordPage({
       </div>
     </div>
   );
+
+  if (building) {
+    return (
+      <div className="space-y-6">
+        {header}
+        <Panel title={t('ihord.buildingTitle')}>
+          <p className="text-sm text-gray-600">{t('ihord.buildingBody')}</p>
+          <Link
+            href={`/admin/money/ihord?period=${period}`}
+            className="mt-3 inline-flex h-8 items-center rounded-card border border-primary-500/30 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 hover:border-ink hover:text-ink"
+          >
+            {t('ihord.buildingRetry')}
+          </Link>
+        </Panel>
+      </div>
+    );
+  }
 
   if (unconfigured || !report) {
     return (
@@ -191,6 +214,10 @@ export default async function IhordPage({
           hint={(m.unpaidCents ?? 0) < 0 ? t('ihord.overpaid') : undefined}
         />
       </div>
+
+      {report.ageSec != null && report.ageSec > 900 ? (
+        <Hint>{t('ihord.age', { minutes: String(Math.round(report.ageSec / 60)) })}</Hint>
+      ) : null}
 
       {/* A parser that quietly reads 191 of 193 rows produces a shortfall
           nobody can explain later, so it is said here rather than logged. */}
