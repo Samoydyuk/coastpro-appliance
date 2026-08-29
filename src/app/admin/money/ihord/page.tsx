@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Camera, ScanLine } from 'lucide-react';
 import { count, money, shortDate } from '@/lib/admin/format';
 import { getReconciliation, type Reconciliation } from '@/lib/ihord/client';
 import { getJobMedia, type JobPaperwork } from '@/lib/money/client';
@@ -41,25 +42,24 @@ function Paperwork({
 }) {
   const photos = media?.photos ?? 0;
   const scans = media?.scans ?? 0;
+
+  const photoLabel = photos ? t('ihord.hasPhotos', { n: photos }) : t('ihord.noPhotos');
+  const scanLabel = scans ? t('ihord.hasScan', { n: scans }) : t('ihord.noScan');
+  // Present is ink, absent is a faint outline. Both are drawn, because a
+  // missing icon reads as "this row is different" while a pale one reads as
+  // "this row is missing something" — which is the actual message.
+  const tone = (has: number) => (has ? 'text-ink' : 'text-primary-500/25');
+
   return (
-    <span className="ml-2 inline-flex items-center gap-1 align-middle">
-      <span
-        aria-hidden
-        title={photos ? t('ihord.hasPhotos', { n: photos }) : t('ihord.noPhotos')}
-        className={photos ? 'text-ink' : 'text-gray-300'}
-      >
-        ▣
-      </span>
-      <span
-        aria-hidden
-        title={scans ? t('ihord.hasScan', { n: scans }) : t('ihord.noScan')}
-        className={scans ? 'text-ink' : 'text-gray-300'}
-      >
-        ▤
-      </span>
+    <span className="ml-2 inline-flex items-center gap-1.5 align-middle">
+      <Camera className={`h-3.5 w-3.5 ${tone(photos)}`} aria-hidden>
+        <title>{photoLabel}</title>
+      </Camera>
+      <ScanLine className={`h-3.5 w-3.5 ${tone(scans)}`} aria-hidden>
+        <title>{scanLabel}</title>
+      </ScanLine>
       <span className="sr-only">
-        {photos ? t('ihord.hasPhotos', { n: photos }) : t('ihord.noPhotos')}.{' '}
-        {scans ? t('ihord.hasScan', { n: scans }) : t('ihord.noScan')}.
+        {photoLabel}. {scanLabel}.
       </span>
     </span>
   );
