@@ -10,6 +10,28 @@ import type { money as source } from '../en/money';
  * Платежі, Виставлено, Лишилось, Робота, Клієнт.
  */
 export const money: Record<keyof typeof source, string> = {
+  'profile.title': 'Картина техніка',
+  'profile.noWork': 'За цей період завершених робіт немає.',
+  'profile.partsRate': 'Запчастини записано',
+  'profile.againstBooks': 'по книгах {pct}%',
+  'profile.serviceCalls': 'Лише сервіс-кол',
+  'profile.serviceCallsHint': 'виїзд був, продажу не було',
+  'profile.time': 'Фактичний візит',
+  'profile.booked': 'заплановано {n} хв',
+  'profile.worth': 'приблизно {amount} за період',
+  'profile.byAppliance': 'За технікою',
+  'profile.byMake': 'За брендом',
+  'profile.makeUnrecorded': 'Не записано',
+  'profile.byDispatcher': 'За диспетчером, лишилось',
+  'profile.hint': 'Кожна знахідка порахована з цих книг за цей період і несе свої числа — жодних середніх по ринку звідкись іззовні. Менш ніж на восьми візитах не каже нічого, бо дві роботи це не закономірність. Собівартість запчастин у розрізі людини не показується: на тонкому зрізі виручка поруч із маржею її видає.',
+
+  'ihord.unpaidHere': 'Не отримано',
+
+  'ihord.hasPhotos': 'фото: {n}',
+  'ihord.noPhotos': 'Фото немає',
+  'ihord.hasScan': 'сканів: {n}',
+  'ihord.noScan': 'Скана немає',
+
   'ihord.title': 'Звірка з диспетчером',
   'ihord.subtitle': 'Книги Esquire поруч із нашими',
   'ihord.period.thisMonth': 'Цей місяць',

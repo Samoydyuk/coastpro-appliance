@@ -86,7 +86,16 @@ export default async function TechniciansPage({
         />
       </div>
 
-      <Panel title={t('technicians.revenueBy')} subtitle={t('money.afterTheSplit')}>
+      <Panel
+        title={t('technicians.revenueBy')}
+        action={
+          <Link
+            href={`/admin/money/technicians/profile?range=${range.key}`}
+            className="inline-flex h-8 items-center rounded-card border border-primary-500/30 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 hover:border-ink hover:text-ink"
+          >
+            {t('profile.title')}
+          </Link>
+        } subtitle={t('money.afterTheSplit')}>
         {rows.length === 0 ? (
           <Empty>{t('money.noFinishedWork')}</Empty>
         ) : (

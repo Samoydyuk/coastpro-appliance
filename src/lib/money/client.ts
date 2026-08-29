@@ -380,3 +380,62 @@ export interface Breakdown {
 export async function getBreakdown(from: Date, to: Date): Promise<Breakdown> {
   return call(`/v1/reports/breakdown?${window(from, to)}`);
 }
+
+export interface TechnicianAdvice {
+  key: string;
+  severity: 'high' | 'medium';
+  /** The finding, with the numbers it was drawn from already in it. */
+  finding: string;
+  worthCents: number | null;
+}
+
+export interface TechnicianProfile {
+  techId: string | null;
+  name: string;
+  jobs: number;
+  ownShareRevenueCents: number;
+  avgTicketCents: number;
+  /** A ratio, never money: what a part cost stays a whole-account figure. */
+  partsAttachPct: number;
+  accountAttachPct: number;
+  serviceCallOnly: number;
+  applianceUnrecorded: number;
+  avgEstimatedMinutes: number;
+  avgActualMinutes: number;
+  byType: Array<{ type: string; jobs: number; revenueCents: number }>;
+  byAppliance: Array<{ brand: string; jobs: number }>;
+  byDispatcher: Array<{
+    name: string; jobs: number; billedCents: number; keptCents: number; keptPct: number | null;
+  }>;
+  advice: TechnicianAdvice[];
+}
+
+export async function getTechnicianProfiles(
+  from: Date,
+  to: Date
+): Promise<{
+  period: Period;
+  scope: Scope;
+  creditRule: string;
+  account: { jobs: number; attachPct: number; avgTicketCents: number };
+  technicians: TechnicianProfile[];
+}> {
+  return call(`/v1/reports/technician-profile?${window(from, to)}`);
+}
+
+export interface JobPaperwork {
+  photos: number;
+  scans: number;
+  paymentStatus: string;
+  /** How the money arrived. Empty when nothing has. */
+  methods: string[];
+  paidCents: number;
+}
+
+/** Photographs, scans and how each visit was paid for — one request for a page. */
+export async function getJobMedia(
+  ids: string[]
+): Promise<{ jobs: Record<string, JobPaperwork> }> {
+  if (ids.length === 0) return { jobs: {} };
+  return call(`/v1/reports/job-media?ids=${ids.slice(0, 200).join(',')}`);
+}

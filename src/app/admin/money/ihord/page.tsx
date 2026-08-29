@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { count, money, shortDate } from '@/lib/admin/format';
 import { getReconciliation } from '@/lib/ihord/client';
+import { getJobMedia, type JobPaperwork } from '@/lib/money/client';
 import { OperationsApiError } from '@/lib/bookings/client';
 import { Empty, Hint, Panel, SetupNotice, StatTile, Table, Td, Th, Warning } from '@/components/admin/ui';
 import { serverTranslator } from '@/lib/i18n/server';
@@ -22,6 +23,76 @@ const PERIODS = [
   { key: 'lastMonth', label: 'Last month' },
   { key: 'all', label: 'All time' },
 ] as const;
+
+/**
+ * Two marks: a camera for photographs, a page for the scanned paper invoice.
+ *
+ * Absence is the message — on a dispatched account the paper invoice is the
+ * evidence the visit happened, and a row with neither mark is the one that
+ * becomes an argument later. Greyed rather than hidden, so the gap is visible
+ * without being read as an error.
+ */
+function Paperwork({
+  media,
+  t,
+}: {
+  media?: JobPaperwork;
+  t: ReturnType<typeof serverTranslator>;
+}) {
+  const photos = media?.photos ?? 0;
+  const scans = media?.scans ?? 0;
+  return (
+    <span className="ml-2 inline-flex items-center gap-1 align-middle">
+      <span
+        aria-hidden
+        title={photos ? t('ihord.hasPhotos', { n: photos }) : t('ihord.noPhotos')}
+        className={photos ? 'text-ink' : 'text-gray-300'}
+      >
+        ▣
+      </span>
+      <span
+        aria-hidden
+        title={scans ? t('ihord.hasScan', { n: scans }) : t('ihord.noScan')}
+        className={scans ? 'text-ink' : 'text-gray-300'}
+      >
+        ▤
+      </span>
+      <span className="sr-only">
+        {photos ? t('ihord.hasPhotos', { n: photos }) : t('ihord.noPhotos')}.{' '}
+        {scans ? t('ihord.hasScan', { n: scans }) : t('ihord.noScan')}.
+      </span>
+    </span>
+  );
+}
+
+/**
+ * How the money arrived, not merely whether it did.
+ *
+ * On a dispatched account those are different questions: a card payment lands
+ * in an account and a cash one lands in somebody's pocket, and only one of
+ * them settles itself. Unpaid says so plainly rather than showing a blank.
+ */
+function PaidHow({
+  media,
+  t,
+}: {
+  media?: JobPaperwork;
+  t: ReturnType<typeof serverTranslator>;
+}) {
+  if (!media) return <span className="text-gray-300">—</span>;
+  if (media.methods.length === 0) {
+    return (
+      <span style={{ color: STATUS.warning }} className="text-[11px] font-medium">
+        {t('ihord.unpaidHere')}
+      </span>
+    );
+  }
+  const label = (method: string) => {
+    const words = method.toLowerCase().replace(/_/g, ' ');
+    return words.charAt(0).toUpperCase() + words.slice(1);
+  };
+  return <span className="text-[11px]">{media.methods.map(label).join(', ')}</span>;
+}
 
 export default async function IhordPage({
   searchParams,
@@ -80,6 +151,17 @@ export default async function IhordPage({
   }
 
   const { money: m, counts, jobs, payouts } = report;
+
+  /**
+   * Which of these visits have a photograph and which have a paper scan.
+   *
+   * Asked in one request for the whole page. It fails quietly on purpose: the
+   * reconciliation is the point of this screen and an icon is not worth
+   * failing it for.
+   */
+  const media = await getJobMedia(
+    jobs.map((j) => j.jpJobId).filter((id): id is string => Boolean(id))
+  ).catch(() => ({ jobs: {} as Record<string, JobPaperwork> }));
   const notSettled = jobs.filter((j) => j.issue === 'not_settled');
   const missingHere = jobs.filter((j) => j.issue === 'missing_in_jobpocket');
   const missingThere = jobs.filter((j) => j.issue === 'missing_in_ihord');
@@ -131,6 +213,7 @@ export default async function IhordPage({
                 <Th>{t('common.date')}</Th>
                 <Th>{t('common.job')}</Th>
                 <Th>{t('common.client')}</Th>
+                <Th>{t('payments.how')}</Th>
                 <Th numeric>{t('ihord.sold')}</Th>
                 <Th numeric>{t('ihord.parts')}</Th>
                 <Th numeric>{t('ihord.toYou')}</Th>
@@ -156,8 +239,12 @@ export default async function IhordPage({
                     {job.invoiceNumber ? (
                       <span className="ml-2 text-[11px] text-gray-500">{job.invoiceNumber}</span>
                     ) : null}
+                    <Paperwork media={job.jpJobId ? media.jobs[job.jpJobId] : undefined} t={t} />
                   </Td>
                   <Td>{job.customer || '—'}</Td>
+                  <Td className="text-gray-600">
+                    <PaidHow media={job.jpJobId ? media.jobs[job.jpJobId] : undefined} t={t} />
+                  </Td>
                   <Td numeric>{money(job.soldCents ?? 0, t.lang)}</Td>
                   <Td numeric className="text-gray-600">
                     {money(job.partsCents ?? 0, t.lang)}

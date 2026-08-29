@@ -12,6 +12,28 @@
  * already lives in `core.ts`. Only what is missing is here.
  */
 export const money = {
+  'profile.title': 'Technician picture',
+  'profile.noWork': 'No finished work in this window.',
+  'profile.partsRate': 'Parts recorded',
+  'profile.againstBooks': '{pct}% across the books',
+  'profile.serviceCalls': 'Service call only',
+  'profile.serviceCallsHint': 'a trip made and nothing sold',
+  'profile.time': 'Actual visit',
+  'profile.booked': 'booked for {n} min',
+  'profile.worth': 'about {amount} over the window',
+  'profile.byAppliance': 'By appliance',
+  'profile.byMake': 'By make',
+  'profile.makeUnrecorded': 'Not recorded',
+  'profile.byDispatcher': 'By dispatcher, kept',
+  'profile.hint': 'Every finding is worked out from these books over this window and states the numbers behind it — nothing here is a trade average from somewhere else. Under eight visits it says nothing at all, because two jobs is not a pattern. What a part cost is not broken out per person: on a thin slice, revenue beside a margin gives it away.',
+
+  'ihord.unpaidHere': 'Nothing taken',
+
+  'ihord.hasPhotos': '{n} photos',
+  'ihord.noPhotos': 'No photos',
+  'ihord.hasScan': '{n} scanned',
+  'ihord.noScan': 'No paper scan',
+
   'ihord.title': 'Dispatcher reconciliation',
   'ihord.subtitle': 'Esquire\'s books beside ours',
   'ihord.period.thisMonth': 'This month',
