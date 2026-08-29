@@ -71,6 +71,24 @@ export function channelColor(channel: string): string {
   return slot === undefined ? NEUTRAL : SERIES[slot]!;
 }
 
+/**
+ * How the money arrived. Fixed slots for the same reason channels have them:
+ * filtering cash out of a view must not repaint Stripe.
+ */
+const PAYMENT_SLOT: Record<string, number> = {
+  STRIPE: 0,
+  CASH: 1,
+  CHECK: 2,
+  BANK_TRANSFER: 3,
+  ZELLE: 4,
+  VENMO: 5,
+};
+
+export function paymentColor(method: string): string {
+  const slot = PAYMENT_SLOT[method];
+  return slot === undefined ? NEUTRAL : SERIES[slot]!;
+}
+
 export function sequentialColor(fraction: number): string {
   if (!Number.isFinite(fraction) || fraction <= 0) return '#f2f0eb';
   const index = Math.min(SEQUENTIAL.length - 1, Math.floor(fraction * SEQUENTIAL.length));

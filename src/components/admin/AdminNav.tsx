@@ -47,6 +47,22 @@ const GROUPS: Group[] = [
     ],
   },
   {
+    // What the work was worth, and what is still owed for it. Second because
+    // money is the outcome of the work above and the justification for the
+    // spending below.
+    title: 'Money',
+    sections: [
+      { href: '/admin/money', label: 'Profit', ranged: true },
+      // Deliberately not ranged: ageing is measured to today, and a date window
+      // on an ageing report hides the ninety-day debts, which are the only ones
+      // that matter.
+      { href: '/admin/money/unpaid', label: 'Unpaid' },
+      { href: '/admin/money/dispatchers', label: 'Dispatchers', ranged: true },
+      { href: '/admin/money/technicians', label: 'Technicians', ranged: true },
+      { href: '/admin/money/payments', label: 'Payments', ranged: true },
+    ],
+  },
+  {
     // What it costs to be found, and what that buys.
     title: 'Getting found',
     sections: [
@@ -75,16 +91,29 @@ const SETTINGS: Section = { href: '/admin/settings', label: 'Settings' };
 
 const ALL: Section[] = [OVERVIEW, ...GROUPS.flatMap((g) => g.sections), SETTINGS];
 
-function isActive(pathname: string, href: string): boolean {
+function matches(pathname: string, href: string): boolean {
   return href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
+}
+
+/**
+ * The one section that is actually being looked at.
+ *
+ * Longest match wins, because a section's href can be a prefix of another's —
+ * `/admin/money` and `/admin/money/unpaid`. Highlighting on a bare `startsWith`
+ * lights both, and then the sidebar is telling the reader they are in two
+ * places at once.
+ */
+function activeHref(pathname: string): string | null {
+  const match = ALL.filter((s) => matches(pathname, s.href)).sort(
+    (a, b) => b.href.length - a.href.length
+  )[0];
+  return match?.href ?? null;
 }
 
 /** Whether the screen being looked at is one a date window applies to. */
 function currentIsRanged(pathname: string): boolean {
-  const match = ALL.filter((s) => isActive(pathname, s.href)).sort(
-    (a, b) => b.href.length - a.href.length
-  )[0];
-  return Boolean(match?.ranged);
+  const href = activeHref(pathname);
+  return Boolean(ALL.find((s) => s.href === href)?.ranged);
 }
 
 function Nav() {
@@ -113,7 +142,7 @@ function Nav() {
       onClick={() => setOpen(false)}
       className={cn(
         'block rounded-card px-3 py-1.5 font-heading text-[11px] font-semibold uppercase tracking-label transition-colors',
-        isActive(pathname, section.href)
+        activeHref(pathname) === section.href
           ? 'bg-ink text-cream'
           : 'text-gray-600 hover:bg-cream-dark hover:text-ink'
       )}
