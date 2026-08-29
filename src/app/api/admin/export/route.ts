@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { parseRange } from '@/lib/admin/range';
 import { getCalls, getChannels, getLeads, getSpend } from '@/lib/admin/queries';
+import { getByCompany, getByTechnician, getPayments, getUnpaid } from '@/lib/money/client';
 import { toCsv } from '@/lib/admin/format';
 import { channelLabel } from '@/lib/attribution';
 import { requireAdmin } from '@/lib/admin-guard';
@@ -104,6 +105,55 @@ export async function GET(request: NextRequest) {
           impressions: row.impressions,
         };
       });
+    } else if (type === 'unpaid') {
+      const report = await getUnpaid();
+      // Column names follow the console's vocabulary: "invoice" is what the
+      // customer was charged, "yours" is what survives the dispatcher's share.
+      rows = report.jobs.map((job) => ({
+        client: job.clientName,
+        job: job.jobNumber,
+        company: job.brandName,
+        finished: job.completedAt,
+        days_owed: job.daysOwed,
+        invoice_usd: job.totalCents / 100,
+        yours_usd: job.ownShareCents / 100,
+        payment_status: job.paymentStatus,
+      }));
+    } else if (type === 'payments') {
+      const report = await getPayments(range.from, range.to);
+      rows = report.payments.map((payment) => ({
+        date: payment.paidAt ?? payment.createdAt,
+        client: payment.clientName,
+        job: payment.jobNumber,
+        method: payment.method,
+        amount_usd: payment.amountCents / 100,
+        invoice_usd: payment.jobTotalCents / 100,
+        // Carried so a row that is in no total can be told apart from one that
+        // is, rather than the two silently adding up differently.
+        status: payment.status,
+        deposit: payment.isDeposit,
+      }));
+    } else if (type === 'dispatchers') {
+      const report = await getByCompany(range.from, range.to);
+      rows = report.companies.map((row) => ({
+        company: row.name,
+        jobs: row.jobs,
+        billed_usd: row.billedCents / 100,
+        their_cut_usd: (row.billedCents - row.ownShareCents) / 100,
+        kept_usd: row.ownShareCents / 100,
+        kept_pct: row.keptPct,
+        share_pct: row.revenueSharePct,
+        reimburses_parts: row.reimbursesParts,
+      }));
+    } else if (type === 'technicians') {
+      const report = await getByTechnician(range.from, range.to);
+      rows = report.technicians.map((row) => ({
+        technician: row.name,
+        jobs: row.jobs,
+        revenue_usd: row.ownShareRevenueCents / 100,
+        avg_ticket_usd: row.avgTicketCents / 100,
+        avg_booked_minutes: row.avgEstimatedMinutes,
+      }));
     } else {
       return NextResponse.json({ error: 'Unknown export type' }, { status: 400 });
     }

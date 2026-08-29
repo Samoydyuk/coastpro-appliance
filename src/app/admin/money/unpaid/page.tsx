@@ -128,6 +128,14 @@ export default async function UnpaidPage() {
       <Panel
         title="Every unpaid invoice"
         subtitle={`Oldest first — age decides who to ring, not size`}
+        action={
+          <a
+            href="/api/admin/export?type=unpaid"
+            className="inline-flex h-8 items-center rounded-card border border-primary-500/30 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 hover:border-ink hover:text-ink"
+          >
+            Export CSV
+          </a>
+        }
       >
         {report.jobs.length === 0 ? (
           <Empty>Nothing outstanding.</Empty>

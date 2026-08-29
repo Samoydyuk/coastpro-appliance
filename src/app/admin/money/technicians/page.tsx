@@ -98,7 +98,16 @@ export default async function TechniciansPage({
         )}
       </Panel>
 
-      <Panel title="Every technician" subtitle="Open the week to see what they actually did">
+      <Panel
+        title="Every technician"
+        subtitle="Open the week to see what they actually did"
+        action={<a
+              href={`/api/admin/export?type=technicians&range=${range.key}`}
+              className="inline-flex h-8 items-center rounded-card border border-primary-500/30 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 hover:border-ink hover:text-ink"
+            >
+              Export CSV
+            </a>}
+      >
         {rows.length === 0 ? (
           <Empty>No finished work in this window.</Empty>
         ) : (

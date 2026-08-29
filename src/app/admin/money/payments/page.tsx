@@ -123,7 +123,16 @@ export default async function PaymentsPage({
         )}
       </Panel>
 
-      <Panel title="Every payment" subtitle="Newest first">
+      <Panel
+        title="Every payment"
+        subtitle="Newest first"
+        action={<a
+              href={`/api/admin/export?type=payments&range=${range.key}`}
+              className="inline-flex h-8 items-center rounded-card border border-primary-500/30 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 hover:border-ink hover:text-ink"
+            >
+              Export CSV
+            </a>}
+      >
         {payments.length === 0 ? (
           <Empty>Nothing was taken in this window.</Empty>
         ) : (
