@@ -1,4 +1,6 @@
 import { parseRange } from '@/lib/admin/range';
+import { getChannels } from '@/lib/admin/queries';
+import { MoneyBasis } from '@/components/admin/MoneyBasis';
 import { count, money, percent } from '@/lib/admin/format';
 import { getProfit, getTrend, type Waterfall } from '@/lib/money/client';
 import { OperationsApiError } from '@/lib/bookings/client';
@@ -76,6 +78,12 @@ export default async function MoneyPage({
     from: searchParams.from as string,
     to: searchParams.to as string,
   });
+
+  // The console's own attribution, for the reconciliation panel at the foot.
+  // Its own database, so it fails independently of JobPocket being reachable.
+  const attribution = await getChannels(range).catch(() => []);
+  const attributedCents = attribution.reduce((sum, row) => sum + row.invoicedCents, 0);
+  const reportedCents = attribution.reduce((sum, row) => sum + row.revenueCents, 0);
 
   let profit: Awaited<ReturnType<typeof getProfit>> | null = null;
   let trend: Awaited<ReturnType<typeof getTrend>> | null = null;
@@ -288,6 +296,14 @@ export default async function MoneyPage({
           up to the one in the table above.
         </Hint>
       </Panel>
+
+      {/* At the foot, not the head: this explains why the number above does not
+          match Channels, and that question only arises once you have read it. */}
+      <MoneyBasis
+        invoicedCents={billed}
+        attributedCents={attributedCents}
+        reportedCents={reportedCents}
+      />
     </div>
   );
 }

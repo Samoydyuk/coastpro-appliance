@@ -33,7 +33,10 @@ export default async function OverviewPage({
 
     const costPerLead = requests ? current.spendCents / requests : null;
     const previousCostPerLead = previousRequests ? previous.spendCents / previousRequests : null;
-    const roas = current.spendCents ? current.revenueCents / current.spendCents : null;
+    // Based on what the work was actually invoiced for, not on the value
+    // somebody typed when they marked the lead won. Both numbers survive; only
+    // the one the return is judged on has changed.
+    const roas = current.spendCents ? current.invoicedCents / current.spendCents : null;
     const leadRate = current.sessions ? current.leads / current.sessions : 0;
     const previousLeadRate = previous.sessions ? previous.leads / previous.sessions : 0;
 
@@ -57,7 +60,7 @@ export default async function OverviewPage({
         leads: day.leads,
         calls: day.calls,
         spend: day.spendCents / 100,
-        revenue: day.revenueCents / 100,
+        revenue: day.invoicedCents / 100,
       },
     }));
 
@@ -107,13 +110,13 @@ export default async function OverviewPage({
             label="Jobs won"
             value={count(current.won)}
             change={delta(current.won, previous.won)}
-            hint={`${money(current.revenueCents)} booked revenue`}
+            hint={`${money(current.revenueCents)} marked · ${money(current.invoicedCents)} invoiced`}
             emphasis
           />
           <StatTile
             label="Return on ad spend"
             value={roas === null ? '—' : `${roas.toFixed(2)}×`}
-            hint={roas === null ? 'needs spend + won jobs' : 'revenue ÷ spend'}
+            hint={roas === null ? 'needs spend + paid jobs' : 'invoiced money ÷ spend'}
             emphasis
           />
         </div>
@@ -203,7 +206,7 @@ export default async function OverviewPage({
               points={points}
               series={[
                 { key: 'spend', label: 'Spend', color: SERIES[1] },
-                { key: 'revenue', label: 'Revenue', color: SERIES[2] },
+                { key: 'revenue', label: 'Invoiced', color: SERIES[2] },
               ]}
               format="money"
             />

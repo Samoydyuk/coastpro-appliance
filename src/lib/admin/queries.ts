@@ -42,7 +42,10 @@ export interface Totals {
   answeredCalls: number;
   booked: number;
   won: number;
+  /** Marked by hand and already uploaded to Google Ads. Never rewritten. */
   revenueCents: number;
+  /** What the work was actually invoiced for, once it was paid. */
+  invoicedCents: number;
   spendCents: number;
 }
 
@@ -80,7 +83,13 @@ async function totalsBetween(from: Date, to: Date): Promise<Totals> {
                          and status <> 'spam')::int              as quality_leads,
       count(*) filter (where booked_at is not null)::int         as booked,
       count(*) filter (where status = 'won')::int                as won,
-      coalesce(sum(value_cents) filter (where status = 'won'), 0)::int as revenue_cents
+      coalesce(sum(value_cents) filter (where status = 'won'), 0)::int as revenue_cents,
+             -- What the work was actually invoiced for, synced back from
+             -- JobPocket. Kept beside the marked figure rather than replacing
+             -- it: the marked one has been uploaded to Google Ads against a
+             -- click, and a number already sent to a third party must not be
+             -- quietly rewritten.
+             coalesce(sum(jp_total_cents) filter (where jp_payment_status = 'PAID'), 0)::int as invoiced_cents
     from leads
     where created_at >= ${from} and created_at < ${to}
   `) as unknown as Record<string, number>[];
@@ -114,6 +123,7 @@ async function totalsBetween(from: Date, to: Date): Promise<Totals> {
     booked: leads?.booked ?? 0,
     won: leads?.won ?? 0,
     revenueCents: leads?.revenue_cents ?? 0,
+    invoicedCents: leads?.invoiced_cents ?? 0,
     spendCents: spend?.spend_cents ?? 0,
   };
 }
@@ -132,7 +142,10 @@ export interface DayPoint {
   leads: number;
   calls: number;
   spendCents: number;
+  /** Marked by hand and already uploaded to Google Ads. Never rewritten. */
   revenueCents: number;
+  /** What the work was actually invoiced for, once it was paid. */
+  invoicedCents: number;
 }
 
 export async function getDailySeries(range: DateRange): Promise<DayPoint[]> {
@@ -155,7 +168,13 @@ export async function getDailySeries(range: DateRange): Promise<DayPoint[]> {
     lead_rows as (
       select (created_at at time zone ${TZ})::date as day,
              count(*)::int as leads,
-             coalesce(sum(value_cents) filter (where status = 'won'), 0)::int as revenue_cents
+             coalesce(sum(value_cents) filter (where status = 'won'), 0)::int as revenue_cents,
+             -- What the work was actually invoiced for, synced back from
+             -- JobPocket. Kept beside the marked figure rather than replacing
+             -- it: the marked one has been uploaded to Google Ads against a
+             -- click, and a number already sent to a third party must not be
+             -- quietly rewritten.
+             coalesce(sum(jp_total_cents) filter (where jp_payment_status = 'PAID'), 0)::int as invoiced_cents
       from leads
       where created_at >= ${range.from} and created_at < ${range.to}
       group by 1
@@ -178,7 +197,8 @@ export async function getDailySeries(range: DateRange): Promise<DayPoint[]> {
       coalesce(lead_rows.leads, 0)               as leads,
       coalesce(call_rows.calls, 0)               as calls,
       coalesce(spend_rows.spend_cents, 0)        as spend_cents,
-      coalesce(lead_rows.revenue_cents, 0)       as revenue_cents
+      coalesce(lead_rows.revenue_cents, 0)       as revenue_cents,
+      coalesce(lead_rows.invoiced_cents, 0)      as invoiced_cents
     from days
     left join traffic     on traffic.day     = days.day
     left join lead_rows   on lead_rows.day   = days.day
@@ -194,6 +214,7 @@ export async function getDailySeries(range: DateRange): Promise<DayPoint[]> {
     calls: Number(row.calls),
     spendCents: Number(row.spend_cents),
     revenueCents: Number(row.revenue_cents),
+    invoicedCents: Number(row.invoiced_cents ?? 0),
   }));
 }
 
@@ -204,7 +225,10 @@ export interface ChannelRow {
   calls: number;
   booked: number;
   won: number;
+  /** Marked by hand and already uploaded to Google Ads. Never rewritten. */
   revenueCents: number;
+  /** What the work was actually invoiced for, once it was paid. */
+  invoicedCents: number;
   spendCents: number;
   duplicates: number;
   spam: number;
@@ -236,7 +260,13 @@ export async function getChannels(range: DateRange, attribution: 'last' | 'first
              count(*) filter (where status = 'spam')::int as spam,
              count(*) filter (where booked_at is not null)::int as booked,
              count(*) filter (where status = 'won')::int as won,
-             coalesce(sum(value_cents) filter (where status = 'won'), 0)::int as revenue_cents
+             coalesce(sum(value_cents) filter (where status = 'won'), 0)::int as revenue_cents,
+             -- What the work was actually invoiced for, synced back from
+             -- JobPocket. Kept beside the marked figure rather than replacing
+             -- it: the marked one has been uploaded to Google Ads against a
+             -- click, and a number already sent to a third party must not be
+             -- quietly rewritten.
+             coalesce(sum(jp_total_cents) filter (where jp_payment_status = 'PAID'), 0)::int as invoiced_cents
       from leads
       where created_at >= ${range.from} and created_at < ${range.to}
       group by 1
@@ -268,6 +298,7 @@ export async function getChannels(range: DateRange, attribution: 'last' | 'first
       coalesce(lead_rows.booked, 0)          as booked,
       coalesce(lead_rows.won, 0)             as won,
       coalesce(lead_rows.revenue_cents, 0)   as revenue_cents,
+      coalesce(lead_rows.invoiced_cents, 0)  as invoiced_cents,
       coalesce(call_rows.calls, 0)           as calls,
       coalesce(spend_rows.spend_cents, 0)    as spend_cents
     from keys
@@ -288,6 +319,7 @@ export async function getChannels(range: DateRange, attribution: 'last' | 'first
     booked: Number(row.booked),
     won: Number(row.won),
     revenueCents: Number(row.revenue_cents),
+    invoicedCents: Number(row.invoiced_cents ?? 0),
     spendCents: Number(row.spend_cents),
     duplicates: Number(row.duplicates),
     spam: Number(row.spam),
@@ -323,7 +355,13 @@ export async function getCampaigns(range: DateRange, groupBy: 'campaign' | 'cont
              count(*)::int as leads,
              count(*) filter (where booked_at is not null)::int as booked,
              count(*) filter (where status = 'won')::int as won,
-             coalesce(sum(value_cents) filter (where status = 'won'), 0)::int as revenue_cents
+             coalesce(sum(value_cents) filter (where status = 'won'), 0)::int as revenue_cents,
+             -- What the work was actually invoiced for, synced back from
+             -- JobPocket. Kept beside the marked figure rather than replacing
+             -- it: the marked one has been uploaded to Google Ads against a
+             -- click, and a number already sent to a third party must not be
+             -- quietly rewritten.
+             coalesce(sum(jp_total_cents) filter (where jp_payment_status = 'PAID'), 0)::int as invoiced_cents
       from leads
       where created_at >= ${range.from} and created_at < ${range.to}
       group by 1, 2
@@ -346,6 +384,7 @@ export async function getCampaigns(range: DateRange, groupBy: 'campaign' | 'cont
       coalesce(lead_rows.booked, 0)        as booked,
       coalesce(lead_rows.won, 0)           as won,
       coalesce(lead_rows.revenue_cents, 0) as revenue_cents,
+      coalesce(lead_rows.invoiced_cents, 0) as invoiced_cents,
       coalesce(spend_rows.spend_cents, 0)  as spend_cents
     from keys
     left join traffic    on traffic.channel = keys.channel and traffic.label = keys.label
@@ -363,6 +402,7 @@ export async function getCampaigns(range: DateRange, groupBy: 'campaign' | 'cont
     booked: Number(row.booked),
     won: Number(row.won),
     revenueCents: Number(row.revenue_cents),
+    invoicedCents: Number(row.invoiced_cents ?? 0),
     spendCents: Number(row.spend_cents),
   }));
 }
@@ -554,7 +594,13 @@ export async function getGeo(range: DateRange) {
       coalesce(nullif(city, ''), '')                          as city,
       count(*)::int                                           as leads,
       count(*) filter (where status = 'won')::int             as won,
-      coalesce(sum(value_cents) filter (where status = 'won'), 0)::int as revenue_cents
+      coalesce(sum(value_cents) filter (where status = 'won'), 0)::int as revenue_cents,
+             -- What the work was actually invoiced for, synced back from
+             -- JobPocket. Kept beside the marked figure rather than replacing
+             -- it: the marked one has been uploaded to Google Ads against a
+             -- click, and a number already sent to a third party must not be
+             -- quietly rewritten.
+             coalesce(sum(jp_total_cents) filter (where jp_payment_status = 'PAID'), 0)::int as invoiced_cents
     from leads
     where created_at >= ${range.from} and created_at < ${range.to}
     group by 1, 2
@@ -606,6 +652,7 @@ export async function getGeo(range: DateRange) {
       leads: Number(row.leads),
       won: Number(row.won),
       revenueCents: Number(row.revenue_cents),
+    invoicedCents: Number(row.invoiced_cents ?? 0),
     })),
   };
 }

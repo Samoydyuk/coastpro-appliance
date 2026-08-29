@@ -6,6 +6,7 @@ import { Empty, Hint, Panel, SetupNotice, StatTile, Table, Td, Th } from '@/comp
 import { SpendEditor } from '@/components/admin/SpendEditor';
 import { TimeSeries } from '@/components/admin/charts';
 import { SERIES } from '@/components/admin/palette';
+import { MoneyBasisLine } from '@/components/admin/MoneyBasis';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,13 +30,14 @@ export default async function SpendPage({
 
     const spendRows = rows as Record<string, string | number | Date | null>[];
     const totalSpend = channels.reduce((sum, row) => sum + row.spendCents, 0);
-    const totalRevenue = channels.reduce((sum, row) => sum + row.revenueCents, 0);
+    const totalRevenue = channels.reduce((sum, row) => sum + row.invoicedCents, 0);
+    const totalMarked = channels.reduce((sum, row) => sum + row.revenueCents, 0);
     const totalRequests = channels.reduce((sum, row) => sum + row.leads + row.calls, 0);
     const totalWon = channels.reduce((sum, row) => sum + row.won, 0);
 
     const points = series.map((day) => ({
       label: shortDate(day.day),
-      values: { spend: day.spendCents / 100, revenue: day.revenueCents / 100 },
+      values: { spend: day.spendCents / 100, revenue: day.invoicedCents / 100 },
     }));
 
     return (
@@ -64,7 +66,7 @@ export default async function SpendPage({
           <StatTile
             label="Return"
             value={totalSpend ? `${(totalRevenue / totalSpend).toFixed(2)}×` : '—'}
-            hint={`${money(totalRevenue)} revenue`}
+            hint={`${money(totalRevenue)} invoiced`}
           />
         </div>
 
@@ -76,6 +78,8 @@ export default async function SpendPage({
             campaign blank to record a whole channel&apos;s daily total.
           </Hint>
         </Panel>
+
+        <MoneyBasisLine attributedCents={totalRevenue} reportedCents={totalMarked} />
 
         <Panel title="Spend against revenue" subtitle="Daily">
           <TimeSeries

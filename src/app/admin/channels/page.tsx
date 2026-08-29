@@ -6,6 +6,7 @@ import { channelLabel, isPaidChannel } from '@/lib/attribution';
 import { Empty, Hint, Panel, SetupNotice, Table, Td, Th } from '@/components/admin/ui';
 import { RankedBars } from '@/components/admin/charts';
 import { channelColor } from '@/components/admin/palette';
+import { MoneyBasisLine } from '@/components/admin/MoneyBasis';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,7 +38,8 @@ export default async function ChannelsPage({
 
     const paid = channels.filter((row) => isPaidChannel(row.channel));
     const totalSpend = paid.reduce((sum, row) => sum + row.spendCents, 0);
-    const totalRevenue = channels.reduce((sum, row) => sum + row.revenueCents, 0);
+    const totalRevenue = channels.reduce((sum, row) => sum + row.invoicedCents, 0);
+    const totalMarked = channels.reduce((sum, row) => sum + row.revenueCents, 0);
 
     return (
       <div className="space-y-6">
@@ -77,6 +79,8 @@ export default async function ChannelsPage({
           underpaid by the ad platforms&apos; own reporting.
         </Hint>
 
+        <MoneyBasisLine attributedCents={totalRevenue} reportedCents={totalMarked} />
+
         <div className="grid gap-4 lg:grid-cols-2">
           <Panel title="Spend" subtitle="Where the money went">
             {totalSpend === 0 ? (
@@ -100,18 +104,18 @@ export default async function ChannelsPage({
             )}
           </Panel>
 
-          <Panel title="Revenue" subtitle="From jobs marked won">
+          <Panel title="Revenue" subtitle="Invoiced in JobPocket, for work that began as an enquiry">
             {totalRevenue === 0 ? (
               <Empty>No won jobs with a value recorded yet.</Empty>
             ) : (
               <RankedBars
                 items={channels
-                  .filter((row) => row.revenueCents > 0)
+                  .filter((row) => row.invoicedCents > 0)
                   .map((row) => ({
                     label: channelLabel(row.channel),
-                    value: row.revenueCents / 100,
+                    value: row.invoicedCents / 100,
                     color: channelColor(row.channel),
-                    note: percent(row.revenueCents / totalRevenue, 0),
+                    note: percent(row.invoicedCents / totalRevenue, 0),
                   }))}
                 format="money"
               />
@@ -137,14 +141,15 @@ export default async function ChannelsPage({
                   <Th numeric>Spend</Th>
                   <Th numeric>Cost / request</Th>
                   <Th numeric>Cost / job</Th>
-                  <Th numeric>Revenue</Th>
+                  <Th numeric>Invoiced</Th>
+                  <Th numeric>Marked</Th>
                   <Th numeric>ROAS</Th>
                 </tr>
               </thead>
               <tbody>
                 {channels.map((row) => {
                   const requests = row.leads + row.calls;
-                  const roas = row.spendCents ? row.revenueCents / row.spendCents : null;
+                  const roas = row.spendCents ? row.invoicedCents / row.spendCents : null;
                   return (
                     <tr key={row.channel}>
                       <Td>
@@ -169,7 +174,10 @@ export default async function ChannelsPage({
                         {row.spendCents && requests ? money(row.spendCents / requests) : '—'}
                       </Td>
                       <Td numeric>{row.spendCents && row.won ? money(row.spendCents / row.won) : '—'}</Td>
-                      <Td numeric>{row.revenueCents ? money(row.revenueCents) : '—'}</Td>
+                      <Td numeric>{row.invoicedCents ? money(row.invoicedCents) : '—'}</Td>
+                      <Td numeric className="text-gray-500">
+                        {row.revenueCents ? money(row.revenueCents) : '—'}
+                      </Td>
                       <Td numeric>
                         {roas === null ? (
                           '—'
