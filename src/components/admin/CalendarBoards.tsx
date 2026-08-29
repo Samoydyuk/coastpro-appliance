@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { timeOfDay, dayKey } from '@/lib/bookings/month';
-import { groupByLane, lanesFor, type Lane } from '@/lib/bookings/lanes';
+import { groupByLane, lanesFor, UNASSIGNED, type Lane } from '@/lib/bookings/lanes';
 import type { CalendarJob } from '@/lib/bookings/client';
 import { shopHour } from '@/lib/admin/clock';
+import { serverTranslator } from '@/lib/i18n/server';
+import type { Translator } from '@/lib/i18n';
 
 /**
  * The two dispatcher boards: a week by technician, and a day by technician.
@@ -22,7 +24,19 @@ interface BoardProps {
   days: { key: string; label: string; isToday: boolean }[];
 }
 
+/**
+ * The name on a lane.
+ *
+ * Every lane but one is a person, and a person's name is not translated. The
+ * exception is the lane that belongs to nobody, which `buildLanes` fills with a
+ * fixed English string because it has no reader to ask.
+ */
+function laneName(lane: Lane, t: Translator): string {
+  return lane.id === UNASSIGNED ? t('work.calendar.nobodyYet') : lane.name;
+}
+
 export function WeekBoard({ jobs, lanes, days }: BoardProps) {
+  const t = serverTranslator();
   const byLane = groupByLane(jobs, lanes);
 
   return (
@@ -61,7 +75,7 @@ export function WeekBoard({ jobs, lanes, days }: BoardProps) {
                     className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ backgroundColor: lane.colour }}
                   />
-                  <span className="truncate text-sm text-ink">{lane.name}</span>
+                  <span className="truncate text-sm text-ink">{laneName(lane, t)}</span>
                   <span className="ml-auto text-[11px] tabular-nums text-gray-500">
                     {laneJobs.length}
                   </span>
@@ -97,6 +111,7 @@ const DAY_START = 7;
 const DAY_END = 20;
 
 export function DayBoard({ jobs, lanes, day }: { jobs: CalendarJob[]; lanes: Lane[]; day: string }) {
+  const t = serverTranslator();
   const today = jobs.filter((job) => dayKey(job.scheduledAt) === day);
   const byLane = groupByLane(today, lanes);
   const hours = Array.from({ length: DAY_END - DAY_START }, (_, i) => DAY_START + i);
@@ -129,7 +144,7 @@ export function DayBoard({ jobs, lanes, day }: { jobs: CalendarJob[]; lanes: Lan
                 style={{ backgroundColor: lane.colour }}
               />
               <span className="truncate font-heading text-[10px] font-semibold uppercase tracking-label text-ink">
-                {lane.name}
+                {laneName(lane, t)}
               </span>
             </div>
           ))}
@@ -186,6 +201,7 @@ export function DayBoard({ jobs, lanes, day }: { jobs: CalendarJob[]; lanes: Lan
 }
 
 function JobChip({ job, lane, tall }: { job: CalendarJob; lane: Lane; tall?: boolean }) {
+  const t = serverTranslator();
   const shared = lanesFor(job).length > 1;
 
   return (
@@ -198,12 +214,12 @@ function JobChip({ job, lane, tall }: { job: CalendarJob; lane: Lane; tall?: boo
       style={{ borderLeftColor: lane.colour }}
     >
       <div className="truncate text-[11px] font-medium text-ink">
-        {timeOfDay(job.scheduledAt)} {job.clientName ?? 'No name'}
+        {timeOfDay(job.scheduledAt)} {job.clientName ?? t('work.calendar.noName')}
       </div>
       {job.type && <div className="truncate text-[10px] text-gray-600">{job.type}</div>}
       {/* A visit with two people on it is on both their days; saying so stops
           the second lane reading as a duplicate. */}
-      {shared && <div className="text-[10px] text-gray-500">shared</div>}
+      {shared && <div className="text-[10px] text-gray-500">{t('work.calendar.shared')}</div>}
     </Link>
   );
 }

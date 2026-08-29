@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useT } from '@/components/admin/LanguageProvider';
 
 export interface ConnectionState {
   provider: 'google' | 'meta' | 'search-console';
@@ -32,10 +33,11 @@ export interface ConnectionState {
  */
 export function PresenceConnections({ connections }: { connections: ConnectionState[] }) {
   const router = useRouter();
+  const t = useT();
   const [busy, setBusy] = useState<string | null>(null);
 
   const disconnect = async (provider: string, label: string) => {
-    if (!confirm(`Disconnect ${label}? The importer stops until it is connected again.`)) return;
+    if (!confirm(t('marketing.presence.disconnectConfirm', { label }))) return;
     setBusy(provider);
     try {
       await fetch('/api/admin/presence', {
@@ -70,19 +72,21 @@ export function PresenceConnections({ connections }: { connections: ConnectionSt
                   ? connection.setupHint
                   : connection.connectedAs
                     ? connection.connectedAs
-                    : 'Not connected'}
+                    : t('marketing.presence.notConnected')}
             </p>
           </div>
 
           <div className="flex shrink-0 gap-2">
             {connection.managedByKey && (
               <span className="font-heading text-[10px] font-semibold uppercase tracking-label text-gray-500">
-                Key
+                {t('marketing.presence.key')}
               </span>
             )}
             {!connection.managedByKey && connection.appReady && (
               <a href={`/api/admin/presence/connect/${connection.provider}`} className={button}>
-                {connection.connectedAs ? 'Reconnect' : 'Connect'}
+                {connection.connectedAs
+                  ? t('marketing.presence.reconnect')
+                  : t('marketing.presence.connect')}
               </a>
             )}
             {!connection.managedByKey && connection.connectedAs && (
@@ -92,7 +96,7 @@ export function PresenceConnections({ connections }: { connections: ConnectionSt
                 onClick={() => disconnect(connection.provider, connection.label)}
                 className={button}
               >
-                {busy === connection.provider ? '…' : 'Disconnect'}
+                {busy === connection.provider ? '…' : t('marketing.presence.disconnect')}
               </button>
             )}
           </div>

@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { count } from '@/lib/admin/format';
+import { serverTranslator } from '@/lib/i18n/server';
 
 /**
  * Moving through a list that is longer than one screen.
@@ -24,6 +26,7 @@ export function Pager({
 }) {
   if (offset === 0 && !hasMore) return null;
 
+  const t = serverTranslator();
   const step = shown || 200;
   const href = (next: number) =>
     `${base}${base.includes('?') ? '&' : '?'}offset=${Math.max(0, next)}`;
@@ -37,22 +40,29 @@ export function Pager({
     <div className="mt-3 flex items-center gap-2">
       {offset > 0 ? (
         <Link href={href(offset - step)} className={link}>
-          ← Previous
+          {t('common.previous')}
         </Link>
       ) : (
-        <span className={dead}>← Previous</span>
+        <span className={dead}>{t('common.previous')}</span>
       )}
       {hasMore ? (
         <Link href={href(offset + step)} className={link}>
-          Next →
+          {t('common.next')}
         </Link>
       ) : (
-        <span className={dead}>Next →</span>
+        <span className={dead}>{t('common.next')}</span>
       )}
       <span className="text-[11px] text-gray-500">
         {total === undefined
-          ? `${offset + 1}–${offset + shown}`
-          : `${offset + 1}–${offset + shown} of ${total}`}
+          ? t('shared.pager.range', {
+              from: count(offset + 1, t.lang),
+              to: count(offset + shown, t.lang),
+            })
+          : t('shared.pager.rangeOfTotal', {
+              from: count(offset + 1, t.lang),
+              to: count(offset + shown, t.lang),
+              total: count(total, t.lang),
+            })}
       </span>
     </div>
   );

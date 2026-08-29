@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useT } from '@/components/admin/LanguageProvider';
 
 /**
  * Setting the desk up.
@@ -17,6 +18,7 @@ export function DispatchSetup({
   seat: { id: string; name: string } | null;
   ringing: boolean;
 }) {
+  const t = useT();
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,12 +34,12 @@ export function DispatchSetup({
       });
       const parsed = (await response.json().catch(() => null)) as { error?: string } | null;
       if (!response.ok) {
-        setError(parsed?.error ?? 'That did not go through.');
+        setError(parsed?.error ?? t('settings.desk.failed'));
         return;
       }
       router.refresh();
     } catch {
-      setError('Could not reach the server.');
+      setError(t('settings.unreachable'));
     } finally {
       setBusy(null);
     }
@@ -52,7 +54,9 @@ export function DispatchSetup({
           style={{ backgroundColor: seat ? '#0ca30c' : '#898781' }}
         />
         <span className="text-sm text-ink">
-          {seat ? `Seat ready — ${seat.name}` : 'No dispatcher seat yet'}
+          {seat
+            ? t('settings.desk.seatReady', { name: seat.name })
+            : t('settings.desk.noSeat')}
         </span>
         {!seat && (
           <button
@@ -61,7 +65,7 @@ export function DispatchSetup({
             disabled={busy !== null}
             className="h-9 rounded-card bg-ink px-4 font-heading text-[10px] font-semibold uppercase tracking-label text-cream disabled:opacity-50"
           >
-            {busy === 'seat' ? 'Creating…' : 'Create the seat'}
+            {busy === 'seat' ? t('settings.desk.creating') : t('settings.desk.createSeat')}
           </button>
         )}
       </div>
@@ -74,9 +78,7 @@ export function DispatchSetup({
             style={{ backgroundColor: ringing ? '#0ca30c' : '#fab219' }}
           />
           <span className="text-sm text-ink">
-            {ringing
-              ? 'Calls ring at the desk as well as the phone'
-              : 'The seat exists but no calls reach it yet'}
+            {ringing ? t('settings.desk.ringing') : t('settings.desk.notRinging')}
           </span>
           <button
             type="button"
@@ -84,17 +86,21 @@ export function DispatchSetup({
             disabled={busy !== null}
             className="h-9 rounded-card border border-primary-500/30 px-4 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 hover:border-ink hover:text-ink disabled:opacity-50"
           >
-            {busy === 'ringing' ? 'Saving…' : ringing ? 'Stop ringing here' : 'Ring here too'}
+            {busy === 'ringing'
+              ? t('settings.desk.saving')
+              : ringing
+                ? t('settings.desk.stopRinging')
+                : t('settings.desk.startRinging')}
           </button>
         </div>
       )}
 
       {error && <p className="text-xs" style={{ color: '#8f2323' }}>{error}</p>}
 
+      {/* The quoted button is the one in the call bar at the top of the page,
+          so it is interpolated rather than written out twice. */}
       <p className="text-xs text-gray-600">
-        The seat is an identity for the phone system to route to — it has no email and no phone
-        number, so nobody can sign into it. Whoever is at the desk presses &ldquo;Take calls
-        here&rdquo; in the bar at the top; closing the tab sends the next call to the phone.
+        {t('settings.desk.hint', { button: t('settings.desk.takeCalls') })}
       </p>
     </div>
   );

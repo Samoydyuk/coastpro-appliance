@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { parseRange } from '@/lib/admin/range';
 import { getSearchReport, type SearchTermRow } from '@/lib/admin/search-queries';
 import { count, delta, percent, shortDate } from '@/lib/admin/format';
+import { serverTranslator } from '@/lib/i18n/server';
+import { numberLocale, type Lang, type Translator } from '@/lib/i18n';
 import {
   Empty,
   Hint,
@@ -16,6 +18,7 @@ import {
 import { TimeSeries } from '@/components/admin/charts';
 import { SearchRefresh } from '@/components/admin/SearchRefresh';
 import { SERIES, STATUS } from '@/components/admin/palette';
+import { rangeLabel } from '@/lib/i18n/range';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,46 +38,65 @@ export const dynamic = 'force-dynamic';
  * every other view.
  */
 
-/** Search positions run backwards — 3 is better than 30, so movement inverts. */
-function positionMove(row: SearchTermRow): { text: string; colour?: string } | null {
-  if (row.position === null || row.previousPosition === null) return null;
-  const move = row.previousPosition - row.position;
-  if (Math.abs(move) < 0.5) return { text: 'held' };
-  return move > 0
-    ? { text: `up ${move.toFixed(1)}`, colour: STATUS.good }
-    : { text: `down ${Math.abs(move).toFixed(1)}`, colour: STATUS.critical };
+/** A position like `12,4`. Through `Intl` so the decimal mark follows the language. */
+function place(value: number, lang: Lang): string {
+  return value.toLocaleString(numberLocale(lang), {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
 }
 
-function TermTable({ rows, heading }: { rows: SearchTermRow[]; heading: string }) {
-  if (rows.length === 0) return <Empty>Nothing recorded for this period yet.</Empty>;
+/** Search positions run backwards — 3 is better than 30, so movement inverts. */
+function positionMove(row: SearchTermRow, t: Translator): { text: string; colour?: string } | null {
+  if (row.position === null || row.previousPosition === null) return null;
+  const move = row.previousPosition - row.position;
+  if (Math.abs(move) < 0.5) return { text: t('marketing.search.held') };
+  return move > 0
+    ? { text: t('marketing.search.up', { n: place(move, t.lang) }), colour: STATUS.good }
+    : {
+        text: t('marketing.search.down', { n: place(Math.abs(move), t.lang) }),
+        colour: STATUS.critical,
+      };
+}
+
+function TermTable({
+  rows,
+  heading,
+  t,
+}: {
+  rows: SearchTermRow[];
+  heading: string;
+  t: Translator;
+}) {
+  if (rows.length === 0) return <Empty>{t('marketing.search.nothingYet')}</Empty>;
 
   return (
     <Table>
       <thead>
         <tr>
           <Th>{heading}</Th>
-          <Th numeric>Shown</Th>
-          <Th numeric>Clicks</Th>
-          <Th numeric>Click rate</Th>
-          <Th numeric>Position</Th>
-          <Th numeric>Change</Th>
+          <Th numeric>{t('marketing.col.shown')}</Th>
+          <Th numeric>{t('marketing.col.clicks')}</Th>
+          <Th numeric>{t('marketing.col.clickRate')}</Th>
+          <Th numeric>{t('marketing.col.position')}</Th>
+          <Th numeric>{t('marketing.col.change')}</Th>
         </tr>
       </thead>
       <tbody>
         {rows.map((row) => {
-          const move = positionMove(row);
+          const move = positionMove(row, t);
           return (
             <tr key={row.term}>
               <Td className="max-w-[340px] truncate">{row.term}</Td>
-              <Td numeric>{count(row.impressions)}</Td>
-              <Td numeric>{count(row.clicks)}</Td>
-              <Td numeric>{percent(row.ctr, 1)}</Td>
-              <Td numeric>{row.position === null ? '—' : row.position.toFixed(1)}</Td>
+              <Td numeric>{count(row.impressions, t.lang)}</Td>
+              <Td numeric>{count(row.clicks, t.lang)}</Td>
+              <Td numeric>{percent(row.ctr, 1, t.lang)}</Td>
+              <Td numeric>{row.position === null ? '—' : place(row.position, t.lang)}</Td>
               <Td numeric>
                 {move ? (
                   <span style={{ color: move.colour }}>{move.text}</span>
                 ) : (
-                  <span className="text-gray-400">new</span>
+                  <span className="text-gray-400">{t('marketing.search.new')}</span>
                 )}
               </Td>
             </tr>
@@ -95,6 +117,7 @@ export default async function SearchPage({
     from: searchParams.from as string,
     to: searchParams.to as string,
   });
+  const t = serverTranslator();
 
   try {
     const report = await getSearchReport(range);
@@ -121,7 +144,7 @@ export default async function SearchPage({
       range.from >= lagEdge ? 'all' : range.to >= lagEdge ? 'edge' : null;
 
     const points = report.days.map((day) => ({
-      label: shortDate(day.day),
+      label: shortDate(day.day, t.lang),
       values: { impressions: day.impressions, clicks: day.clicks },
     }));
 
@@ -129,11 +152,11 @@ export default async function SearchPage({
       <div className="space-y-6">
         <div>
           <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">
-            Search
+            {t('marketing.search.title')}
           </h1>
           <p className="mt-1 text-sm text-gray-600">
-            {range.label}
-            {report.lastDay ? ` · Google has data through ${report.lastDay}` : ''}
+            {rangeLabel(range, t)}
+            {report.lastDay ? t('marketing.search.dataThrough', { day: report.lastDay }) : ''}
           </p>
         </div>
 
@@ -142,102 +165,92 @@ export default async function SearchPage({
         {report.connected && lagged !== null && (
           <Warning>
             {lagged === 'all'
-              ? 'Google reports search data two to three days late, and this range is almost entirely inside that gap — the near-zero figures below are the lag, not a collapse in traffic. Pick a wider range to see anything meaningful.'
-              : 'The last two or three days of this range are still filling in. Google restates them as it finalises, so the right-hand edge of the chart will rise over the next few days.'}
+              ? t('marketing.search.laggedAll')
+              : t('marketing.search.laggedEdge')}
           </Warning>
         )}
 
         {!report.connected && (
           <Warning>
-            Search Console is not connected, so none of this has any numbers behind it yet. Connect
-            it on{' '}
+            {t('marketing.search.notConnectedBefore')}
             <Link href="/admin/presence" className="underline">
-              Presence
+              {t('marketing.search.notConnectedLink')}
             </Link>
-            .
+            {t('marketing.search.notConnectedAfter')}
           </Warning>
         )}
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatTile
-            label="Times shown"
-            value={count(totals.impressions)}
+            label={t('marketing.search.timesShown')}
+            value={count(totals.impressions, t.lang)}
             change={delta(totals.impressions, previousTotals.impressions)}
-            hint="appearances in search results"
+            hint={t('marketing.search.timesShownHint')}
             emphasis
           />
           <StatTile
-            label="Clicks from search"
-            value={count(totals.clicks)}
+            label={t('marketing.search.clicksFrom')}
+            value={count(totals.clicks, t.lang)}
             change={delta(totals.clicks, previousTotals.clicks)}
-            hint="people who chose us"
+            hint={t('marketing.search.clicksHint')}
             emphasis
           />
           <StatTile
-            label="Average position"
-            value={totals.position === null ? '—' : totals.position.toFixed(1)}
+            label={t('marketing.search.avgPosition')}
+            value={totals.position === null ? '—' : place(totals.position, t.lang)}
             change={
               totals.position !== null && previousTotals.position !== null
                 ? delta(previousTotals.position, totals.position)
                 : null
             }
-            hint="weighted by how often each query ran"
+            hint={t('marketing.search.avgPositionHint')}
             emphasis
           />
           <StatTile
-            label="Click rate"
-            value={percent(totals.ctr, 2)}
+            label={t('marketing.col.clickRate')}
+            value={percent(totals.ctr, 2, t.lang)}
             change={delta(totals.ctr, previousTotals.ctr)}
-            hint={`${report.seenNeverClicked} queries shown but never clicked`}
+            hint={t('marketing.search.clickRateHint', {
+              queries: t.plural(report.seenNeverClicked, 'marketing.plural.query'),
+            })}
             emphasis
           />
         </div>
 
-        <Panel title="Shown and clicked" subtitle="Day by day, straight from Google">
+        <Panel
+          title={t('marketing.search.shownAndClicked')}
+          subtitle={t('marketing.search.shownAndClickedSub')}
+        >
           {points.length === 0 ? (
-            <Empty>No days imported yet.</Empty>
+            <Empty>{t('marketing.search.noDays')}</Empty>
           ) : (
             <TimeSeries
               points={points}
               series={[
-                { key: 'impressions', label: 'Shown', color: SERIES[0] },
-                { key: 'clicks', label: 'Clicks', color: SERIES[1] },
+                { key: 'impressions', label: t('marketing.col.shown'), color: SERIES[0] },
+                { key: 'clicks', label: t('marketing.col.clicks'), color: SERIES[1] },
               ]}
             />
           )}
-          <Hint>
-            Google restates the last few days as it finalises them, so the right-hand edge of this
-            chart moves for about seventy-two hours after it first appears.
-          </Hint>
+          <Hint>{t('marketing.search.restatesHint')}</Hint>
         </Panel>
 
         <Panel
-          title="Closest to the first page"
-          subtitle="Real volume, positions 4 to 25 — where a small push pays"
+          title={t('marketing.search.nearly')}
+          subtitle={t('marketing.search.nearlySub')}
         >
-          <TermTable rows={nearlyThere} heading="Query" />
-          <Hint>
-            These are already ranking, just not high enough to be chosen. Almost all clicks go to
-            the first page, so a query sitting at 12 with a few hundred impressions is worth far
-            more attention than a new page targeting a query the site has never appeared for at
-            all.
-          </Hint>
+          <TermTable rows={nearlyThere} heading={t('marketing.col.query')} t={t} />
+          <Hint>{t('marketing.search.nearlyHint')}</Hint>
         </Panel>
 
-        <Panel title="Every query" subtitle="What people typed, most shown first">
-          <TermTable rows={report.queries} heading="Query" />
-          <Hint>
-            Google withholds queries used by too few people to stay anonymous, which is why these
-            rarely add up to the totals above. The gap is real traffic, not a fault.
-          </Hint>
+        <Panel title={t('marketing.search.every')} subtitle={t('marketing.search.everySub')}>
+          <TermTable rows={report.queries} heading={t('marketing.col.query')} t={t} />
+          <Hint>{t('marketing.search.everyHint')}</Hint>
         </Panel>
 
-        <Panel title="Pages earning impressions" subtitle="Which addresses search actually shows">
-          <TermTable rows={report.pages} heading="Page" />
-          <Hint>
-            A page published and never listed here is a page Google has not found worth showing for
-            anything — a different problem from one shown often and clicked rarely.
-          </Hint>
+        <Panel title={t('marketing.search.pages')} subtitle={t('marketing.search.pagesSub')}>
+          <TermTable rows={report.pages} heading={t('marketing.col.page')} t={t} />
+          <Hint>{t('marketing.search.pagesHint')}</Hint>
         </Panel>
       </div>
     );

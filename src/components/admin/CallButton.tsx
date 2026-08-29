@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useT } from '@/components/admin/LanguageProvider';
 
 /**
  * The phone number on a record, made dialable.
@@ -21,6 +22,7 @@ export function CallButton({
   name?: string;
   clientId?: string;
 }) {
+  const t = useT();
   const [desk, setDesk] = useState(false);
 
   useEffect(() => {
@@ -48,11 +50,11 @@ export function CallButton({
         )
       }
       className="inline-flex items-center gap-1.5 text-ink underline decoration-primary-500/40 underline-offset-2 hover:text-primary-600"
-      title="Call on the business line"
+      title={t('shared.callButton.title')}
     >
       {phone}
       <span aria-hidden className="text-[11px] text-primary-600">
-        ↗ call
+        {t('shared.callButton.action')}
       </span>
     </button>
   );

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useT } from '@/components/admin/LanguageProvider';
 
 /**
  * Pulling the released jobs across from JobPocket.
@@ -13,6 +14,7 @@ import { useRouter } from 'next/navigation';
  */
 export function MarketingRefresh({ lastRefresh }: { lastRefresh: string | null }) {
   const router = useRouter();
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
@@ -29,13 +31,18 @@ export function MarketingRefresh({ lastRefresh }: { lastRefresh: string | null }
         error?: string;
       } | null;
       if (!response.ok) {
-        setError(body?.error ?? 'Could not read from JobPocket.');
+        setError(body?.error ?? t('marketing.jobs.readFailed'));
         return;
       }
-      setResult(`${body?.jobs ?? 0} jobs, ${body?.photos ?? 0} photos`);
+      setResult(
+        t('marketing.jobs.refreshResult', {
+          jobs: t.plural(body?.jobs ?? 0, 'plural.job'),
+          photos: t.plural(body?.photos ?? 0, 'marketing.plural.photo'),
+        })
+      );
       router.refresh();
     } catch {
-      setError('Could not reach the server.');
+      setError(t('marketing.msg.noServer'));
     } finally {
       setBusy(false);
     }
@@ -49,12 +56,14 @@ export function MarketingRefresh({ lastRefresh }: { lastRefresh: string | null }
         disabled={busy}
         className="h-8 rounded-card bg-ink px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-cream disabled:opacity-50"
       >
-        {busy ? 'Reading…' : 'Refresh from JobPocket'}
+        {busy ? t('marketing.jobs.reading') : t('marketing.jobs.refresh')}
       </button>
       {result && <span className="text-xs text-gray-600">{result}</span>}
       {error && <span className="text-xs text-red-700">{error}</span>}
       {!result && !error && lastRefresh && (
-        <span className="text-xs text-gray-500">Last read {lastRefresh}</span>
+        <span className="text-xs text-gray-500">
+          {t('marketing.jobs.lastRead', { when: lastRefresh })}
+        </span>
       )}
     </div>
   );

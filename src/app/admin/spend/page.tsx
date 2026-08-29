@@ -1,14 +1,28 @@
 import { parseRange } from '@/lib/admin/range';
 import { getChannels, getDailySeries, getSpend } from '@/lib/admin/queries';
 import { count, money, shortDate } from '@/lib/admin/format';
-import { channelLabel } from '@/lib/attribution';
+import { CHANNEL_LABELS, channelLabel } from '@/lib/attribution';
+import { serverTranslator } from '@/lib/i18n/server';
+import { numberLocale, type Lang, type TranslationKey } from '@/lib/i18n';
 import { Empty, Hint, Panel, SetupNotice, StatTile, Table, Td, Th } from '@/components/admin/ui';
 import { SpendEditor } from '@/components/admin/SpendEditor';
 import { TimeSeries } from '@/components/admin/charts';
 import { SERIES } from '@/components/admin/palette';
 import { MoneyBasisLine } from '@/components/admin/MoneyBasis';
+import { rangeLabel } from '@/lib/i18n/range';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * A return like `2,40×`. Through `Intl` rather than `toFixed`, or it is the one
+ * number on a Ukrainian screen still written with a full stop.
+ */
+function ratio(value: number, lang: Lang): string {
+  return value.toLocaleString(numberLocale(lang), {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
 
 export default async function SpendPage({
   searchParams,
@@ -20,6 +34,13 @@ export default async function SpendPage({
     from: searchParams.from as string,
     to: searchParams.to as string,
   });
+  const t = serverTranslator();
+
+  // The slug is a JOIN key and never moves; only what the reader sees does.
+  const channelName = (channel: string | null | undefined) =>
+    channel && channel in CHANNEL_LABELS
+      ? t(`marketing.channel.${channel}` as TranslationKey)
+      : channelLabel(channel);
 
   try {
     const [rows, channels, series] = await Promise.all([
@@ -36,7 +57,7 @@ export default async function SpendPage({
     const totalWon = channels.reduce((sum, row) => sum + row.won, 0);
 
     const points = series.map((day) => ({
-      label: shortDate(day.day),
+      label: shortDate(day.day, t.lang),
       values: { spend: day.spendCents / 100, revenue: day.invoicedCents / 100 },
     }));
 
@@ -44,73 +65,70 @@ export default async function SpendPage({
       <div className="space-y-6">
         <div>
           <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">
-            Ad spend
+            {t('marketing.spend.title')}
           </h1>
-          <p className="mt-1 text-sm text-gray-600">{range.label}</p>
+          <p className="mt-1 text-sm text-gray-600">{rangeLabel(range, t)}</p>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <StatTile label="Spent" value={money(totalSpend)} higherIsBetter={false} />
           <StatTile
-            label="Cost per request"
-            value={totalRequests ? money(totalSpend / totalRequests) : '—'}
+            label={t('marketing.spend.spent')}
+            value={money(totalSpend, t.lang)}
             higherIsBetter={false}
-            hint={`${count(totalRequests)} leads + calls`}
           />
           <StatTile
-            label="Cost per job"
-            value={totalWon ? money(totalSpend / totalWon) : '—'}
+            label={t('marketing.spend.costPerRequest')}
+            value={totalRequests ? money(totalSpend / totalRequests, t.lang) : '—'}
             higherIsBetter={false}
-            hint={`${count(totalWon)} won`}
+            hint={t('marketing.spend.costPerRequestHint', { n: count(totalRequests, t.lang) })}
           />
           <StatTile
-            label="Return"
-            value={totalSpend ? `${(totalRevenue / totalSpend).toFixed(2)}×` : '—'}
-            hint={`${money(totalRevenue)} invoiced`}
+            label={t('marketing.spend.costPerJob')}
+            value={totalWon ? money(totalSpend / totalWon, t.lang) : '—'}
+            higherIsBetter={false}
+            hint={t('marketing.spend.costPerJobHint', { n: count(totalWon, t.lang) })}
+          />
+          <StatTile
+            label={t('marketing.spend.return')}
+            value={totalSpend ? `${ratio(totalRevenue / totalSpend, t.lang)}×` : '—'}
+            hint={t('marketing.spend.returnHint', { amount: money(totalRevenue, t.lang) })}
           />
         </div>
 
-        <Panel title="Add spend" subtitle="One row per day per campaign — saving again overwrites it">
+        <Panel title={t('marketing.spend.add')} subtitle={t('marketing.spend.addSub')}>
           <SpendEditor />
-          <Hint>
-            Take the figures straight off the platform&apos;s own reporting. Entering campaign-level
-            rows is optional but it is what makes the per-campaign cost per lead work; leave the
-            campaign blank to record a whole channel&apos;s daily total.
-          </Hint>
+          <Hint>{t('marketing.spend.addHint')}</Hint>
         </Panel>
 
         <MoneyBasisLine attributedCents={totalRevenue} reportedCents={totalMarked} />
 
-        <Panel title="Spend against revenue" subtitle="Daily">
+        <Panel title={t('marketing.spend.vsRevenue')} subtitle={t('marketing.spend.daily')}>
           <TimeSeries
             points={points}
             series={[
-              { key: 'spend', label: 'Spend', color: SERIES[1] },
-              { key: 'revenue', label: 'Revenue from won jobs', color: SERIES[2] },
+              { key: 'spend', label: t('marketing.spend.seriesSpend'), color: SERIES[1] },
+              { key: 'revenue', label: t('marketing.spend.seriesRevenue'), color: SERIES[2] },
             ]}
               format="money"
           />
-          <Hint>
-            Revenue is dated to when the lead arrived, not when the invoice was paid — so a recent
-            day can look thin simply because those jobs have not been done yet.
-          </Hint>
+          <Hint>{t('marketing.spend.chartHint')}</Hint>
         </Panel>
 
-        <Panel title="Recorded spend">
+        <Panel title={t('marketing.spend.recorded')}>
           {spendRows.length === 0 ? (
-            <Empty>Nothing recorded for this period.</Empty>
+            <Empty>{t('marketing.spend.nothing')}</Empty>
           ) : (
             <Table>
               <thead>
                 <tr>
-                  <Th>Day</Th>
-                  <Th>Channel</Th>
-                  <Th>Campaign</Th>
-                  <Th numeric>Cost</Th>
-                  <Th numeric>Clicks</Th>
-                  <Th numeric>Cost / click</Th>
-                  <Th numeric>Impressions</Th>
-                  <Th>Source</Th>
+                  <Th>{t('marketing.col.day')}</Th>
+                  <Th>{t('marketing.col.channel')}</Th>
+                  <Th>{t('marketing.col.campaign')}</Th>
+                  <Th numeric>{t('marketing.col.cost')}</Th>
+                  <Th numeric>{t('marketing.col.clicks')}</Th>
+                  <Th numeric>{t('marketing.col.costPerClick')}</Th>
+                  <Th numeric>{t('marketing.col.impressions')}</Th>
+                  <Th>{t('marketing.col.source')}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -120,20 +138,30 @@ export default async function SpendPage({
                   return (
                     <tr key={String(row.id)}>
                       <Td className="whitespace-nowrap">
-                        {new Date(row.day as Date).toLocaleDateString('en-US', {
+                        {/* A date somebody reads, so it follows the language.
+                            The UTC zone stays: `day` is a date-only column. */}
+                        {new Date(row.day as Date).toLocaleDateString(numberLocale(t.lang), {
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric',
                           timeZone: 'UTC',
                         })}
                       </Td>
-                      <Td>{channelLabel(row.channel as string)}</Td>
+                      <Td>{channelName(row.channel as string)}</Td>
                       <Td>{(row.campaign as string) || '—'}</Td>
-                      <Td numeric>{money(cost)}</Td>
-                      <Td numeric>{clicks ? count(clicks) : '—'}</Td>
-                      <Td numeric>{clicks ? money(cost / clicks) : '—'}</Td>
-                      <Td numeric>{row.impressions ? count(Number(row.impressions)) : '—'}</Td>
-                      <Td className="capitalize">{row.source as string}</Td>
+                      <Td numeric>{money(cost, t.lang)}</Td>
+                      <Td numeric>{clicks ? count(clicks, t.lang) : '—'}</Td>
+                      <Td numeric>{clicks ? money(cost / clicks, t.lang) : '—'}</Td>
+                      <Td numeric>
+                        {row.impressions ? count(Number(row.impressions), t.lang) : '—'}
+                      </Td>
+                      <Td className="capitalize">
+                        {/* `source` is a value the importers write, not a label:
+                            the one the owner types is named, the rest stand. */}
+                        {row.source === 'manual'
+                          ? t('marketing.spend.source.manual')
+                          : (row.source as string)}
+                      </Td>
                     </tr>
                   );
                 })}

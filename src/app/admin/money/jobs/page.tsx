@@ -6,6 +6,8 @@ import { OperationsApiError } from '@/lib/bookings/client';
 import { Empty, Hint, Panel, SetupNotice, StatTile, StatusPill, Table, Td, Th, Warning } from '@/components/admin/ui';
 import { NotConnected } from '@/components/admin/NotConnected';
 import { Pager } from '@/components/admin/Pager';
+import { serverTranslator } from '@/lib/i18n/server';
+import { rangeLabel } from '@/lib/i18n/range';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +22,7 @@ export default async function JobsPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
+  const t = serverTranslator();
   const range = parseRange({
     range: searchParams.range as string,
     from: searchParams.from as string,
@@ -50,13 +53,15 @@ export default async function JobsPage({
     }
   }
 
-  const title = (searchParams.title as string) || 'Jobs';
+  // The title is written by whichever screen linked here, in the language that
+  // screen was being read in.
+  const title = (searchParams.title as string) || t('money.jobsPageTitle');
 
   if (unconfigured) {
     return (
       <div className="space-y-6">
-        <Header title={title} subtitle={range.label} backTo={backTo} />
-        <NotConnected what="Jobs and payments" />
+        <Header title={title} subtitle={rangeLabel(range, t)} backTo={backTo} />
+        <NotConnected what={t('money.notConnected')} />
       </div>
     );
   }
@@ -64,56 +69,56 @@ export default async function JobsPage({
   if (!report) {
     return (
       <div className="space-y-6">
-        <Header title={title} subtitle={range.label} backTo={backTo} />
-        <Warning>{failure ?? 'JobPocket did not answer.'}</Warning>
+        <Header title={title} subtitle={rangeLabel(range, t)} backTo={backTo} />
+        <Warning>{failure ?? t('money.noAnswer')}</Warning>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <Header title={title} subtitle={range.label} backTo={backTo} />
+      <Header title={title} subtitle={rangeLabel(range, t)} backTo={backTo} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="Jobs" value={count(report.totals.jobs)} emphasis />
-        <StatTile label="Billed" value={money(report.totals.billedCents)} />
+        <StatTile label={t('money.jobs')} value={count(report.totals.jobs, t.lang)} emphasis />
+        <StatTile label={t('common.billed')} value={money(report.totals.billedCents, t.lang)} />
         <StatTile
-          label="Kept"
-          value={money(report.totals.ownShareCents)}
+          label={t('common.kept')}
+          value={money(report.totals.ownShareCents, t.lang)}
           emphasis
-          hint="after the dispatchers' share"
+          hint={t('money.afterDispatchersShare')}
         />
         <StatTile
-          label="Average ticket"
+          label={t('money.avgTicket')}
           value={
             report.totals.jobs
-              ? money(Math.round(report.totals.ownShareCents / report.totals.jobs))
+              ? money(Math.round(report.totals.ownShareCents / report.totals.jobs), t.lang)
               : '—'
           }
         />
       </div>
 
-      <Panel title="Every job behind that figure" subtitle="Newest first">
+      <Panel title={t('money.everyJobBehind')} subtitle={t('payments.newestFirst')}>
         {report.jobs.length === 0 ? (
-          <Empty>No finished work matches that.</Empty>
+          <Empty>{t('money.noJobsMatch')}</Empty>
         ) : (
           <Table>
             <thead>
               <tr>
-                <Th>Finished</Th>
-                <Th>Client</Th>
-                <Th>Job</Th>
-                <Th>Company</Th>
-                <Th>Status</Th>
-                <Th numeric>Billed</Th>
-                <Th numeric>Kept</Th>
+                <Th>{t('unpaid.finished')}</Th>
+                <Th>{t('common.client')}</Th>
+                <Th>{t('common.job')}</Th>
+                <Th>{t('common.company')}</Th>
+                <Th>{t('common.status')}</Th>
+                <Th numeric>{t('common.billed')}</Th>
+                <Th numeric>{t('common.kept')}</Th>
               </tr>
             </thead>
             <tbody>
               {report.jobs.map((job) => (
                 <tr key={job.id}>
                   <Td className="text-gray-600">
-                    {job.completedAt ? shortDate(new Date(job.completedAt)) : '—'}
+                    {job.completedAt ? shortDate(new Date(job.completedAt), t.lang) : '—'}
                   </Td>
                   <Td>{job.clientName ?? '—'}</Td>
                   <Td>
@@ -121,7 +126,7 @@ export default async function JobsPage({
                       href={`/admin/calendar/${job.id}`}
                       className="text-ink underline decoration-primary-500/40 underline-offset-2 hover:text-primary-600"
                     >
-                      {job.jobNumber ?? 'Job'}
+                      {job.jobNumber ?? t('common.job')}
                     </Link>
                     {job.type ? <span className="ml-2 text-[11px] text-gray-500">{job.type}</span> : null}
                   </Td>
@@ -129,9 +134,9 @@ export default async function JobsPage({
                   <Td>
                     <StatusPill status={job.paymentStatus} />
                   </Td>
-                  <Td numeric>{money(job.totalCents)}</Td>
+                  <Td numeric>{money(job.totalCents, t.lang)}</Td>
                   <Td numeric className="font-medium">
-                    {money(job.ownShareCents)}
+                    {money(job.ownShareCents, t.lang)}
                   </Td>
                 </tr>
               ))}
@@ -150,24 +155,21 @@ export default async function JobsPage({
           shown={report.jobs.length}
           hasMore={report.hasMore}
         />
-        <Hint>
-          Billed is what the customer was charged; kept is what survives the dispatcher&apos;s
-          share. On split work they are different numbers, and the difference is the whole reason
-          this section exists.
-        </Hint>
+        <Hint>{t('money.jobsHint')}</Hint>
       </Panel>
     </div>
   );
 }
 
 function Header({ title, subtitle, backTo }: { title: string; subtitle: string; backTo: string }) {
+  const t = serverTranslator();
   return (
     <div>
       <Link
         href={backTo}
         className="font-heading text-[10px] uppercase tracking-label text-gray-500 hover:text-ink"
       >
-        ← Back
+        {t('common.back')}
       </Link>
       <h1 className="mt-1 font-heading text-xl font-bold uppercase tracking-label text-ink">
         {title}

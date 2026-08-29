@@ -7,6 +7,8 @@ import { Empty, Hint, Panel, SetupNotice, StatTile, Table, Td, Th, Warning } fro
 import { NotConnected } from '@/components/admin/NotConnected';
 import { RankedBars } from '@/components/admin/charts';
 import { SERIES } from '@/components/admin/palette';
+import { serverTranslator } from '@/lib/i18n/server';
+import { rangeLabel } from '@/lib/i18n/range';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +17,7 @@ export default async function DispatchersPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
+  const t = serverTranslator();
   const range = parseRange({
     range: searchParams.range as string,
     from: searchParams.from as string,
@@ -39,8 +42,8 @@ export default async function DispatchersPage({
   if (unconfigured) {
     return (
       <div className="space-y-6">
-        <Header label={range.label} subtitle="" />
-        <NotConnected what="Jobs and payments" />
+        <Header label={rangeLabel(range, t)} subtitle="" />
+        <NotConnected what={t('money.notConnected')} />
       </div>
     );
   }
@@ -48,8 +51,8 @@ export default async function DispatchersPage({
   if (!report) {
     return (
       <div className="space-y-6">
-        <Header label={range.label} subtitle="" />
-        <Warning>{failure ?? 'JobPocket did not answer.'}</Warning>
+        <Header label={rangeLabel(range, t)} subtitle="" />
+        <Warning>{failure ?? t('money.noAnswer')}</Warning>
       </div>
     );
   }
@@ -70,38 +73,48 @@ export default async function DispatchersPage({
   // you know most of the calendar carries somebody else's name.
   const subtitle =
     totalJobs === 0
-      ? range.label
-      : `${range.label} · ${percent(dispatchedJobs / totalJobs, 0)} of the work was dispatched — ` +
-        `${count(totalJobs - dispatchedJobs)} of ${count(totalJobs)} jobs carried your own name.`;
+      ? rangeLabel(range, t)
+      : `${rangeLabel(range, t)} · ` +
+        t('money.dispatchedShareOfWork', {
+          pct: percent(dispatchedJobs / totalJobs, 0, t.lang),
+          own: count(totalJobs - dispatchedJobs, t.lang),
+          total: count(totalJobs, t.lang),
+        });
 
   return (
     <div className="space-y-6">
-      <Header label={range.label} subtitle={subtitle} />
+      <Header label={rangeLabel(range, t)} subtitle={subtitle} />
       {failure ? <Warning>{failure}</Warning> : null}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="Your own work" value={money(sum(own, 'ownShareCents'))} emphasis />
         <StatTile
-          label="Kept from dispatched work"
-          value={money(dispatchedKept)}
+          label={t('dispatchers.ownWork')}
+          value={money(sum(own, 'ownShareCents'), t.lang)}
+          emphasis
+        />
+        <StatTile
+          label={t('dispatchers.keptFrom')}
+          value={money(dispatchedKept, t.lang)}
           emphasis
           hint={
             dispatchedBilled
-              ? `${Math.round((dispatchedKept / dispatchedBilled) * 100)}¢ on the dollar`
+              ? t('money.centsOnDollar', {
+                  cents: count(Math.round((dispatchedKept / dispatchedBilled) * 100), t.lang),
+                })
               : undefined
           }
         />
         <StatTile
-          label="Dispatched, billed"
-          value={money(dispatchedBilled)}
-          hint="what the customers were charged"
+          label={t('dispatchers.dispatchedBilled')}
+          value={money(dispatchedBilled, t.lang)}
+          hint={t('money.whatCustomersCharged')}
         />
-        <StatTile label="Jobs dispatched" value={count(dispatchedJobs)} />
+        <StatTile label={t('dispatchers.jobsDispatched')} value={count(dispatchedJobs, t.lang)} />
       </div>
 
-      <Panel title="Kept, by dispatcher" subtitle="Ranked on what survives, not on what they send">
+      <Panel title={t('dispatchers.keptBy')} subtitle={t('money.rankedOnSurvives')}>
         {rows.length === 0 ? (
-          <Empty>No finished work in this window.</Empty>
+          <Empty>{t('money.noFinishedWork')}</Empty>
         ) : (
           <RankedBars
             format="money"
@@ -111,39 +124,42 @@ export default async function DispatchersPage({
               // One hue: dispatchers are not marketing channels, and borrowing
               // that palette would imply a connection that does not exist.
               color: SERIES[0]!,
-              note: `${row.keptPct === null ? '—' : `${row.keptPct}%`} of ${money(row.billedCents)} · ${count(row.jobs)} jobs`,
+              note:
+                t('money.keptOfBilled', {
+                  pct: row.keptPct === null ? '—' : percent(row.keptPct / 100, 0, t.lang),
+                  billed: money(row.billedCents, t.lang),
+                }) +
+                ' · ' +
+                t.plural(row.jobs, 'plural.job'),
             }))}
           />
         )}
-        <Hint>
-          Ranked on what you keep rather than what was billed: billed ranks who sends the most work,
-          kept ranks who is worth the most, and only the second changes what you do about it.
-        </Hint>
+        <Hint>{t('money.keptRankHint')}</Hint>
       </Panel>
 
       <Panel
-        title="Every dispatcher"
-        subtitle="What the deal actually returns"
+        title={t('dispatchers.every')}
+        subtitle={t('money.whatDealReturns')}
         action={<a
               href={`/api/admin/export?type=dispatchers&range=${range.key}`}
               className="inline-flex h-8 items-center rounded-card border border-primary-500/30 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 hover:border-ink hover:text-ink"
             >
-              Export CSV
+              {t('common.exportCsv')}
             </a>}
       >
         {rows.length === 0 ? (
-          <Empty>No finished work in this window.</Empty>
+          <Empty>{t('money.noFinishedWork')}</Empty>
         ) : (
           <Table>
             <thead>
               <tr>
-                <Th>Company</Th>
-                <Th numeric>Jobs</Th>
-                <Th numeric>Billed</Th>
-                <Th numeric>Their cut</Th>
-                <Th numeric>Kept</Th>
-                <Th numeric>Kept %</Th>
-                <Th numeric>Avg ticket</Th>
+                <Th>{t('common.company')}</Th>
+                <Th numeric>{t('common.jobs')}</Th>
+                <Th numeric>{t('common.billed')}</Th>
+                <Th numeric>{t('dispatchers.theirCut')}</Th>
+                <Th numeric>{t('common.kept')}</Th>
+                <Th numeric>{t('dispatchers.keptPct')}</Th>
+                <Th numeric>{t('money.avgTicketShort')}</Th>
               </tr>
             </thead>
             <tbody>
@@ -158,42 +174,42 @@ export default async function DispatchersPage({
                     </Link>
                     {row.revenueSharePct !== null ? (
                       <span className="ml-2 text-[11px] text-gray-500">
-                        {row.revenueSharePct}%{row.reimbursesParts ? ', parts back' : ''}
+                        {percent(row.revenueSharePct / 100, 0, t.lang)}
+                        {row.reimbursesParts ? t('money.partsBack') : ''}
                       </span>
                     ) : null}
                   </Td>
-                  <Td numeric>{count(row.jobs)}</Td>
-                  <Td numeric>{money(row.billedCents)}</Td>
+                  <Td numeric>{count(row.jobs, t.lang)}</Td>
+                  <Td numeric>{money(row.billedCents, t.lang)}</Td>
                   <Td numeric className="text-gray-600">
-                    {money(row.billedCents - row.ownShareCents)}
+                    {money(row.billedCents - row.ownShareCents, t.lang)}
                   </Td>
                   <Td numeric className="font-medium">
-                    {money(row.ownShareCents)}
+                    {money(row.ownShareCents, t.lang)}
                   </Td>
-                  <Td numeric>{row.keptPct === null ? '—' : `${row.keptPct}%`}</Td>
+                  <Td numeric>
+                    {row.keptPct === null ? '—' : percent(row.keptPct / 100, 0, t.lang)}
+                  </Td>
                   <Td numeric className="text-gray-600">
-                    {row.jobs ? money(Math.round(row.ownShareCents / row.jobs)) : '—'}
+                    {row.jobs ? money(Math.round(row.ownShareCents / row.jobs), t.lang) : '—'}
                   </Td>
                 </tr>
               ))}
             </tbody>
           </Table>
         )}
-        <Hint>
-          Kept % is what survives of the whole ticket, which is not the headline percentage: a
-          dispatcher who reimburses parts returns that money whole, so the share they keep is
-          smaller than their number suggests.
-        </Hint>
+        <Hint>{t('money.keptPctHint')}</Hint>
       </Panel>
     </div>
   );
 }
 
 function Header({ label, subtitle }: { label: string; subtitle: string }) {
+  const t = serverTranslator();
   return (
     <div>
       <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">
-        Dispatchers
+        {t('dispatchers.title')}
       </h1>
       <p className="mt-1 text-sm text-gray-600">{subtitle || label}</p>
     </div>

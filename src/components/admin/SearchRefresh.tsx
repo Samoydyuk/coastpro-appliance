@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useT } from '@/components/admin/LanguageProvider';
 
 /**
  * Pull from Google now, rather than waiting for tomorrow.
@@ -17,6 +18,7 @@ import { useRouter } from 'next/navigation';
  */
 export function SearchRefresh({ lastDay }: { lastDay: string | null }) {
   const router = useRouter();
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
@@ -31,20 +33,26 @@ export function SearchRefresh({ lastDay }: { lastDay: string | null }) {
       });
       const body = await response.json().catch(() => null);
       if (!response.ok) {
-        setNote(body?.error ?? 'Refresh failed.');
+        setNote(body?.error ?? t('marketing.search.refreshFailed'));
         return;
       }
       const search = (body?.outcomes ?? []).find(
         (o: { channel: string }) => o.channel === 'google_search'
       );
+      // `error`, `skipped` and `note` are the importer's own words and stay as
+      // they arrived; only the sentence around them is ours to translate.
       setNote(
         search?.error ??
           search?.skipped ??
-          (search ? `${search.rows} rows written${search.note ? ` — ${search.note}` : ''}` : 'Nothing to fetch.')
+          (search
+            ? t('marketing.search.rowsWritten', {
+                rows: t.plural(search.rows, 'marketing.plural.row'),
+              }) + (search.note ? ` — ${search.note}` : '')
+            : t('marketing.search.nothingToFetch'))
       );
       router.refresh();
     } catch {
-      setNote('Could not reach the server.');
+      setNote(t('marketing.msg.noServer'));
     } finally {
       setBusy(false);
     }
@@ -58,10 +66,13 @@ export function SearchRefresh({ lastDay }: { lastDay: string | null }) {
         disabled={busy}
         className="h-8 rounded-card border border-primary-500/40 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-ink transition-colors hover:bg-cream-dark/50 disabled:opacity-50"
       >
-        {busy ? 'Fetching…' : 'Fetch from Google'}
+        {busy ? t('marketing.search.fetching') : t('marketing.search.fetch')}
       </button>
       <span className="text-[11px] text-gray-500">
-        {note ?? (lastDay ? `Held through ${lastDay}; refreshed nightly.` : 'Nothing imported yet.')}
+        {note ??
+          (lastDay
+            ? t('marketing.search.heldThrough', { day: lastDay })
+            : t('marketing.search.nothingImported'))}
       </span>
     </div>
   );

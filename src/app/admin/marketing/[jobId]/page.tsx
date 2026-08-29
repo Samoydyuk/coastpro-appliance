@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getMarketingJob, getContentHistory, findSimilarJobs } from '@/lib/marketing/queries';
 import { dateTime } from '@/lib/admin/format';
+import { serverTranslator } from '@/lib/i18n/server';
+import type { TranslationKey } from '@/lib/i18n';
 import { Empty, Hint, Panel, SetupNotice, Warning } from '@/components/admin/ui';
 import { MarketingContent } from '@/components/admin/MarketingContent';
 import { MarketingPhotos } from '@/components/admin/MarketingPhotos';
@@ -25,6 +27,7 @@ function Field({ label, value }: { label: string; value: string | null }) {
 }
 
 export default async function MarketingJobPage({ params }: { params: { jobId: string } }) {
+  const t = serverTranslator();
   // The read is what can fail for a setup reason; `notFound()` throws a control
   // signal Next needs to see, so it is raised after the catch rather than
   // inside it, where it would be reported as a database problem.
@@ -46,7 +49,9 @@ export default async function MarketingJobPage({ params }: { params: { jobId: st
 
   {
     const { job, photos, content } = detail;
-    const title = [job.manufacturer, job.appliance_type].filter(Boolean).join(' ') || 'Repair';
+    const title =
+      [job.manufacturer, job.appliance_type].filter(Boolean).join(' ') ||
+      t('marketing.job.repairFallback');
     const place = [job.city, job.state].filter(Boolean).join(', ');
 
     return (
@@ -57,16 +62,16 @@ export default async function MarketingJobPage({ params }: { params: { jobId: st
               href="/admin/marketing"
               className="font-heading text-[10px] uppercase tracking-label text-gray-500 hover:text-ink"
             >
-              ← Marketing
+              {t('marketing.job.back')}
             </Link>
             <h1 className="mt-1 font-heading text-xl font-bold uppercase tracking-label text-ink">
               {title}
             </h1>
             <p className="mt-1 text-sm text-gray-600">
               {[
-                job.model ? `Model ${job.model}` : null,
+                job.model ? t('marketing.job.model', { model: job.model }) : null,
                 place || null,
-                job.completed_at ? dateTime(job.completed_at) : null,
+                job.completed_at ? dateTime(job.completed_at, t.lang) : null,
               ]
                 .filter(Boolean)
                 .join(' · ') || '—'}
@@ -86,18 +91,13 @@ export default async function MarketingJobPage({ params }: { params: { jobId: st
           )}
         </header>
 
-        {!job.released && (
-          <Warning>
-            This job has been taken off the website list in the app. It is still here because
-            something has been written from it — but nothing new should be, and anything already
-            published from it is worth taking down.
-          </Warning>
-        )}
+        {!job.released && <Warning>{t('marketing.job.unreleased')}</Warning>}
 
         {similar.length > 0 && (
           <Warning>
-            Something has already been written about {similar.length === 1 ? 'a' : similar.length}{' '}
-            similar {similar.length === 1 ? 'job' : 'jobs'}:{' '}
+            {t('marketing.job.similarLead', {
+              jobs: t.plural(similar.length, 'marketing.plural.similarJob'),
+            })}{' '}
             {similar.map((entry, index) => (
               <span key={entry.job_id}>
                 {index > 0 ? ', ' : ''}
@@ -107,42 +107,35 @@ export default async function MarketingJobPage({ params }: { params: { jobId: st
                 >
                   {entry.title || `${entry.manufacturer ?? ''} ${entry.appliance_type ?? ''}`.trim()}
                 </Link>
-                {entry.status === 'published' ? ' (live)' : ''}
+                {entry.status === 'published' ? t('marketing.job.live') : ''}
               </span>
             ))}
-            . Worth a look before writing another — two pages about the same fault compete with
-            each other for the search that matters. Not a reason not to: the second one may be
-            the better page.
+            {t('marketing.job.similarTail')}
           </Warning>
         )}
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <div className="space-y-6">
-            <Panel title="The repair">
+            <Panel title={t('marketing.job.theRepair')}>
               <div className="space-y-5">
-                <Field label="What was wrong" value={job.diagnosis} />
-                <Field label="What was done" value={job.repair_performed} />
-                <Field label="Technician's note for the website" value={job.technician_notes} />
+                <Field label={t('marketing.job.whatWasWrong')} value={job.diagnosis} />
+                <Field label={t('marketing.job.whatWasDone')} value={job.repair_performed} />
+                <Field label={t('marketing.job.techNote')} value={job.technician_notes} />
                 {!job.diagnosis && !job.repair_performed && !job.technician_notes && (
-                  <Empty>
-                    Nothing was written on this job. An article can still be built from the
-                    appliance, the brand and the parts — but it will be a thin one.
-                  </Empty>
+                  <Empty>{t('marketing.job.nothingWritten')}</Empty>
                 )}
               </div>
 
               {job.redacted.length > 0 && (
-                <Hint>
-                  Removed before this left JobPocket: {job.redacted.join(', ')}. The text above is
-                  what remains — a phone number or a name the technician typed never reached this
-                  server, and the labels are here so that is visible rather than assumed.
-                </Hint>
+                // The field names come across with the job and are left as they
+                // arrived; only the sentence around them is ours.
+                <Hint>{t('marketing.job.redacted', { fields: job.redacted.join(', ') })}</Hint>
               )}
             </Panel>
 
-            <Panel title="Parts replaced">
+            <Panel title={t('marketing.job.parts')}>
               {job.replaced_parts.length === 0 ? (
-                <Empty>No parts recorded with a number.</Empty>
+                <Empty>{t('marketing.job.noParts')}</Empty>
               ) : (
                 <ul className="space-y-2">
                   {job.replaced_parts.map((part, index) => (
@@ -156,8 +149,8 @@ export default async function MarketingJobPage({ params }: { params: { jobId: st
             </Panel>
 
             <Panel
-              title="Content"
-              subtitle="Written from the fields above and nothing else. Every piece is a draft."
+              title={t('marketing.job.content')}
+              subtitle={t('marketing.job.contentSub')}
             >
               <MarketingContent
                 jobId={job.job_id}
@@ -165,7 +158,10 @@ export default async function MarketingJobPage({ params }: { params: { jobId: st
                 // article *about* — only a note. Say so before the button is
                 // pressed rather than producing three paragraphs of hedging.
                 thin={!job.diagnosis && !job.repair_performed}
-                channels={CHANNELS.map((channel) => ({ key: channel.key, label: channel.label }))}
+                channels={CHANNELS.map((channel) => ({
+                  key: channel.key,
+                  label: t(`marketing.piece.${channel.key}` as TranslationKey),
+                }))}
                 pieces={content.map((piece) => ({
                   channel: piece.channel,
                   status: piece.status,
@@ -189,13 +185,14 @@ export default async function MarketingJobPage({ params }: { params: { jobId: st
             </Panel>
           </div>
 
-          <Panel title="Photos" subtitle={`${photos.length} released · tap to choose`}>
+          <Panel
+            title={t('marketing.job.photos')}
+            subtitle={t('marketing.job.photosSub', {
+              photos: t.plural(photos.length, 'marketing.plural.photo'),
+            })}
+          >
             {photos.length === 0 ? (
-              <Empty>
-                No photos released for this job. A picture has its own switch in the app — off
-                until somebody turns it on, because no field filter can see a house number or a
-                face in an image.
-              </Empty>
+              <Empty>{t('marketing.job.noPhotos')}</Empty>
             ) : (
               <MarketingPhotos
                 jobId={job.job_id}
@@ -230,10 +227,7 @@ export default async function MarketingJobPage({ params }: { params: { jobId: st
                 }))}
               />
             )}
-            <Hint>
-              Served through this console rather than from storage, so the location the camera
-              wrote into the file is stripped on the way and the key never reaches the browser.
-            </Hint>
+            <Hint>{t('marketing.job.photosHint')}</Hint>
           </Panel>
         </div>
       </div>

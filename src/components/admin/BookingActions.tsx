@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useT } from '@/components/admin/LanguageProvider';
 
 /**
  * Answering a request.
@@ -44,6 +45,7 @@ function toLocalInput(iso: string | null): string {
 }
 
 export function BookingActions({ requestId, status, scheduledStart, scheduledEnd }: Props) {
+  const t = useT();
   const router = useRouter();
   const [start, setStart] = useState(toLocalInput(scheduledStart));
   const [busy, setBusy] = useState<'accept' | 'decline' | null>(null);
@@ -75,20 +77,22 @@ export function BookingActions({ requestId, status, scheduledStart, scheduledEnd
         | null;
 
       if (!response.ok) {
-        setError(body?.error ?? 'That did not go through.');
+        // The server's own wording, when it has one: it knows what went wrong
+        // and this console does not.
+        setError(body?.error ?? t('work.answer.failed'));
         return;
       }
 
       setDone(
         action === 'decline'
-          ? 'Declined.'
+          ? t('work.answer.declined')
           : body?.alreadyAccepted
-            ? 'Already a job — nothing new was created.'
-            : 'Accepted. It is on the calendar now.'
+            ? t('work.answer.already')
+            : t('work.answer.accepted')
       );
       router.refresh();
     } catch {
-      setError('Could not reach the server.');
+      setError(t('work.form.noServer'));
     } finally {
       setBusy(null);
     }
@@ -99,10 +103,10 @@ export function BookingActions({ requestId, status, scheduledStart, scheduledEnd
       <div className="space-y-2">
         <p className="text-sm text-gray-600">
           {status === 'ACCEPTED'
-            ? 'Accepted — this is a job now.'
+            ? t('work.answer.wasAccepted')
             : status === 'DECLINED'
-              ? 'Declined.'
-              : 'Cancelled by the customer.'}
+              ? t('work.answer.wasDeclined')
+              : t('work.answer.wasCancelled')}
         </p>
         {done && <p className="text-xs" style={{ color: '#006300' }}>{done}</p>}
       </div>
@@ -113,7 +117,7 @@ export function BookingActions({ requestId, status, scheduledStart, scheduledEnd
     <div className="space-y-3">
       <label className="flex flex-col gap-1">
         <span className="font-heading text-[10px] uppercase tracking-label text-gray-500">
-          When to turn up
+          {t('work.answer.whenToTurnUp')}
         </span>
         <input
           type="datetime-local"
@@ -122,9 +126,7 @@ export function BookingActions({ requestId, status, scheduledStart, scheduledEnd
           className={field}
         />
         <span className="text-xs text-gray-500">
-          {scheduledStart
-            ? 'What they picked. Change it and the job takes the new time.'
-            : 'They did not pick a time. Leave it empty to accept without one and ring them.'}
+          {scheduledStart ? t('work.answer.theirTime') : t('work.answer.noTime')}
         </span>
       </label>
 
@@ -135,7 +137,7 @@ export function BookingActions({ requestId, status, scheduledStart, scheduledEnd
           disabled={busy !== null}
           className="h-9 rounded-card bg-ink px-4 font-heading text-[10px] font-semibold uppercase tracking-label text-cream disabled:opacity-50"
         >
-          {busy === 'accept' ? 'Accepting…' : 'Accept'}
+          {busy === 'accept' ? t('work.answer.accepting') : t('work.answer.accept')}
         </button>
         <button
           type="button"
@@ -143,17 +145,14 @@ export function BookingActions({ requestId, status, scheduledStart, scheduledEnd
           disabled={busy !== null}
           className="h-9 rounded-card border border-primary-500/30 px-4 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 hover:border-ink hover:text-ink disabled:opacity-50"
         >
-          {busy === 'decline' ? 'Declining…' : 'Decline'}
+          {busy === 'decline' ? t('work.answer.declining') : t('work.answer.decline')}
         </button>
       </div>
 
       {error && <p className="text-xs" style={{ color: '#8f2323' }}>{error}</p>}
       {done && <p className="text-xs" style={{ color: '#006300' }}>{done}</p>}
 
-      <p className="text-xs text-gray-600">
-        Accepting creates the job in JobPocket and puts it on the calendar. The customer is not told
-        anything automatically — that still happens when you ring them.
-      </p>
+      <p className="text-xs text-gray-600">{t('work.answer.note')}</p>
     </div>
   );
 }

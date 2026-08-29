@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getJob, getTeam, OperationsApiError } from '@/lib/bookings/client';
 import { dateTime, money, relativeTime } from '@/lib/admin/format';
+import { serverTranslator } from '@/lib/i18n/server';
 import { timeOfDay } from '@/lib/bookings/month';
 import { Empty, Hint, Panel, SetupNotice, StatusPill, Table, Td, Th, Warning } from '@/components/admin/ui';
 import type { JobPhoto } from '@/lib/bookings/client';
@@ -21,6 +22,7 @@ export const dynamic = 'force-dynamic';
  */
 
 export default async function JobPage({ params }: { params: { id: string } }) {
+  const t = serverTranslator();
   let job;
 
   try {
@@ -52,11 +54,11 @@ export default async function JobPage({ params }: { params: { id: string } }) {
   const scans = job.photos.filter((photo) => photo.category === 'DOCUMENT');
   const workPhotos = job.photos.filter((photo) => photo.category !== 'DOCUMENT');
   const PHOTO_GROUPS: { key: JobPhoto['category']; label: string }[] = [
-    { key: 'BEFORE', label: 'Before' },
-    { key: 'DURING', label: 'During' },
-    { key: 'AFTER', label: 'After' },
-    { key: 'ISSUE', label: 'The problem' },
-    { key: 'GENERAL', label: 'Other' },
+    { key: 'BEFORE', label: t('work.job.photo.BEFORE') },
+    { key: 'DURING', label: t('work.job.photo.DURING') },
+    { key: 'AFTER', label: t('work.job.photo.AFTER') },
+    { key: 'ISSUE', label: t('work.job.photo.ISSUE') },
+    { key: 'GENERAL', label: t('work.job.photo.GENERAL') },
   ];
 
   return (
@@ -65,17 +67,17 @@ export default async function JobPage({ params }: { params: { id: string } }) {
         <div>
           <BackLink />
           <h1 className="mt-2 font-heading text-xl font-bold uppercase tracking-label text-ink">
-            {job.jobNumber ?? 'Job'}
+            {job.jobNumber ?? t('work.job.untitled')}
             {job.client?.name ? ` · ${job.client.name}` : ''}
           </h1>
           <p className="mt-1 text-sm text-gray-600">
             {job.scheduledAt ? (
               <>
-                {dateTime(job.scheduledAt)}
+                {dateTime(job.scheduledAt, t.lang)}
                 {job.scheduledEnd && ` – ${timeOfDay(job.scheduledEnd)}`}
               </>
             ) : (
-              'Not scheduled'
+              t('work.job.notScheduled')
             )}
             {job.type ? ` · ${job.type}` : ''}
           </p>
@@ -90,27 +92,25 @@ export default async function JobPage({ params }: { params: { id: string } }) {
           dispatched, so it is the first thing worth knowing about a job. */}
       {job.brand && (
         <p className="text-sm text-gray-600">
-          Done under <strong className="text-ink">{job.brand.name}</strong> — dispatched work, not
-          CoastPro&apos;s own.
+          {t('work.job.doneUnderBefore')}
+          <strong className="text-ink">{job.brand.name}</strong>
+          {t('work.job.doneUnderAfter')}
         </p>
       )}
 
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-4">
-          <Panel title="What it was priced from">
+          <Panel title={t('work.job.pricedFrom')}>
             {billable.length === 0 ? (
-              <Empty>
-                Nothing itemised yet. A visit is priced on site, so a job that has not happened
-                carries no lines.
-              </Empty>
+              <Empty>{t('work.job.nothingItemised')}</Empty>
             ) : (
               <Table>
                 <thead>
                   <tr>
-                    <Th>Item</Th>
-                    <Th numeric>Qty</Th>
-                    <Th numeric>Each</Th>
-                    <Th numeric>Total</Th>
+                    <Th>{t('work.job.item')}</Th>
+                    <Th numeric>{t('work.job.qty')}</Th>
+                    <Th numeric>{t('work.job.each')}</Th>
+                    <Th numeric>{t('work.job.lineTotal')}</Th>
                   </tr>
                 </thead>
                 <tbody>
@@ -123,8 +123,8 @@ export default async function JobPage({ params }: { params: { id: string } }) {
                         )}
                       </Td>
                       <Td numeric>{item.quantity}</Td>
-                      <Td numeric>{money(item.unitPriceCents)}</Td>
-                      <Td numeric>{money(item.totalCents)}</Td>
+                      <Td numeric>{money(item.unitPriceCents, t.lang)}</Td>
+                      <Td numeric>{money(item.totalCents, t.lang)}</Td>
                     </tr>
                   ))}
                 </tbody>
@@ -132,15 +132,18 @@ export default async function JobPage({ params }: { params: { id: string } }) {
             )}
 
             <dl className="mt-4 space-y-1.5 border-t border-primary-500/15 pt-4 text-sm">
-              <Money label="Subtotal" cents={job.subtotalCents} />
-              <Money label={`Tax (${job.taxRate}%)`} cents={job.taxCents} />
-              <Money label="Total" cents={job.totalCents} strong />
+              <Money label={t('work.job.subtotal')} cents={job.subtotalCents} />
+              <Money label={t('work.job.tax', { rate: job.taxRate })} cents={job.taxCents} />
+              <Money label={t('work.job.total')} cents={job.totalCents} strong />
             </dl>
           </Panel>
 
-          <Panel title="Photos" subtitle={`${workPhotos.length} from the visit`}>
+          <Panel
+            title={t('work.job.photos')}
+            subtitle={t('work.job.photosSubtitle', { n: workPhotos.length })}
+          >
             {workPhotos.length === 0 ? (
-              <Empty>No photos on this job.</Empty>
+              <Empty>{t('work.job.noPhotos')}</Empty>
             ) : (
               <div className="space-y-5">
                 {PHOTO_GROUPS.map((group) => {
@@ -165,16 +168,19 @@ export default async function JobPage({ params }: { params: { id: string } }) {
           </Panel>
 
           {(job.notes || job.diagnosis || job.resolution) && (
-            <Panel title="What happened">
-              {job.diagnosis && <Para label="Diagnosis">{job.diagnosis}</Para>}
-              {job.resolution && <Para label="What was done">{job.resolution}</Para>}
-              {job.notes && <Para label="Notes">{job.notes}</Para>}
+            <Panel title={t('work.job.whatHappened')}>
+              {job.diagnosis && <Para label={t('work.job.diagnosis')}>{job.diagnosis}</Para>}
+              {job.resolution && <Para label={t('work.job.resolution')}>{job.resolution}</Para>}
+              {job.notes && <Para label={t('work.job.notes')}>{job.notes}</Para>}
             </Panel>
           )}
         </div>
 
         <div className="space-y-4">
-          <Panel title="Who is going" subtitle="They are told as soon as you save">
+          <Panel
+            title={t('work.job.whoIsGoing')}
+            subtitle={t('work.job.whoIsGoingSubtitle')}
+          >
             <AssignForm
               jobId={job.id}
               team={team}
@@ -182,21 +188,17 @@ export default async function JobPage({ params }: { params: { id: string } }) {
             />
           </Panel>
 
-          <Panel title="Move this visit">
+          <Panel title={t('work.job.moveTitle')}>
             <RescheduleForm
               jobId={job.id}
               canMove={job.status !== 'CANCELLED' && job.status !== 'PAID'}
             />
-            <Hint>
-              Status, prices and payment are changed in the app. Finishing a job closes the
-              technician&apos;s time entry and can start a follow-up message, so it belongs where
-              the work happens.
-            </Hint>
+            <Hint>{t('work.job.moveHint')}</Hint>
           </Panel>
 
-          <Panel title="Estimates & invoices">
+          <Panel title={t('work.job.documents')}>
             {job.documents.length === 0 ? (
-              <Empty>Nothing has been billed on this job yet.</Empty>
+              <Empty>{t('work.job.nothingBilled')}</Empty>
             ) : (
               <ul className="space-y-3">
                 {job.documents.map((doc) => (
@@ -210,20 +212,22 @@ export default async function JobPage({ params }: { params: { id: string } }) {
                       <div className="flex items-baseline justify-between gap-2">
                         <span className="font-medium text-ink">{doc.documentNumber}</span>
                         <span className="tabular-nums text-sm text-ink">
-                          {money(doc.totalCents)}
+                          {money(doc.totalCents, t.lang)}
                         </span>
                       </div>
                       <div className="mt-0.5 text-xs text-gray-500">
-                        {doc.type === 'INVOICE' ? 'Invoice' : 'Estimate'}
+                        {doc.type === 'INVOICE'
+                          ? t('work.job.doc.invoice')
+                          : t('work.job.doc.estimate')}
                         {doc.voidedAt
-                          ? ' · voided'
+                          ? t('work.job.doc.voided')
                           : doc.paidAt
-                            ? ` · paid ${dateTime(doc.paidAt)}`
+                            ? t('work.job.doc.paid', { when: dateTime(doc.paidAt, t.lang) })
                             : doc.signedAt
-                              ? ` · signed ${dateTime(doc.signedAt)}`
+                              ? t('work.job.doc.signed', { when: dateTime(doc.signedAt, t.lang) })
                               : doc.sentAt
-                                ? ` · sent ${dateTime(doc.sentAt)}`
-                                : ' · not sent'}
+                                ? t('work.job.doc.sent', { when: dateTime(doc.sentAt, t.lang) })
+                                : t('work.job.doc.notSent')}
                       </div>
                     </a>
                   </li>
@@ -233,23 +237,20 @@ export default async function JobPage({ params }: { params: { id: string } }) {
           </Panel>
 
           {scans.length > 0 && (
-            <Panel title="Scans" subtitle="Signed paper from the visit">
+            <Panel title={t('work.job.scans')} subtitle={t('work.job.scansSubtitle')}>
               <div className="grid grid-cols-2 gap-2">
                 {scans.map((photo) => (
                   <PhotoTile key={photo.id} jobId={job.id} photo={photo} />
                 ))}
               </div>
-              <Hint>
-                Internal. These are the paper documents scanned on the job, not something the
-                customer is shown.
-              </Hint>
+              <Hint>{t('work.job.scansHint')}</Hint>
             </Panel>
           )}
 
-          <Panel title="Customer">
+          <Panel title={t('work.job.customer')}>
             <dl className="space-y-3">
-              <Field label="Name">{job.client?.name ?? '—'}</Field>
-              <Field label="Phone">
+              <Field label={t('work.job.name')}>{job.client?.name ?? '—'}</Field>
+              <Field label={t('work.job.phone')}>
                 {job.client?.phone ? (
                   <CallButton
                     phone={job.client.phone}
@@ -260,43 +261,46 @@ export default async function JobPage({ params }: { params: { id: string } }) {
                   '—'
                 )}
               </Field>
-              <Field label="Address">{job.address ?? '—'}</Field>
+              <Field label={t('work.job.address')}>{job.address ?? '—'}</Field>
               {job.appliance && (
-                <Field label="Appliance">
+                <Field label={t('work.job.appliance')}>
                   {[job.appliance.brand, job.appliance.model].filter(Boolean).join(' ') || '—'}
                 </Field>
               )}
             </dl>
           </Panel>
 
-          <Panel title="Timeline">
+          <Panel title={t('work.job.timeline')}>
             <dl className="space-y-3">
-              <Field label="Created">{dateTime(job.createdAt)}</Field>
-              <Field label="Scheduled">
-                {job.scheduledAt ? dateTime(job.scheduledAt) : 'Not scheduled'}
+              <Field label={t('work.job.created')}>{dateTime(job.createdAt, t.lang)}</Field>
+              <Field label={t('work.job.scheduled')}>
+                {job.scheduledAt ? dateTime(job.scheduledAt, t.lang) : t('work.job.notScheduled')}
               </Field>
-              <Field label="Started">{job.startedAt ? dateTime(job.startedAt) : '—'}</Field>
-              <Field label="Completed">
+              <Field label={t('work.job.started')}>
+                {job.startedAt ? dateTime(job.startedAt, t.lang) : '—'}
+              </Field>
+              <Field label={t('work.job.completed')}>
                 {job.completedAt ? (
                   <>
-                    {dateTime(job.completedAt)}
+                    {dateTime(job.completedAt, t.lang)}
                     <div className="text-xs text-gray-500">{relativeTime(job.completedAt)}</div>
                   </>
                 ) : (
                   '—'
                 )}
               </Field>
-              <Field label="Paid">{job.paidAt ? dateTime(job.paidAt) : 'Not yet'}</Field>
-              {job.assignedTo && <Field label="Assigned to">{job.assignedTo.name}</Field>}
+              <Field label={t('work.job.paid')}>
+                {job.paidAt ? dateTime(job.paidAt, t.lang) : t('work.job.notPaidYet')}
+              </Field>
+              {job.assignedTo && (
+                <Field label={t('work.job.assignedTo')}>{job.assignedTo.name}</Field>
+              )}
             </dl>
           </Panel>
         </div>
       </div>
 
-      <Hint>
-        Read live from JobPocket — this is the same job the app shows, not a copy of it. What a part
-        cost to buy is deliberately not carried here.
-      </Hint>
+      <Hint>{t('work.job.hint')}</Hint>
     </div>
   );
 }
@@ -310,6 +314,7 @@ export default async function JobPage({ params }: { params: { id: string } }) {
  * somebody's kitchen carries the coordinates of that kitchen.
  */
 function PhotoTile({ jobId, photo }: { jobId: string; photo: JobPhoto }) {
+  const t = serverTranslator();
   const src = `/api/admin/jobs/${jobId}/photo/${photo.id}`;
 
   return (
@@ -324,7 +329,7 @@ function PhotoTile({ jobId, photo }: { jobId: string; photo: JobPhoto }) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
-        alt={photo.caption ?? 'Job photo'}
+        alt={photo.caption ?? t('work.job.photoAlt')}
         loading="lazy"
         className="aspect-[4/3] w-full bg-cream-dark object-cover"
       />
@@ -336,12 +341,13 @@ function PhotoTile({ jobId, photo }: { jobId: string; photo: JobPhoto }) {
 }
 
 function BackLink() {
+  const t = serverTranslator();
   return (
     <Link
       href="/admin/calendar"
       className="font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 hover:text-ink"
     >
-      ← Calendar
+      {t('work.job.back')}
     </Link>
   );
 }
@@ -356,11 +362,12 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function Money({ label, cents, strong }: { label: string; cents: number; strong?: boolean }) {
+  const t = serverTranslator();
   return (
     <div className="flex justify-between">
       <dt className={strong ? 'font-medium text-ink' : 'text-gray-600'}>{label}</dt>
       <dd className={strong ? 'font-medium tabular-nums text-ink' : 'tabular-nums text-gray-600'}>
-        {money(cents)}
+        {money(cents, t.lang)}
       </dd>
     </div>
   );

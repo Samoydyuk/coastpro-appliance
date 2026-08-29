@@ -3,19 +3,28 @@ import { parseRange } from '@/lib/admin/range';
 import { getCalls, getTrackingNumbers } from '@/lib/admin/queries';
 import { count, dateTime, duration, percent } from '@/lib/admin/format';
 import { channelLabel } from '@/lib/attribution';
+import { serverTranslator } from '@/lib/i18n/server';
 import { Empty, Hint, Panel, SetupNotice, StatTile, Table, Td, Th, Warning } from '@/components/admin/ui';
 import { STATUS, channelColor } from '@/components/admin/palette';
+import { rangeLabel } from '@/lib/i18n/range';
 
 export const dynamic = 'force-dynamic';
 
 /** Calls shorter than this are misdials and wrong numbers, not customers. */
 const REAL_CALL_SECONDS = 30;
 
+/**
+ * The window the page is read through, named in the reader's language.
+ *
+ * `parseRange` labels in English because the export and the logs read the same
+ * object. The key identifies the window; this only renames it.
+ */
 export default async function CallsPage({
   searchParams,
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
+  const t = serverTranslator();
   const range = parseRange({
     range: searchParams.range as string,
     from: searchParams.from as string,
@@ -32,62 +41,74 @@ export default async function CallsPage({
     const firstTime = rows.filter((row) => row.is_first_time).length;
     const totalTalk = answered.reduce((sum, row) => sum + Number(row.duration_seconds ?? 0), 0);
 
+
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">Calls</h1>
-          <p className="mt-1 text-sm text-gray-600">{range.label}</p>
+          <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">
+            {t('work.calls.title')}
+          </h1>
+          <p className="mt-1 text-sm text-gray-600">{rangeLabel(range, t)}</p>
         </div>
 
         {numbers.length === 0 && (
           <Warning>
-            No tracking numbers are configured, so calls cannot be attributed to a channel. Add
-            them under{' '}
+            {t('work.calls.noNumbersBefore')}
             <Link href="/admin/settings" className="underline">
-              Settings
-            </Link>{' '}
-            — one number per channel, each forwarded to the main line.
+              {t('nav.settings')}
+            </Link>
+            {t('work.calls.noNumbersAfter')}
           </Warning>
         )}
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <StatTile label="Calls" value={count(rows.length)} hint={`${count(firstTime)} first-time callers`} />
           <StatTile
-            label="Answered"
-            value={count(answered.length)}
-            hint={rows.length ? `${percent(answered.length / rows.length, 0)} of calls` : undefined}
+            label={t('work.calls.count')}
+            value={count(rows.length, t.lang)}
+            hint={t.plural(firstTime, 'work.plural.newCaller')}
           />
           <StatTile
-            label="Missed"
-            value={count(missed)}
+            label={t('work.calls.answered')}
+            value={count(answered.length, t.lang)}
+            hint={
+              rows.length
+                ? t('work.calls.ofCalls', {
+                    pct: percent(answered.length / rows.length, 0, t.lang),
+                  })
+                : undefined
+            }
+          />
+          <StatTile
+            label={t('work.calls.missed')}
+            value={count(missed, t.lang)}
             higherIsBetter={false}
-            hint={missed ? 'each one is a job somebody else got' : 'none'}
+            hint={missed ? t('work.calls.missedHint') : t('work.calls.missedNone')}
           />
           <StatTile
-            label="Talk time"
+            label={t('work.calls.talkTime')}
             value={duration(totalTalk)}
-            hint={`${count(real.length)} calls over ${REAL_CALL_SECONDS}s`}
+            hint={t('work.calls.overSeconds', {
+              n: count(real.length, t.lang),
+              seconds: REAL_CALL_SECONDS,
+            })}
           />
         </div>
 
-        <Panel title="Call log">
+        <Panel title={t('work.calls.log')}>
           {rows.length === 0 ? (
-            <Empty>
-              No calls recorded. Calls only appear here once tracking numbers are live and the
-              Telnyx webhook is pointed at this site.
-            </Empty>
+            <Empty>{t('work.calls.empty')}</Empty>
           ) : (
             <Table>
               <thead>
                 <tr>
-                  <Th>When</Th>
-                  <Th>From</Th>
-                  <Th>Rang</Th>
-                  <Th>Channel</Th>
-                  <Th>Town</Th>
-                  <Th>Was reading</Th>
-                  <Th numeric>Length</Th>
-                  <Th>Result</Th>
+                  <Th>{t('work.calls.when')}</Th>
+                  <Th>{t('work.calls.from')}</Th>
+                  <Th>{t('work.calls.rang')}</Th>
+                  <Th>{t('work.calls.channel')}</Th>
+                  <Th>{t('work.calls.town')}</Th>
+                  <Th>{t('work.calls.wasReading')}</Th>
+                  <Th numeric>{t('work.calls.length')}</Th>
+                  <Th>{t('work.calls.result')}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -96,12 +117,14 @@ export default async function CallsPage({
                   const short = Boolean(row.answered) && seconds < REAL_CALL_SECONDS;
                   return (
                     <tr key={String(row.id)}>
-                      <Td className="whitespace-nowrap">{dateTime(row.started_at as Date)}</Td>
+                      <Td className="whitespace-nowrap">
+                        {dateTime(row.started_at as Date, t.lang)}
+                      </Td>
                       <Td className="whitespace-nowrap font-mono text-xs">
                         {(row.caller_number as string) || '—'}
                         {row.is_first_time ? (
                           <span className="ml-2 text-[10px] uppercase tracking-label text-gray-500">
-                            new
+                            {t('work.calls.new')}
                           </span>
                         ) : null}
                       </Td>
@@ -126,17 +149,19 @@ export default async function CallsPage({
                       <Td>
                         {row.answered ? (
                           <span style={{ color: short ? STATUS.warning : '#006300' }}>
-                            {short ? 'Too short' : 'Answered'}
+                            {short ? t('work.calls.tooShort') : t('work.calls.wasAnswered')}
                           </span>
                         ) : (
-                          <span style={{ color: STATUS.critical }}>Missed</span>
+                          <span style={{ color: STATUS.critical }}>
+                            {t('work.calls.wasMissed')}
+                          </span>
                         )}
                         {row.lead_id ? (
                           <Link
                             href={`/admin/leads/${row.lead_id}`}
                             className="ml-2 text-xs underline"
                           >
-                            lead
+                            {t('work.calls.lead')}
                           </Link>
                         ) : null}
                       </Td>
@@ -146,11 +171,7 @@ export default async function CallsPage({
               </tbody>
             </Table>
           )}
-          <Hint>
-            &quot;Was reading&quot; is the page the matching browsing session landed on — how the
-            call gets tied back to an ad. It is a best match on channel and timing, so treat it as
-            strong evidence rather than proof.
-          </Hint>
+          <Hint>{t('work.calls.hint')}</Hint>
         </Panel>
       </div>
     );

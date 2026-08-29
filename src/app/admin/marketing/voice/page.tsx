@@ -1,12 +1,16 @@
 import Link from 'next/link';
 import { getVoice } from '@/lib/marketing/voice';
 import { CHANNELS } from '@/lib/marketing/prompts';
+import { serverTranslator } from '@/lib/i18n/server';
+import type { TranslationKey } from '@/lib/i18n';
 import { Hint, Panel, SetupNotice } from '@/components/admin/ui';
 import { VoiceEditor } from '@/components/admin/VoiceEditor';
 
 export const dynamic = 'force-dynamic';
 
 export default async function VoicePage() {
+  const t = serverTranslator();
+
   try {
     const voice = await getVoice();
 
@@ -17,36 +21,34 @@ export default async function VoicePage() {
             href="/admin/marketing"
             className="font-heading text-[10px] uppercase tracking-label text-gray-500 hover:text-ink"
           >
-            ← Marketing
+            {t('marketing.job.back')}
           </Link>
           <h1 className="mt-1 font-heading text-xl font-bold uppercase tracking-label text-ink">
-            House voice
+            {t('marketing.voice.title')}
           </h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Applies to every channel. Changing it changes the next draft, not the ones already
-            written.
-          </p>
+          <p className="mt-1 text-sm text-gray-600">{t('marketing.voice.subtitle')}</p>
         </header>
 
         <Panel>
           <VoiceEditor voice={voice} />
         </Panel>
 
-        <Panel title="What gets written">
+        <Panel title={t('marketing.voice.whatGets')}>
           <ul className="space-y-3">
+            {/* The brief itself is what the model is given, in English; what is
+                shown here is the same instruction said in the reader's language. */}
             {CHANNELS.map((channel) => (
               <li key={channel.key}>
-                <p className="text-sm font-medium text-ink">{channel.label}</p>
-                <p className="text-xs leading-relaxed text-gray-600">{channel.brief}</p>
+                <p className="text-sm font-medium text-ink">
+                  {t(`marketing.piece.${channel.key}` as TranslationKey)}
+                </p>
+                <p className="text-xs leading-relaxed text-gray-600">
+                  {t(`marketing.brief.${channel.key}` as TranslationKey)}
+                </p>
               </li>
             ))}
           </ul>
-          <Hint>
-            Each draft is built from an outline assembled out of the fields that job actually
-            has. A repair with no diagnosis recorded does not get a &ldquo;what we
-            found&rdquo; section written from guesswork — it gets an outline with no such
-            section in it.
-          </Hint>
+          <Hint>{t('marketing.voice.hint')}</Hint>
         </Panel>
       </div>
     );

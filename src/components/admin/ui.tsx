@@ -2,8 +2,20 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { deltaColor, INK_MUTED, STATUS } from './palette';
 import { percent } from '@/lib/admin/format';
+import { SetupNoticeBody, StatusPill } from './ui.client';
 
-/** The building blocks every admin screen is assembled from. */
+/**
+ * The building blocks every admin screen is assembled from.
+ *
+ * Nothing in this file reads the language, and nothing in it may. The live-now
+ * screen is a client component and imports from here, so this whole file is
+ * compiled into the browser bundle too — one `next/headers` import anywhere in
+ * its reach and the build stops. The two blocks that have words of their own
+ * live in `ui.client.tsx` and read the language from context instead.
+ */
+
+// Re-exported so every call site keeps importing the pill from one place.
+export { StatusPill };
 
 export function Panel({
   title,
@@ -80,44 +92,6 @@ export function StatTile({
         {hint && <span className="text-xs text-gray-500">{hint}</span>}
       </div>
     </div>
-  );
-}
-
-const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  new: { bg: '#e8f1fd', text: '#1c5cab', label: 'New' },
-  contacted: { bg: '#fdf2e3', text: '#8a5a12', label: 'Contacted' },
-  booked: { bg: '#e6f4ec', text: '#0b5c34', label: 'Booked' },
-  won: { bg: '#e3f3e3', text: '#06600d', label: 'Won' },
-  lost: { bg: '#f4e6e6', text: '#8f2323', label: 'Lost' },
-  spam: { bg: '#eceae6', text: '#635c56', label: 'Spam' },
-
-  // Booking requests, as JobPocket names them. Without these the pill fell back
-  // to grey with the raw enum in it — "PENDING" shouted at the reader in a
-  // column where every other row said something in English.
-  PENDING: { bg: '#fdf2e3', text: '#8a5a12', label: 'Waiting' },
-  ACCEPTED: { bg: '#e6f4ec', text: '#0b5c34', label: 'Accepted' },
-  DECLINED: { bg: '#f4e6e6', text: '#8f2323', label: 'Declined' },
-  CANCELLED: { bg: '#eceae6', text: '#635c56', label: 'Cancelled' },
-
-  // And the job it becomes.
-  SCHEDULED: { bg: '#e8f1fd', text: '#1c5cab', label: 'Scheduled' },
-  IN_PROGRESS: { bg: '#fdf2e3', text: '#8a5a12', label: 'In progress' },
-  PAUSED: { bg: '#eceae6', text: '#635c56', label: 'Paused' },
-  COMPLETED: { bg: '#e6f4ec', text: '#0b5c34', label: 'Completed' },
-  INVOICED: { bg: '#e8f1fd', text: '#1c5cab', label: 'Invoiced' },
-  PAID: { bg: '#e3f3e3', text: '#06600d', label: 'Paid' },
-  DRAFT: { bg: '#eceae6', text: '#635c56', label: 'Draft' },
-};
-
-export function StatusPill({ status }: { status: string }) {
-  const style = STATUS_STYLES[status] ?? { bg: '#eceae6', text: '#635c56', label: status };
-  return (
-    <span
-      className="inline-flex items-center rounded-full px-2.5 py-0.5 font-heading text-[10px] font-semibold uppercase tracking-label"
-      style={{ backgroundColor: style.bg, color: style.text }}
-    >
-      {style.label}
-    </span>
   );
 }
 
@@ -222,6 +196,12 @@ export function Hint({ children }: { children: React.ReactNode }) {
  * What a screen shows when it cannot reach the database. Almost always a
  * missing DATABASE_URL rather than a real fault, so it says so plainly instead
  * of showing a stack trace.
+ *
+ * The reading of the error stays here, on the server, for two reasons. The
+ * driver writes its message in English whatever the console is set to, so the
+ * matching below must never be translated — and an `Error` is a class
+ * instance, which cannot be handed across the boundary to a client component
+ * at all. What crosses is two booleans and a string.
  */
 export function SetupNotice({ error }: { error: unknown }) {
   const message = error instanceof Error ? error.message : String(error);
@@ -229,40 +209,7 @@ export function SetupNotice({ error }: { error: unknown }) {
   const missingTables = /relation .* does not exist/i.test(message);
 
   return (
-    <div className="mx-auto max-w-2xl py-16">
-      <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">
-        {missingUrl ? 'Database not connected yet' : missingTables ? 'Tables not created yet' : 'Could not load'}
-      </h1>
-      <div className="mt-4 space-y-3 text-sm text-gray-700">
-        {missingUrl && (
-          <>
-            <p>
-              Copy <code className="rounded bg-cream-dark px-1.5 py-0.5">DATABASE_PUBLIC_URL</code>{' '}
-              from the Railway Postgres service, add it to Vercel as{' '}
-              <code className="rounded bg-cream-dark px-1.5 py-0.5">DATABASE_URL</code>, and
-              redeploy.
-            </p>
-            <p className="text-gray-500">
-              It has to be the public one. The internal address —{' '}
-              <code className="rounded bg-cream-dark px-1.5 py-0.5">*.railway.internal</code> —
-              only resolves inside Railway&apos;s own network, and this site does not run there.
-            </p>
-          </>
-        )}
-        {missingTables && (
-          <p>
-            The database is reachable but empty. Run{' '}
-            <code className="rounded bg-cream-dark px-1.5 py-0.5">
-              psql &quot;$DATABASE_PUBLIC_URL&quot; -f db/schema.sql
-            </code>{' '}
-            once.
-          </p>
-        )}
-        {!missingUrl && !missingTables && (
-          <p className="rounded-card bg-cream-dark p-3 font-mono text-xs">{message}</p>
-        )}
-      </div>
-    </div>
+    <SetupNoticeBody missingUrl={missingUrl} missingTables={missingTables} message={message} />
   );
 }
 

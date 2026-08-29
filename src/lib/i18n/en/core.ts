@@ -6,7 +6,7 @@
  * English needs two of those forms and Ukrainian needs four, and code that
  * chooses with `n === 1` gets Ukrainian wrong at every count a report contains.
  */
-export const en = {
+export const core = {
   // Navigation
   'nav.overview': 'Overview',
   'nav.settings': 'Settings',

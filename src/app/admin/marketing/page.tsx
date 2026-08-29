@@ -1,19 +1,22 @@
 import Link from 'next/link';
 import { listMarketingJobs, marketingFacets, marketingLastRefresh } from '@/lib/marketing/queries';
 import { dateTime } from '@/lib/admin/format';
+import { serverTranslator } from '@/lib/i18n/server';
 import { Empty, Hint, Panel, SetupNotice, Table, Td, Th } from '@/components/admin/ui';
 import { MarketingRefresh } from '@/components/admin/MarketingRefresh';
 
 export const dynamic = 'force-dynamic';
 
+// `value` is what the filter sends and what the query matches on; only the
+// label is the reader's.
 const CONTENT_STATUSES = [
-  { value: 'none', label: 'Nothing written' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'generated', label: 'Generated' },
-  { value: 'edited', label: 'Edited' },
-  { value: 'published', label: 'Published' },
-  { value: 'skipped', label: 'Skipped' },
-];
+  { value: 'none', labelKey: 'marketing.jobs.status.none' },
+  { value: 'draft', labelKey: 'marketing.jobs.status.draft' },
+  { value: 'generated', labelKey: 'marketing.jobs.status.generated' },
+  { value: 'edited', labelKey: 'marketing.jobs.status.edited' },
+  { value: 'published', labelKey: 'marketing.jobs.status.published' },
+  { value: 'skipped', labelKey: 'marketing.jobs.status.skipped' },
+] as const;
 
 const field =
   'h-9 rounded-card border border-primary-500/30 bg-[#fcfcfb] px-3 text-sm';
@@ -34,6 +37,7 @@ export default async function MarketingPage({
     offset: Number(searchParams.offset ?? 0) || 0,
     limit: 50,
   };
+  const t = serverTranslator();
 
   try {
     const [{ rows, total }, facets, lastRefresh] = await Promise.all([
@@ -66,12 +70,14 @@ export default async function MarketingPage({
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">
-              Marketing
+              {t('marketing.jobs.title')}
             </h1>
             <p className="mt-1 text-sm text-gray-600">
               {total === 0
-                ? 'No released jobs yet'
-                : `${total} finished ${total === 1 ? 'job' : 'jobs'} released for content`}
+                ? t('marketing.jobs.none')
+                : t('marketing.jobs.releasedCount', {
+                    jobs: t.plural(total, 'marketing.plural.finishedJob'),
+                  })}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -79,20 +85,17 @@ export default async function MarketingPage({
               href="/admin/marketing/voice"
               className="inline-flex h-8 items-center rounded-card border border-primary-500/30 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 hover:border-ink hover:text-ink"
             >
-              House voice
+              {t('marketing.jobs.houseVoice')}
             </Link>
-            <MarketingRefresh lastRefresh={lastRefresh ? dateTime(lastRefresh) : null} />
+            <MarketingRefresh
+              lastRefresh={lastRefresh ? dateTime(lastRefresh, t.lang) : null}
+            />
           </div>
         </header>
 
         {total === 0 && (
           <Panel>
-            <Empty>
-              Nothing here yet. A finished job appears once it is switched on for the website —
-              the toggle is at the bottom of the Complete Job sheet in the app, and photos have
-              their own switch in the job&rsquo;s photo list. Both are off by default, which is
-              why this page starts empty rather than full.
-            </Empty>
+            <Empty>{t('marketing.jobs.emptyState')}</Empty>
           </Panel>
         )}
 
@@ -101,20 +104,20 @@ export default async function MarketingPage({
             <Panel>
               <form method="get" className="flex flex-wrap items-end gap-3">
                 <label className="flex flex-col gap-1">
-                  <span className={legend}>Search</span>
+                  <span className={legend}>{t('marketing.jobs.search')}</span>
                   <input
                     type="search"
                     name="q"
                     defaultValue={filters.search ?? ''}
-                    placeholder="Fault, repair, model"
+                    placeholder={t('marketing.jobs.searchPlaceholder')}
                     className={`${field} w-56`}
                   />
                 </label>
 
                 <label className="flex flex-col gap-1">
-                  <span className={legend}>Appliance</span>
+                  <span className={legend}>{t('marketing.jobs.appliance')}</span>
                   <select name="type" defaultValue={filters.applianceType ?? ''} className={field}>
-                    <option value="">Any</option>
+                    <option value="">{t('marketing.any')}</option>
                     {facets.types.map((entry) => (
                       <option key={entry} value={entry}>
                         {entry}
@@ -124,9 +127,9 @@ export default async function MarketingPage({
                 </label>
 
                 <label className="flex flex-col gap-1">
-                  <span className={legend}>Brand</span>
+                  <span className={legend}>{t('marketing.jobs.brand')}</span>
                   <select name="brand" defaultValue={filters.brand ?? ''} className={field}>
-                    <option value="">Any</option>
+                    <option value="">{t('marketing.any')}</option>
                     {facets.brands.map((entry) => (
                       <option key={entry} value={entry}>
                         {entry}
@@ -136,9 +139,9 @@ export default async function MarketingPage({
                 </label>
 
                 <label className="flex flex-col gap-1">
-                  <span className={legend}>Town</span>
+                  <span className={legend}>{t('marketing.jobs.town')}</span>
                   <select name="city" defaultValue={filters.city ?? ''} className={field}>
-                    <option value="">Any</option>
+                    <option value="">{t('marketing.any')}</option>
                     {facets.cities.map((entry) => (
                       <option key={entry} value={entry}>
                         {entry}
@@ -149,9 +152,9 @@ export default async function MarketingPage({
 
                 {facets.codes.length > 0 && (
                   <label className="flex flex-col gap-1">
-                    <span className={legend}>Error code</span>
+                    <span className={legend}>{t('marketing.jobs.errorCode')}</span>
                     <select name="code" defaultValue={filters.errorCode ?? ''} className={field}>
-                      <option value="">Any</option>
+                      <option value="">{t('marketing.any')}</option>
                       {facets.codes.map((entry) => (
                         <option key={entry} value={entry}>
                           {entry}
@@ -162,12 +165,12 @@ export default async function MarketingPage({
                 )}
 
                 <label className="flex flex-col gap-1">
-                  <span className={legend}>Content</span>
+                  <span className={legend}>{t('marketing.jobs.content')}</span>
                   <select name="content" defaultValue={filters.contentStatus ?? ''} className={field}>
-                    <option value="">Any</option>
+                    <option value="">{t('marketing.any')}</option>
                     {CONTENT_STATUSES.map((entry) => (
                       <option key={entry.value} value={entry.value}>
-                        {entry.label}
+                        {t(entry.labelKey)}
                       </option>
                     ))}
                   </select>
@@ -177,14 +180,14 @@ export default async function MarketingPage({
                   type="submit"
                   className="h-9 rounded-card bg-ink px-4 font-heading text-[10px] font-semibold uppercase tracking-label text-cream"
                 >
-                  Apply
+                  {t('marketing.action.apply')}
                 </button>
                 {active && (
                   <Link
                     href="/admin/marketing"
                     className="h-9 self-end px-2 font-heading text-[10px] uppercase tracking-label leading-9 text-gray-500 hover:text-ink"
                   >
-                    Clear
+                    {t('marketing.action.clear')}
                   </Link>
                 )}
               </form>
@@ -192,19 +195,19 @@ export default async function MarketingPage({
 
             <Panel>
               {rows.length === 0 ? (
-                <Empty>No released jobs match this filter.</Empty>
+                <Empty>{t('marketing.jobs.noMatch')}</Empty>
               ) : (
                 <Table>
                   <thead>
                     <tr>
-                      <Th>Finished</Th>
-                      <Th>Appliance</Th>
-                      <Th>Brand</Th>
-                      <Th>Fault</Th>
-                      <Th>Codes</Th>
-                      <Th>Town</Th>
-                      <Th numeric>Photos</Th>
-                      <Th>Content</Th>
+                      <Th>{t('marketing.col.finished')}</Th>
+                      <Th>{t('marketing.jobs.appliance')}</Th>
+                      <Th>{t('marketing.jobs.brand')}</Th>
+                      <Th>{t('marketing.col.fault')}</Th>
+                      <Th>{t('marketing.col.codes')}</Th>
+                      <Th>{t('marketing.jobs.town')}</Th>
+                      <Th numeric>{t('marketing.col.photos')}</Th>
+                      <Th>{t('marketing.jobs.content')}</Th>
                     </tr>
                   </thead>
                   <tbody>
@@ -215,7 +218,7 @@ export default async function MarketingPage({
                             href={`/admin/marketing/${row.job_id}`}
                             className="whitespace-nowrap text-gray-700 underline-offset-2 hover:underline"
                           >
-                            {row.completed_at ? dateTime(row.completed_at) : '—'}
+                            {row.completed_at ? dateTime(row.completed_at, t.lang) : '—'}
                           </Link>
                         </Td>
                         <Td>
@@ -223,7 +226,7 @@ export default async function MarketingPage({
                             href={`/admin/marketing/${row.job_id}`}
                             className="font-medium text-ink"
                           >
-                            {row.appliance_type || 'Appliance'}
+                            {row.appliance_type || t('marketing.jobs.appliance')}
                           </Link>
                         </Td>
                         <Td>{row.manufacturer || '—'}</Td>
@@ -241,11 +244,11 @@ export default async function MarketingPage({
                               ? `${row.selected_photos}/${row.photo_count}`
                               : row.photo_count}
                         </Td>
-                        <Td className="capitalize">
+                        <Td>
                           {row.channels.length === 0 ? (
                             <span className="text-gray-500">—</span>
                           ) : (
-                            `${row.channels.length} ${row.channels.length === 1 ? 'piece' : 'pieces'}`
+                            t.plural(row.channels.length, 'marketing.plural.piece')
                           )}
                         </Td>
                       </tr>
@@ -257,7 +260,8 @@ export default async function MarketingPage({
               {total > filters.limit && (
                 <div className="mt-4 flex items-center justify-between text-xs text-gray-600">
                   <span>
-                    {filters.offset + 1}–{Math.min(filters.offset + filters.limit, total)} of {total}
+                    {filters.offset + 1}–{Math.min(filters.offset + filters.limit, total)}{' '}
+                    {t('common.of')} {total}
                   </span>
                   <div className="flex gap-2">
                     {filters.offset > 0 && (
@@ -265,7 +269,7 @@ export default async function MarketingPage({
                         href={page(Math.max(0, filters.offset - filters.limit))}
                         className="font-heading text-[10px] uppercase tracking-label hover:text-ink"
                       >
-                        ← Newer
+                        {t('marketing.jobs.newer')}
                       </Link>
                     )}
                     {filters.offset + filters.limit < total && (
@@ -273,19 +277,14 @@ export default async function MarketingPage({
                         href={page(filters.offset + filters.limit)}
                         className="font-heading text-[10px] uppercase tracking-label hover:text-ink"
                       >
-                        Older →
+                        {t('marketing.jobs.older')}
                       </Link>
                     )}
                   </div>
                 </div>
               )}
 
-              <Hint>
-                This list is a copy of what JobPocket is willing to publish, and that is all it
-                can ever be: no customer name, phone, email or street address is sent, and none
-                of those columns exist here to put one in. Location is the town and nothing
-                finer.
-              </Hint>
+              <Hint>{t('marketing.jobs.listHint')}</Hint>
             </Panel>
           </>
         )}

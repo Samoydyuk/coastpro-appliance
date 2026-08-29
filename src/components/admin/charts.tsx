@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BASELINE, GRIDLINE, INK, INK_MUTED, SURFACE, sequentialColor } from './palette';
+import { useT } from '@/components/admin/LanguageProvider';
+import { count, percent } from '@/lib/admin/format';
+import { numberLocale, type Lang, type TranslationKey, type Translator } from '@/lib/i18n';
 
 /**
  * A small chart kit, hand-built in SVG.
@@ -44,12 +47,20 @@ function niceCeil(value: number): number {
  */
 export type ValueFormat = 'number' | 'money';
 
-function formatterFor(format: ValueFormat) {
+/**
+ * Grouping and the decimal mark follow the reader; the dollar sign does not.
+ * The business bills in USD, so a Ukrainian axis reads "$1 200" — translating
+ * the currency would be inventing a number nobody was ever charged.
+ */
+function formatterFor(format: ValueFormat, lang: Lang) {
+  const locale = numberLocale(lang);
   if (format === 'money') {
-    return (value: number) => `$${Math.round(value).toLocaleString('en-US')}`;
+    return (value: number) => `$${Math.round(value).toLocaleString(locale)}`;
   }
   return (value: number) =>
-    Number.isInteger(value) ? value.toLocaleString('en-US') : value.toFixed(1);
+    Number.isInteger(value)
+      ? value.toLocaleString(locale)
+      : value.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 }
 
 export interface SeriesSpec {
@@ -78,7 +89,8 @@ export function TimeSeries({
   height?: number;
   format?: ValueFormat;
 }) {
-  const formatValue = formatterFor(format);
+  const t = useT();
+  const formatValue = formatterFor(format, t.lang);
   const { ref, width } = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
 
@@ -120,7 +132,9 @@ export function TimeSeries({
           onMouseMove={onMove}
           onMouseLeave={() => setHover(null)}
           role="img"
-          aria-label={`${series.map((entry) => entry.label).join(', ')} over time`}
+          aria-label={t('shared.chart.overTime', {
+            series: series.map((entry) => entry.label).join(', '),
+          })}
         >
           <g transform={`translate(${padding.left},${padding.top})`}>
             {ticks.map((tick) => (
@@ -248,9 +262,11 @@ export function RankedBars({
   format?: ValueFormat;
   max?: number;
 }) {
-  const formatValue = formatterFor(format);
+  const t = useT();
+  const formatValue = formatterFor(format, t.lang);
   const max = providedMax ?? Math.max(1, ...items.map((item) => item.value));
-  if (!items.length) return <p className="py-6 text-center text-sm text-gray-500">No data yet.</p>;
+  if (!items.length)
+    return <p className="py-6 text-center text-sm text-gray-500">{t('shared.chart.noData')}</p>;
 
   return (
     <ul className="space-y-2.5">
@@ -288,6 +304,7 @@ export function Funnel({
 }: {
   stages: { key: string; label: string; value: number; note: string }[];
 }) {
+  const t = useT();
   const top = Math.max(1, stages[0]?.value ?? 1);
   return (
     <ol className="space-y-3">
@@ -300,9 +317,11 @@ export function Funnel({
             <div className="flex items-baseline justify-between gap-3">
               <span className="text-sm font-medium text-gray-800">{stage.label}</span>
               <span className="font-heading text-sm font-bold tabular-nums" style={{ color: INK }}>
-                {stage.value.toLocaleString('en-US')}
+                {count(stage.value, t.lang)}
                 <span className="ml-2 text-xs font-normal text-gray-500">
-                  {(share * 100).toFixed(share < 1 ? 1 : 0)}% of visits
+                  {t('shared.chart.ofVisits', {
+                    pct: percent(share, share < 1 ? 1 : 0, t.lang),
+                  })}
                 </span>
               </span>
             </div>
@@ -319,10 +338,10 @@ export function Funnel({
               <span>{stage.note}</span>
               {stepRate !== null && (
                 <span className="ml-auto tabular-nums">
-                  {(stepRate * 100).toFixed(0)}% carried over
+                  {t('shared.chart.carriedOver', { pct: percent(stepRate, 0, t.lang) })}
                   {stepRate < 1 && (
                     <span className="ml-1 text-[#8f2323]">
-                      (−{(previous! - stage.value).toLocaleString('en-US')})
+                      (−{count(previous! - stage.value, t.lang)})
                     </span>
                   )}
                 </span>
@@ -335,10 +354,28 @@ export function Funnel({
   );
 }
 
-const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+/**
+ * Weekdays in the order `Date.getDay()` counts them, so the index in this
+ * array is the number the query returns. The rows are keyed by that number and
+ * never by the label — a translated label as a React key would rebuild the
+ * whole grid the moment the language changed, and would collapse two rows
+ * outright in any language where two days abbreviate the same way.
+ */
+const DAY_KEYS: TranslationKey[] = [
+  'shared.day.0',
+  'shared.day.1',
+  'shared.day.2',
+  'shared.day.3',
+  'shared.day.4',
+  'shared.day.5',
+  'shared.day.6',
+];
+
+const dayName = (t: Translator, dow: number) => t(DAY_KEYS[dow] ?? 'shared.day.0');
 
 /** Weekday × hour grid. Magnitude, so a single hue light→dark. */
 export function Heatmap({ cells }: { cells: { dow: number; hour: number; total: number }[] }) {
+  const t = useT();
   const [hover, setHover] = useState<{ dow: number; hour: number; total: number } | null>(null);
   const lookup = useMemo(() => {
     const map = new Map<string, number>();
@@ -362,10 +399,10 @@ export function Heatmap({ cells }: { cells: { dow: number; hour: number; total: 
             </tr>
           </thead>
           <tbody>
-            {DAYS.map((day, dow) => (
-              <tr key={day}>
+            {DAY_KEYS.map((_key, dow) => (
+              <tr key={dow}>
                 <th className="pr-2 text-right text-[10px] font-normal" style={{ color: INK_MUTED }}>
-                  {day}
+                  {dayName(t, dow)}
                 </th>
                 {Array.from({ length: 24 }, (_, hour) => {
                   const total = lookup.get(`${dow}-${hour}`) ?? 0;
@@ -376,7 +413,11 @@ export function Heatmap({ cells }: { cells: { dow: number; hour: number; total: 
                         style={{ backgroundColor: sequentialColor(total / max) }}
                         onMouseEnter={() => setHover({ dow, hour, total })}
                         onMouseLeave={() => setHover(null)}
-                        title={`${day} ${hour}:00 — ${total}`}
+                        title={t('shared.chart.cellTitle', {
+                          day: dayName(t, dow),
+                          hour,
+                          total: count(total, t.lang),
+                        })}
                       />
                     </td>
                   );
@@ -388,8 +429,14 @@ export function Heatmap({ cells }: { cells: { dow: number; hour: number; total: 
       </div>
       <p className="mt-3 text-xs" style={{ color: INK_MUTED }}>
         {hover
-          ? `${DAYS[hover.dow]} at ${hover.hour}:00 — ${hover.total} request${hover.total === 1 ? '' : 's'}`
-          : `Darkest cell = ${max} requests. Hover a cell for the exact figure.`}
+          ? t('shared.chart.heatmapHover', {
+              day: dayName(t, hover.dow),
+              hour: hover.hour,
+              requests: t.plural(hover.total, 'shared.request'),
+            })
+          : t('shared.chart.heatmapLegend', {
+              requests: t.plural(max, 'shared.request'),
+            })}
       </p>
     </div>
   );

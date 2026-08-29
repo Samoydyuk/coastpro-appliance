@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLang, useT } from '@/components/admin/LanguageProvider';
+import { numberLocale } from '@/lib/i18n';
 
 /**
  * Moving a visit.
@@ -24,7 +26,11 @@ interface ArrivalWindow {
   endISO: string;
 }
 
-function nextDays(count: number) {
+/**
+ * The next `count` days. `value` is the ISO day the API is asked for and never
+ * moves with the language; the two labels are only what the chip reads.
+ */
+function nextDays(count: number, locale: string) {
   return Array.from({ length: count }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() + i);
@@ -33,16 +39,22 @@ function nextDays(count: number) {
     ).padStart(2, '0')}`;
     return {
       value,
-      weekday: i === 0 ? 'Today' : date.toLocaleDateString('en-US', { weekday: 'short' }),
-      day: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      isToday: i === 0,
+      weekday: date.toLocaleDateString(locale, { weekday: 'short' }),
+      day: date.toLocaleDateString(locale, { month: 'short', day: 'numeric' }),
     };
   });
 }
 
 export function RescheduleForm({ jobId, canMove }: { jobId: string; canMove: boolean }) {
+  const t = useT();
+  const lang = useLang();
   const router = useRouter();
 
-  const days = useRef(nextDays(21)).current;
+  // Rebuilt when the language changes: switching it refreshes the server
+  // components without unmounting this one, so anything cached in a ref would
+  // keep the old month names.
+  const days = useMemo(() => nextDays(21, numberLocale(lang)), [lang]);
   const [date, setDate] = useState(days[0].value);
   const [windows, setWindows] = useState<ArrivalWindow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -78,17 +90,13 @@ export function RescheduleForm({ jobId, canMove }: { jobId: string; canMove: boo
   }, [date, canMove]);
 
   if (!canMove) {
-    return (
-      <p className="text-sm text-gray-600">
-        This job is finished or called off. Reopen it in the app before moving it.
-      </p>
-    );
+    return <p className="text-sm text-gray-600">{t('work.move.locked')}</p>;
   }
 
   const submit = async () => {
     const when = picked?.startISO ?? (exactTime ? new Date(exactTime).toISOString() : null);
     if (!when) {
-      setError('Pick a window or set a time.');
+      setError(t('work.move.pickSomething'));
       return;
     }
 
@@ -118,23 +126,24 @@ export function RescheduleForm({ jobId, canMove }: { jobId: string; canMove: boo
         | null;
 
       if (!response.ok) {
-        setError(body?.error ?? 'Could not move that visit.');
+        // The server's own wording when it has one — it knows what it refused.
+        setError(body?.error ?? t('work.move.failed'));
         return;
       }
 
-      setDone('Moved. The technician has been told and the app has it already.');
+      setDone(t('work.move.done'));
       if (body?.warning) {
         setClash(
-          `Note: there is another visit within the hour${
-            body.warning.jobType ? ` (${body.warning.jobType})` : ''
-          }. Moved anyway.`
+          t('work.move.clash', {
+            what: body.warning.jobType ? ` (${body.warning.jobType})` : '',
+          })
         );
       }
       setPicked(null);
       setExactTime('');
       router.refresh();
     } catch {
-      setError('Could not reach the server.');
+      setError(t('work.form.noServer'));
     } finally {
       setBusy(false);
     }
@@ -156,7 +165,7 @@ export function RescheduleForm({ jobId, canMove }: { jobId: string; canMove: boo
             }`}
           >
             <span className="block font-heading text-[9px] font-semibold uppercase tracking-label">
-              {d.weekday}
+              {d.isToday ? t('work.form.today') : d.weekday}
             </span>
             <span className="mt-0.5 block text-xs">{d.day}</span>
           </button>
@@ -164,7 +173,7 @@ export function RescheduleForm({ jobId, canMove }: { jobId: string; canMove: boo
       </div>
 
       {loading ? (
-        <p className="text-xs text-gray-600">Checking the calendar…</p>
+        <p className="text-xs text-gray-600">{t('work.form.checkingCalendar')}</p>
       ) : windows.length > 0 ? (
         <div className="grid grid-cols-2 gap-2">
           {windows.map((w) => (
@@ -186,14 +195,12 @@ export function RescheduleForm({ jobId, canMove }: { jobId: string; canMove: boo
           ))}
         </div>
       ) : (
-        <p className="text-xs text-gray-600">
-          No free windows that day on the booking page. Set a time below instead.
-        </p>
+        <p className="text-xs text-gray-600">{t('work.move.noWindows')}</p>
       )}
 
       <label className="flex flex-col gap-1">
         <span className="font-heading text-[10px] uppercase tracking-label text-gray-500">
-          Or a time of your own
+          {t('work.form.ownTime')}
         </span>
         <input
           type="datetime-local"
@@ -212,7 +219,7 @@ export function RescheduleForm({ jobId, canMove }: { jobId: string; canMove: boo
         disabled={busy || (!picked && !exactTime)}
         className="h-9 w-full rounded-card bg-ink px-4 font-heading text-[10px] font-semibold uppercase tracking-label text-cream disabled:opacity-50"
       >
-        {busy ? 'Moving…' : 'Move the visit'}
+        {busy ? t('work.move.submitting') : t('work.move.submit')}
       </button>
 
       {error && <p className="text-xs" style={{ color: '#8f2323' }}>{error}</p>}

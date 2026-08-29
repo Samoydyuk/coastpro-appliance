@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { PresenceChannel } from '@/lib/presence/store';
+import { useT } from '@/components/admin/LanguageProvider';
+import type { TranslationKey } from '@/lib/i18n';
 
 /**
  * Typing in the numbers Yelp and Apple will not hand over.
@@ -18,6 +20,7 @@ import type { PresenceChannel } from '@/lib/presence/store';
  */
 export function PresenceEntry({ channels }: { channels: PresenceChannel[] }) {
   const router = useRouter();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [channelKey, setChannelKey] = useState(channels[0]?.key ?? '');
   const [day, setDay] = useState(() => {
@@ -33,6 +36,15 @@ export function PresenceEntry({ channels }: { channels: PresenceChannel[] }) {
   const [error, setError] = useState<string | null>(null);
 
   const channel = channels.find((c) => c.key === channelKey);
+
+  // The measure names live in the presence catalogue beside the importers, so
+  // the dictionary answers by channel and measure; anything added there later
+  // keeps its own English rather than showing a key.
+  const measureLabel = (channelName: string, measure: { key: string; label: string }) => {
+    const key = `marketing.presence.measure.${channelName}.${measure.key}`;
+    const text = t(key as TranslationKey);
+    return text === key ? measure.label : text;
+  };
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -52,14 +64,14 @@ export function PresenceEntry({ channels }: { channels: PresenceChannel[] }) {
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null);
-        setError(body?.error ?? 'Could not save.');
+        setError(body?.error ?? t('marketing.msg.couldNotSave'));
         return;
       }
       setValues({});
-      setNote(`Saved ${channel.name} for ${day}.`);
+      setNote(t('marketing.presence.savedDay', { channel: channel.name, day }));
       router.refresh();
     } catch {
-      setError('Could not reach the server.');
+      setError(t('marketing.msg.noServer'));
     } finally {
       setBusy(false);
     }
@@ -77,11 +89,12 @@ export function PresenceEntry({ channels }: { channels: PresenceChannel[] }) {
       });
       const body = await response.json().catch(() => null);
       if (!response.ok) {
-        setError(body?.error ?? 'Refresh failed.');
+        setError(body?.error ?? t('marketing.presence.refreshFailed'));
         return;
       }
       // Say what actually happened per importer. "Done" would hide a channel
-      // that skipped because nobody has added its credentials yet.
+      // that skipped because nobody has added its credentials yet. The channel
+      // key and the importer's own message are left exactly as they arrived.
       const outcomes: Array<{ channel: string; rows: number; skipped?: string; error?: string }> =
         body?.outcomes ?? [];
       setNote(
@@ -91,13 +104,13 @@ export function PresenceEntry({ channels }: { channels: PresenceChannel[] }) {
               ? `${o.channel}: ${o.error}`
               : o.skipped
                 ? `${o.channel}: ${o.skipped}`
-                : `${o.channel}: ${o.rows} days`
+                : `${o.channel}: ${t.plural(o.rows, 'plural.day')}`
           )
-          .join(' · ') || 'Nothing to fetch.'
+          .join(' · ') || t('marketing.presence.nothingToFetch')
       );
       router.refresh();
     } catch {
-      setError('Could not reach the server.');
+      setError(t('marketing.msg.noServer'));
     } finally {
       setBusy(false);
     }
@@ -113,7 +126,7 @@ export function PresenceEntry({ channels }: { channels: PresenceChannel[] }) {
     <div className="flex flex-col items-end gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={refresh} disabled={busy} className={button}>
-          {busy ? 'Working…' : 'Refresh fetched'}
+          {busy ? t('marketing.presence.working') : t('marketing.presence.refreshFetched')}
         </button>
         {channels.length > 0 && (
           <button
@@ -122,7 +135,7 @@ export function PresenceEntry({ channels }: { channels: PresenceChannel[] }) {
             disabled={busy}
             className={button}
           >
-            {open ? 'Close' : 'Enter by hand'}
+            {open ? t('marketing.action.close') : t('marketing.presence.enterByHand')}
           </button>
         )}
       </div>
@@ -137,7 +150,7 @@ export function PresenceEntry({ channels }: { channels: PresenceChannel[] }) {
         >
           <div className="flex flex-wrap gap-3">
             <label className="flex flex-col gap-1">
-              <span className={labelText}>Listing</span>
+              <span className={labelText}>{t('marketing.presence.listing')}</span>
               <select
                 value={channelKey}
                 onChange={(event) => {
@@ -154,7 +167,7 @@ export function PresenceEntry({ channels }: { channels: PresenceChannel[] }) {
               </select>
             </label>
             <label className="flex flex-col gap-1">
-              <span className={labelText}>Day</span>
+              <span className={labelText}>{t('marketing.col.day')}</span>
               <input
                 type="date"
                 value={day}
@@ -169,7 +182,7 @@ export function PresenceEntry({ channels }: { channels: PresenceChannel[] }) {
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {channel.measures.map((measure) => (
               <label key={measure.key} className="flex flex-col gap-1">
-                <span className={labelText}>{measure.label}</span>
+                <span className={labelText}>{measureLabel(channel.key, measure)}</span>
                 <input
                   type="number"
                   min={0}
@@ -186,11 +199,9 @@ export function PresenceEntry({ channels }: { channels: PresenceChannel[] }) {
           </div>
 
           <div className="mt-4 flex items-center justify-between gap-4">
-            <p className="text-[11px] text-gray-500">
-              Blank counts as zero. Sending the same day again replaces it.
-            </p>
+            <p className="text-[11px] text-gray-500">{t('marketing.presence.blankZero')}</p>
             <button type="submit" disabled={busy} className={button}>
-              {busy ? 'Saving…' : 'Save day'}
+              {busy ? t('marketing.presence.saving') : t('marketing.presence.saveDay')}
             </button>
           </div>
         </form>

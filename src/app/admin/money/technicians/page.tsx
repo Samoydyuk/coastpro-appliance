@@ -8,6 +8,8 @@ import { Empty, Hint, Panel, SetupNotice, StatTile, Table, Td, Th, Warning } fro
 import { NotConnected } from '@/components/admin/NotConnected';
 import { RankedBars } from '@/components/admin/charts';
 import { NEUTRAL } from '@/components/admin/palette';
+import { serverTranslator } from '@/lib/i18n/server';
+import { rangeLabel } from '@/lib/i18n/range';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +18,7 @@ export default async function TechniciansPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
+  const t = serverTranslator();
   const range = parseRange({
     range: searchParams.range as string,
     from: searchParams.from as string,
@@ -40,8 +43,8 @@ export default async function TechniciansPage({
   if (unconfigured) {
     return (
       <div className="space-y-6">
-        <Header subtitle={range.label} />
-        <NotConnected what="Jobs and payments" />
+        <Header subtitle={rangeLabel(range, t)} />
+        <NotConnected what={t('money.notConnected')} />
       </div>
     );
   }
@@ -49,8 +52,8 @@ export default async function TechniciansPage({
   if (!report) {
     return (
       <div className="space-y-6">
-        <Header subtitle={range.label} />
-        <Warning>{failure ?? 'JobPocket did not answer.'}</Warning>
+        <Header subtitle={rangeLabel(range, t)} />
+        <Warning>{failure ?? t('money.noAnswer')}</Warning>
       </div>
     );
   }
@@ -68,23 +71,24 @@ export default async function TechniciansPage({
 
   return (
     <div className="space-y-6">
-      <Header subtitle={`${range.label} · ${report.creditRule}`} />
+      {/* The credit rule is a sentence JobPocket writes about its own split. */}
+      <Header subtitle={`${rangeLabel(range, t)} · ${report.creditRule}`} />
       {failure ? <Warning>{failure}</Warning> : null}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="Own revenue" value={money(totalRevenue)} emphasis />
-        <StatTile label="Jobs finished" value={count(totalJobs)} />
-        <StatTile label="Technicians with work" value={count(rows.length)} />
+        <StatTile label={t('money.ownRevenue')} value={money(totalRevenue, t.lang)} emphasis />
+        <StatTile label={t('technicians.finished')} value={count(totalJobs, t.lang)} />
+        <StatTile label={t('technicians.withWork')} value={count(rows.length, t.lang)} />
         <StatTile
-          label="Average ticket"
-          value={totalJobs ? money(Math.round(totalRevenue / totalJobs)) : '—'}
-          hint="after the dispatchers' share"
+          label={t('money.avgTicket')}
+          value={totalJobs ? money(Math.round(totalRevenue / totalJobs), t.lang) : '—'}
+          hint={t('money.afterDispatchersShare')}
         />
       </div>
 
-      <Panel title="Revenue by technician" subtitle="What each of them brought in, after the split">
+      <Panel title={t('technicians.revenueBy')} subtitle={t('money.afterTheSplit')}>
         {rows.length === 0 ? (
-          <Empty>No finished work in this window.</Empty>
+          <Empty>{t('money.noFinishedWork')}</Empty>
         ) : (
           <RankedBars
             format="money"
@@ -92,33 +96,36 @@ export default async function TechniciansPage({
               label: row.name,
               value: row.ownShareRevenueCents / 100,
               color: colourFor(row.techId),
-              note: `${count(row.jobs)} jobs · ${money(row.avgTicketCents)} avg`,
+              note:
+                t.plural(row.jobs, 'plural.job') +
+                ' · ' +
+                t('money.avgEach', { amount: money(row.avgTicketCents, t.lang) }),
             }))}
           />
         )}
       </Panel>
 
       <Panel
-        title="Every technician"
-        subtitle="Open the week to see what they actually did"
+        title={t('technicians.every')}
+        subtitle={t('money.openTheWeek')}
         action={<a
               href={`/api/admin/export?type=technicians&range=${range.key}`}
               className="inline-flex h-8 items-center rounded-card border border-primary-500/30 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 hover:border-ink hover:text-ink"
             >
-              Export CSV
+              {t('common.exportCsv')}
             </a>}
       >
         {rows.length === 0 ? (
-          <Empty>No finished work in this window.</Empty>
+          <Empty>{t('money.noFinishedWork')}</Empty>
         ) : (
           <Table>
             <thead>
               <tr>
-                <Th>Technician</Th>
-                <Th numeric>Jobs</Th>
-                <Th numeric>Revenue</Th>
-                <Th numeric>Avg ticket</Th>
-                <Th numeric>Avg booked</Th>
+                <Th>{t('money.technician')}</Th>
+                <Th numeric>{t('common.jobs')}</Th>
+                <Th numeric>{t('money.revenue')}</Th>
+                <Th numeric>{t('money.avgTicketShort')}</Th>
+                <Th numeric>{t('technicians.avgBooked')}</Th>
                 <Th />
               </tr>
             </thead>
@@ -137,13 +144,15 @@ export default async function TechniciansPage({
                       row.name
                     )}
                   </Td>
-                  <Td numeric>{count(row.jobs)}</Td>
+                  <Td numeric>{count(row.jobs, t.lang)}</Td>
                   <Td numeric className="font-medium">
-                    {money(row.ownShareRevenueCents)}
+                    {money(row.ownShareRevenueCents, t.lang)}
                   </Td>
-                  <Td numeric>{money(row.avgTicketCents)}</Td>
+                  <Td numeric>{money(row.avgTicketCents, t.lang)}</Td>
                   <Td numeric className="text-gray-600">
-                    {row.avgEstimatedMinutes ? `${row.avgEstimatedMinutes} min` : '—'}
+                    {row.avgEstimatedMinutes
+                      ? t('money.minutes', { n: count(row.avgEstimatedMinutes, t.lang) })
+                      : '—'}
                   </Td>
                   <Td numeric>
                     {row.techId ? (
@@ -151,7 +160,7 @@ export default async function TechniciansPage({
                         href={`/admin/money/jobs?range=${range.key}&techId=${row.techId}&title=${encodeURIComponent(row.name)}&back=/admin/money/technicians`}
                         className="text-[11px] text-gray-500 underline underline-offset-2 hover:text-ink"
                       >
-                        jobs
+                        {t('money.jobsLink')}
                       </Link>
                     ) : null}
                   </Td>
@@ -160,21 +169,18 @@ export default async function TechniciansPage({
             </tbody>
           </Table>
         )}
-        <Hint>
-          Revenue only, deliberately. What a job cost is not broken out per person here: on a short
-          window a technician often has one job, and revenue beside a margin would give away what
-          that job&apos;s parts cost. The booked time answers the same question without it.
-        </Hint>
+        <Hint>{t('money.techRevenueOnlyHint')}</Hint>
       </Panel>
     </div>
   );
 }
 
 function Header({ subtitle }: { subtitle: string }) {
+  const t = serverTranslator();
   return (
     <div>
       <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">
-        Technicians
+        {t('technicians.title')}
       </h1>
       <p className="mt-1 text-sm text-gray-600">{subtitle}</p>
     </div>

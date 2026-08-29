@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLang, useT } from '@/components/admin/LanguageProvider';
+import { numberLocale } from '@/lib/i18n';
 
 /**
  * Putting a visit in the diary because somebody rang.
@@ -29,8 +31,13 @@ interface Service {
   name: string;
 }
 
-/** The next `count` days, as YYYY-MM-DD in the reader's own timezone. */
-function nextDays(count: number) {
+/**
+ * The next `count` days, as YYYY-MM-DD in the reader's own timezone.
+ *
+ * `value` is the day the API is asked for and never moves with the language;
+ * the two labels are only what the chip reads.
+ */
+function nextDays(count: number, locale: string) {
   return Array.from({ length: count }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() + i);
@@ -39,13 +46,16 @@ function nextDays(count: number) {
     ).padStart(2, '0')}`;
     return {
       value,
-      weekday: i === 0 ? 'Today' : date.toLocaleDateString('en-US', { weekday: 'short' }),
-      day: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      isToday: i === 0,
+      weekday: date.toLocaleDateString(locale, { weekday: 'short' }),
+      day: date.toLocaleDateString(locale, { month: 'short', day: 'numeric' }),
     };
   });
 }
 
 export function BookJobForm({ services }: { services: Service[] }) {
+  const t = useT();
+  const lang = useLang();
   const router = useRouter();
 
   const [name, setName] = useState('');
@@ -54,7 +64,9 @@ export function BookJobForm({ services }: { services: Service[] }) {
   const [service, setService] = useState('');
   const [description, setDescription] = useState('');
 
-  const days = useRef(nextDays(14)).current;
+  // Rebuilt when the language changes: the switch refreshes the server
+  // components without unmounting this one, so a ref would keep the old names.
+  const days = useMemo(() => nextDays(14, numberLocale(lang)), [lang]);
   const [date, setDate] = useState(days[0].value);
   const [windows, setWindows] = useState<ArrivalWindow[]>([]);
   const [loadingWindows, setLoadingWindows] = useState(false);
@@ -126,11 +138,12 @@ export function BookJobForm({ services }: { services: Service[] }) {
         | null;
 
       if (!response.ok) {
-        setError(body?.error ?? 'Could not create that job.');
+        // The server's own wording when it has one.
+        setError(body?.error ?? t('work.book.failed'));
         return;
       }
 
-      setDone('Booked. It is on the calendar and in the app.');
+      setDone(t('work.book.done'));
       setName('');
       setPhone('');
       setAddress('');
@@ -141,7 +154,7 @@ export function BookJobForm({ services }: { services: Service[] }) {
       externalId.current = `console-${crypto.randomUUID()}`;
       router.refresh();
     } catch {
-      setError('Could not reach the server.');
+      setError(t('work.form.noServer'));
     } finally {
       setBusy(false);
     }
@@ -150,16 +163,16 @@ export function BookJobForm({ services }: { services: Service[] }) {
   return (
     <form onSubmit={submit} className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Labelled label="Name">
+        <Labelled label={t('work.book.name')}>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
             className={field}
-            placeholder="Ann Wheeler"
+            placeholder={t('work.book.namePlaceholder')}
           />
         </Labelled>
-        <Labelled label="Phone">
+        <Labelled label={t('work.book.phone')}>
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
@@ -169,7 +182,7 @@ export function BookJobForm({ services }: { services: Service[] }) {
             placeholder="(949) 555-0101"
           />
         </Labelled>
-        <Labelled label="Address">
+        <Labelled label={t('work.book.address')}>
           <input
             value={address}
             onChange={(e) => setAddress(e.target.value)}
@@ -177,9 +190,9 @@ export function BookJobForm({ services }: { services: Service[] }) {
             placeholder="12 Bay Street, Irvine"
           />
         </Labelled>
-        <Labelled label="Service">
+        <Labelled label={t('work.book.service')}>
           <select value={service} onChange={(e) => setService(e.target.value)} className={field}>
-            <option value="">Not sure yet</option>
+            <option value="">{t('work.book.notSureYet')}</option>
             {services.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
@@ -189,18 +202,18 @@ export function BookJobForm({ services }: { services: Service[] }) {
         </Labelled>
       </div>
 
-      <Labelled label="What is wrong">
+      <Labelled label={t('work.book.problem')}>
         <input
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           className={field}
-          placeholder="Not draining, grinding noise, error code F22…"
+          placeholder={t('work.book.problemPlaceholder')}
         />
       </Labelled>
 
       <div>
         <div className="font-heading text-[10px] uppercase tracking-label text-gray-500">
-          When
+          {t('work.book.when')}
         </div>
 
         {/* -mx-1/px-1 so the focus ring of the first chip is not clipped */}
@@ -217,7 +230,7 @@ export function BookJobForm({ services }: { services: Service[] }) {
               }`}
             >
               <span className="block font-heading text-[9px] font-semibold uppercase tracking-label">
-                {d.weekday}
+                {d.isToday ? t('work.form.today') : d.weekday}
               </span>
               <span className="mt-0.5 block text-xs">{d.day}</span>
             </button>
@@ -225,7 +238,7 @@ export function BookJobForm({ services }: { services: Service[] }) {
         </div>
 
         {loadingWindows ? (
-          <p className="text-xs text-gray-600">Checking the calendar…</p>
+          <p className="text-xs text-gray-600">{t('work.form.checkingCalendar')}</p>
         ) : windows.length > 0 ? (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {windows.map((w) => (
@@ -247,13 +260,11 @@ export function BookJobForm({ services }: { services: Service[] }) {
             ))}
           </div>
         ) : (
-          <p className="text-xs text-gray-600">
-            No free windows that day on the booking page. You can still set a time below.
-          </p>
+          <p className="text-xs text-gray-600">{t('work.book.noWindows')}</p>
         )}
 
         <div className="mt-3 flex flex-wrap items-end gap-3">
-          <Labelled label="Or a time of your own">
+          <Labelled label={t('work.form.ownTime')}>
             <input
               type="datetime-local"
               value={exactTime}
@@ -264,10 +275,7 @@ export function BookJobForm({ services }: { services: Service[] }) {
               className={field}
             />
           </Labelled>
-          <p className="pb-2 text-xs text-gray-600">
-            Your diary is not limited to what the booking page is offering. Leave both empty to book
-            without a time and ring them.
-          </p>
+          <p className="pb-2 text-xs text-gray-600">{t('work.book.notLimited')}</p>
         </div>
       </div>
 
@@ -277,7 +285,7 @@ export function BookJobForm({ services }: { services: Service[] }) {
           disabled={busy || !name.trim() || !phone.trim()}
           className="h-9 rounded-card bg-ink px-4 font-heading text-[10px] font-semibold uppercase tracking-label text-cream disabled:opacity-50"
         >
-          {busy ? 'Booking…' : 'Book the visit'}
+          {busy ? t('work.book.submitting') : t('work.book.submit')}
         </button>
         {error && <span className="text-xs" style={{ color: '#8f2323' }}>{error}</span>}
         {done && <span className="text-xs" style={{ color: '#006300' }}>{done}</span>}

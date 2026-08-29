@@ -343,7 +343,22 @@ export interface Breakdown {
       at: string | null; totalCents: number; partsCents: number;
     }>;
   };
-  expenses: { totalCents: number; rows: Array<{ category: string; cents: number }> };
+  expenses: {
+    totalCents: number;
+    rows: Array<{
+      category: string;
+      cents: number;
+      count: number;
+      /** What put a number in this category — date, vendor, description. */
+      items: Array<{
+        id: string;
+        at: string | null;
+        vendor: string | null;
+        description: string | null;
+        cents: number;
+      }>;
+    }>;
+  };
   overhead: {
     rows: Array<{
       id: string; name: string; cadence: string;

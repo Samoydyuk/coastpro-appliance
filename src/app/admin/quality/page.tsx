@@ -1,10 +1,12 @@
 import { parseRange } from '@/lib/admin/range';
 import { getQuality } from '@/lib/admin/queries';
 import { count, percent } from '@/lib/admin/format';
+import { serverTranslator } from '@/lib/i18n/server';
 import { channelLabel } from '@/lib/attribution';
 import { Empty, Hint, Panel, SetupNotice, StatTile, Table, Td, Th, Warning } from '@/components/admin/ui';
 import { RankedBars } from '@/components/admin/charts';
 import { NEUTRAL, STATUS } from '@/components/admin/palette';
+import { rangeLabel } from '@/lib/i18n/range';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +15,7 @@ export default async function QualityPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
+  const t = serverTranslator();
   const range = parseRange({
     range: searchParams.range as string,
     from: searchParams.from as string,
@@ -29,93 +32,99 @@ export default async function QualityPage({
       <div className="space-y-6">
         <div>
           <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">
-            Traffic quality
+            {t('website.quality.title')}
           </h1>
           <p className="mt-1 text-sm text-gray-600">
-            {range.label} — what the headline numbers would be hiding
+            {t('website.quality.subtitle', { range: rangeLabel(range, t) })}
           </p>
         </div>
 
         {undelivered > 0 && (
           <Warning>
-            {count(undelivered)} lead notification{undelivered === 1 ? '' : 's'} failed to send by
-            email. Those people filled in the form and nobody was told. Check that RESEND_API_KEY is
-            set and the sending domain is verified.
+            {t('website.quality.undeliveredWarning', {
+              notifications: t.plural(undelivered, 'website.plural.notification'),
+            })}
           </Warning>
         )}
 
         {missedCalls > 0 && (
           <Warning>
-            {count(missedCalls)} call{missedCalls === 1 ? '' : 's'} went unanswered in this period.
-            On paid channels that is money spent to make a phone ring that nobody picked up.
+            {t('website.quality.missedWarning', {
+              calls: t.plural(missedCalls, 'website.plural.call'),
+            })}
           </Warning>
         )}
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatTile
-            label="Requests seen"
-            value={count(quality.sessions.total)}
-            hint="before filtering"
+            label={t('website.quality.requestsSeen')}
+            value={count(quality.sessions.total, t.lang)}
+            hint={t('website.quality.beforeFiltering')}
           />
           <StatTile
-            label="Bots filtered"
-            value={count(quality.sessions.bots)}
+            label={t('website.quality.botsFiltered')}
+            value={count(quality.sessions.bots, t.lang)}
             higherIsBetter={false}
-            hint={percent(botShare, 0) + ' of all traffic'}
+            hint={t('website.quality.shareOfTraffic', { pct: percent(botShare, 0, t.lang) })}
           />
           <StatTile
-            label="Our own visits"
-            value={count(quality.sessions.internal)}
+            label={t('website.quality.ourOwnVisits')}
+            value={count(quality.sessions.internal, t.lang)}
             higherIsBetter={false}
-            hint="excluded everywhere else"
+            hint={t('website.quality.excludedElsewhere')}
           />
           <StatTile
-            label="Instant bounces"
-            value={count(quality.sessions.bouncedInstantly)}
+            label={t('website.quality.instantBounces')}
+            value={count(quality.sessions.bouncedInstantly, t.lang)}
             higherIsBetter={false}
-            hint="one page, under five seconds"
+            hint={t('website.quality.instantBouncesHint')}
           />
           <StatTile
-            label="Failed notifications"
-            value={count(undelivered)}
+            label={t('website.quality.failedNotifications')}
+            value={count(undelivered, t.lang)}
             higherIsBetter={false}
-            hint={undelivered ? 'needs attention' : 'all delivered'}
+            hint={
+              undelivered
+                ? t('website.quality.needsAttention')
+                : t('website.quality.allDelivered')
+            }
           />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <Panel title="What the bot filter caught" subtitle="Matched token in the user agent">
+          <Panel title={t('website.quality.botFilter')} subtitle={t('website.quality.botFilterSub')}>
             {quality.botReasons.length === 0 ? (
-              <Empty>No bot traffic in this period.</Empty>
+              <Empty>{t('website.quality.noBots')}</Empty>
             ) : (
               <RankedBars
                 items={quality.botReasons.map((row) => ({
+                  // The reason is the token matched in the user agent — a
+                  // recorded value, left exactly as it was written down.
                   label: row.reason,
                   value: row.total,
                   color: NEUTRAL,
                 }))}
               />
             )}
-            <Hint>
-              These visits are excluded everywhere else in the console. Left in, a crawler that
-              hits every service page hourly would sit at the top of the most-viewed report and
-              drag every bounce rate with it.
-            </Hint>
+            <Hint>{t('website.quality.botHint')}</Hint>
           </Panel>
 
-          <Panel title="Lead quality by channel" subtitle="Duplicates, spam and lost">
+          <Panel
+            title={t('website.quality.leadQuality')}
+            subtitle={t('website.quality.leadQualitySub')}
+          >
             {quality.leadQuality.length === 0 ? (
-              <Empty>No leads in this period.</Empty>
+              <Empty>{t('website.quality.noLeads')}</Empty>
             ) : (
               <Table className="min-w-0">
                 <thead>
                   <tr>
-                    <Th>Channel</Th>
-                    <Th numeric>Leads</Th>
-                    <Th numeric>Dup</Th>
-                    <Th numeric>Spam</Th>
-                    <Th numeric>Lost</Th>
-                    <Th numeric>Junk rate</Th>
+                    <Th>{t('website.quality.channel')}</Th>
+                    <Th numeric>{t('website.quality.leads')}</Th>
+                    <Th numeric>{t('website.quality.dup')}</Th>
+                    <Th numeric>{t('website.quality.spam')}</Th>
+                    <Th numeric>{t('website.quality.lost')}</Th>
+                    <Th numeric>{t('website.quality.junkRate')}</Th>
                   </tr>
                 </thead>
                 <tbody>
@@ -124,13 +133,13 @@ export default async function QualityPage({
                     return (
                       <tr key={row.channel}>
                         <Td>{channelLabel(row.channel)}</Td>
-                        <Td numeric>{count(row.leads)}</Td>
-                        <Td numeric>{count(row.duplicates)}</Td>
-                        <Td numeric>{count(row.spam)}</Td>
-                        <Td numeric>{count(row.lost)}</Td>
+                        <Td numeric>{count(row.leads, t.lang)}</Td>
+                        <Td numeric>{count(row.duplicates, t.lang)}</Td>
+                        <Td numeric>{count(row.spam, t.lang)}</Td>
+                        <Td numeric>{count(row.lost, t.lang)}</Td>
                         <Td numeric>
                           <span style={{ color: junk > 0.3 ? STATUS.critical : undefined }}>
-                            {percent(junk, 0)}
+                            {percent(junk, 0, t.lang)}
                           </span>
                         </Td>
                       </tr>
@@ -139,26 +148,26 @@ export default async function QualityPage({
                 </tbody>
               </Table>
             )}
-            <Hint>
-              A channel with a high junk rate is not cheap just because its cost per lead looks
-              low. This is the column that tells the difference.
-            </Hint>
+            <Hint>{t('website.quality.junkHint')}</Hint>
           </Panel>
         </div>
 
-        <Panel title="Call quality by channel" subtitle="Missed calls and calls too short to be real">
+        <Panel
+          title={t('website.quality.callQuality')}
+          subtitle={t('website.quality.callQualitySub')}
+        >
           {quality.calls.length === 0 ? (
-            <Empty>No calls recorded in this period.</Empty>
+            <Empty>{t('website.quality.noCalls')}</Empty>
           ) : (
             <Table>
               <thead>
                 <tr>
-                  <Th>Channel</Th>
-                  <Th numeric>Calls</Th>
-                  <Th numeric>Missed</Th>
-                  <Th numeric>Under 30s</Th>
-                  <Th numeric>Usable</Th>
-                  <Th numeric>Miss rate</Th>
+                  <Th>{t('website.quality.channel')}</Th>
+                  <Th numeric>{t('website.quality.calls')}</Th>
+                  <Th numeric>{t('website.quality.missed')}</Th>
+                  <Th numeric>{t('website.quality.under30s')}</Th>
+                  <Th numeric>{t('website.quality.usable')}</Th>
+                  <Th numeric>{t('website.quality.missRate')}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -168,13 +177,13 @@ export default async function QualityPage({
                   return (
                     <tr key={row.channel}>
                       <Td>{channelLabel(row.channel)}</Td>
-                      <Td numeric>{count(row.calls)}</Td>
-                      <Td numeric>{count(row.missed)}</Td>
-                      <Td numeric>{count(row.tooShort)}</Td>
-                      <Td numeric>{count(usable)}</Td>
+                      <Td numeric>{count(row.calls, t.lang)}</Td>
+                      <Td numeric>{count(row.missed, t.lang)}</Td>
+                      <Td numeric>{count(row.tooShort, t.lang)}</Td>
+                      <Td numeric>{count(usable, t.lang)}</Td>
                       <Td numeric>
                         <span style={{ color: missRate > 0.2 ? STATUS.critical : undefined }}>
-                          {percent(missRate, 0)}
+                          {percent(missRate, 0, t.lang)}
                         </span>
                       </Td>
                     </tr>

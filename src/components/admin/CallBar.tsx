@@ -1,7 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLang } from '@/components/admin/LanguageProvider';
+import {
+  numberLocale,
+  translator,
+  type Lang,
+  type TranslationKey,
+  type Translator,
+} from '@/lib/i18n';
 
 /**
  * Answering the business number at a desk.
@@ -26,7 +34,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 type Status = 'off' | 'connecting' | 'ready' | 'ringing' | 'live' | 'error';
 
 interface CallerCard {
-  fromDisplay: string;
+  /**
+   * The number they are ringing from, or null while nobody knows yet.
+   *
+   * Null rather than the words "Incoming call": this field was being compared
+   * against its own placeholder to decide whether to show the number, and a
+   * sentence used as a sentinel stops working the moment it is translated.
+   */
+  fromDisplay: string | null;
   match: 'existing' | 'new' | 'multiple';
   client: { name: string; address: string | null; phone: string | null } | null;
   history: { jobCount: number; balanceDue: number; unpaidCount: number } | null;
@@ -64,9 +79,48 @@ const EMPTY_CARD: Omit<CallerCard, 'fromDisplay'> = {
   recentJobs: [],
 };
 
-/** Plain words for a status nobody says out loud as SCREAMING_SNAKE. */
+/**
+ * Plain words for a status nobody says out loud as SCREAMING_SNAKE.
+ *
+ * The enum values arrive from JobPocket and are looked up here, never
+ * rewritten: what changes is the label beside them. Anything the dictionary
+ * has no word for yet falls back to the old lowercasing — which reads as
+ * English wherever it lands, and so names the status that still needs adding.
+ */
+const STATUS_KEYS: Record<string, TranslationKey> = {
+  DRAFT: 'shared.status.DRAFT',
+  SENT: 'shared.status.SENT',
+  APPROVED: 'shared.status.APPROVED',
+  SCHEDULED: 'shared.status.SCHEDULED',
+  IN_PROGRESS: 'shared.status.IN_PROGRESS',
+  PAUSED: 'shared.status.PAUSED',
+  COMPLETED: 'shared.status.COMPLETED',
+  INVOICED: 'shared.status.INVOICED',
+  PAID: 'shared.status.PAID',
+  CANCELLED: 'shared.status.CANCELLED',
+};
+
+const PAY_KEYS: Record<string, TranslationKey> = {
+  UNPAID: 'shared.pay.UNPAID',
+  PARTIAL: 'shared.pay.PARTIAL',
+  PAID: 'shared.pay.PAID',
+  REFUNDED: 'shared.pay.REFUNDED',
+  WRITTEN_OFF: 'shared.pay.WRITTEN_OFF',
+  FREE: 'shared.pay.FREE',
+};
+
 function humanise(value: string): string {
   return value.toLowerCase().replace(/_/g, ' ');
+}
+
+function statusLabel(t: Translator, value: string): string {
+  const key = STATUS_KEYS[value];
+  return key ? t(key) : humanise(value);
+}
+
+function payLabel(t: Translator, value: string): string {
+  const key = PAY_KEYS[value];
+  return key ? t(key) : humanise(value);
 }
 
 /**
@@ -88,11 +142,11 @@ function payTone(status: string): 'warn' | 'good' | 'neutral' {
 }
 
 /** "Fri 14:00" — enough to answer "are you coming today?" without a calendar. */
-function whenLabel(iso: string | null): string | null {
+function whenLabel(iso: string | null, lang: Lang): string | null {
   if (!iso) return null;
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleString(undefined, {
+  return date.toLocaleString(numberLocale(lang), {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -102,17 +156,27 @@ function whenLabel(iso: string | null): string | null {
 }
 
 /** A date on its own, for work that is already finished. */
-function dayLabel(iso: string | null): string | null {
+function dayLabel(iso: string | null, lang: Lang): string | null {
   if (!iso) return null;
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  return date.toLocaleDateString(numberLocale(lang), {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
-function money(amount: number): string {
-  return amount.toLocaleString(undefined, {
+/**
+ * Dollars, in whichever language. `narrowSymbol` because without it a
+ * Ukrainian locale writes "500,00 USD" and the dollar sign vanishes from a
+ * chip that exists to say how much somebody owes.
+ */
+function money(amount: number, lang: Lang): string {
+  return amount.toLocaleString(numberLocale(lang), {
     style: 'currency',
     currency: 'USD',
+    currencyDisplay: 'narrowSymbol',
     maximumFractionDigits: 0,
   });
 }
@@ -132,15 +196,17 @@ async function loadSdk() {
  */
 const ON_DUTY_KEY = 'coastpro:dispatch-on-duty';
 
-async function post(action: string, body: unknown = {}) {
+async function post(t: Translator, action: string, body: unknown = {}) {
   const response = await fetch(`/api/admin/dispatch/${action}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
   if (!response.ok) {
+    // The server's own words when it has any — it knows what went wrong and
+    // this component does not.
     const parsed = (await response.json().catch(() => null)) as { error?: string } | null;
-    throw new Error(parsed?.error ?? 'That did not go through.');
+    throw new Error(parsed?.error ?? t('shared.call.err.request'));
   }
   return response.json();
 }
@@ -151,30 +217,26 @@ async function post(action: string, body: unknown = {}) {
  * A refusal and a missing device look identical from a promise rejection, and
  * "could not access the microphone" tells a dispatcher nothing they can act on.
  */
-async function requestMicrophone(): Promise<MediaStream> {
+async function requestMicrophone(t: Translator): Promise<MediaStream> {
   if (!navigator.mediaDevices?.getUserMedia) {
-    throw new Error(
-      'This browser will not share a microphone with the page. Chrome, Edge or Safari over https will.'
-    );
+    throw new Error(t('shared.call.err.noMediaApi'));
   }
   try {
     return await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch (err) {
     const name = (err as { name?: string })?.name;
     if (name === 'NotAllowedError' || name === 'SecurityError') {
-      throw new Error(
-        'The microphone is blocked for this site. Click the padlock in the address bar, allow the microphone, then reload.'
-      );
+      throw new Error(t('shared.call.err.micBlocked'));
     }
     if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
-      throw new Error('No microphone found. Plug one in, or pick one in the system sound settings.');
+      throw new Error(t('shared.call.err.micMissing'));
     }
     if (name === 'NotReadableError') {
-      throw new Error('Another program is holding the microphone. Close it and try again.');
+      throw new Error(t('shared.call.err.micBusy'));
     }
-    throw new Error(
-      `The microphone could not be opened${name ? ` (${name})` : ''}.`
-    );
+    // The browser's own name for the fault, kept as it is: it is a DOM
+    // constant, not a sentence, and it is the thing worth searching for.
+    throw new Error(t('shared.call.err.micOther', { detail: name ? ` (${name})` : '' }));
   }
 }
 
@@ -199,6 +261,20 @@ function Chip({
 }
 
 export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
+  /**
+   * Built from the language rather than taken from `useT`, so it is the same
+   * object between renders.
+   *
+   * A fresh translator every render would put a new value in the dependency
+   * list of `connect` and `placeCall` — and this bar re-renders once a second
+   * for the whole of a call, because it is counting the seconds. Everything
+   * downstream of those callbacks would be rebuilt on every tick. Nothing here
+   * would break today; it is the kind of thing that breaks later, when an
+   * effect that tears down the socket picks up a dependency on one of them.
+   */
+  const lang = useLang();
+  const t = useMemo(() => translator(lang), [lang]);
+
   const [status, setStatus] = useState<Status>('off');
   const [error, setError] = useState<string | null>(null);
   const [caller, setCaller] = useState<CallerCard | null>(null);
@@ -287,7 +363,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
       }
 
       try {
-        const { callId } = await post('outbound', {
+        const { callId } = await post(t, 'outbound', {
           teamMemberId,
           toE164: request.toE164,
           ...(request.clientId ? { clientId: request.clientId } : {}),
@@ -318,10 +394,10 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
         );
       } catch (err) {
         outbound.current = null;
-        setError(err instanceof Error ? err.message : 'That call would not go through.');
+        setError(err instanceof Error ? err.message : t('shared.call.err.outbound'));
       }
     },
-    [teamMemberId]
+    [teamMemberId, t]
   );
 
   const stopHeartbeat = useCallback(() => {
@@ -400,13 +476,13 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
        */
       let micStream: MediaStream | null = null;
       if (!options?.resuming) {
-        setStage('Asking for the microphone');
-        micStream = await requestMicrophone();
+        setStage(t('shared.call.stage.mic'));
+        micStream = await requestMicrophone(t);
       }
 
-      const session = await post('session', { teamMemberId });
+      const session = await post(t, 'session', { teamMemberId });
       lineE164.current = session.lineE164 ?? null;
-      setStage('Loading the phone');
+      setStage(t('shared.call.stage.loading'));
       const TelnyxRTC = await loadSdk();
 
       // Permission is what was wanted, not the recording. Holding this open
@@ -414,7 +490,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
       // capture of the same microphone alongside the call's own.
       micStream?.getTracks().forEach((track) => track.stop());
 
-      setStage('Connecting');
+      setStage(t('shared.call.stage.connecting'));
       const client = new TelnyxRTC({
         login_token: session.token,
         // The app needed this: direct peer-to-peer fails on some carrier
@@ -423,10 +499,8 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
       });
       clientRef.current = client;
 
-      client.on('telnyx.socket.open', () => setStage('Signing in'));
-      client.on('telnyx.socket.error', () =>
-        setStage('The connection to the phone network failed')
-      );
+      client.on('telnyx.socket.open', () => setStage(t('shared.call.stage.signingIn')));
+      client.on('telnyx.socket.error', () => setStage(t('shared.call.stage.socketFailed')));
 
       client.on('telnyx.ready', () => {
         if (watchdog.current) clearTimeout(watchdog.current);
@@ -442,11 +516,11 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
         // Announce presence immediately; the interval below only keeps it
         // fresh. Waiting the first thirty seconds would leave a window where
         // the desk is connected but the server still routes past it.
-        void post('registered', { teamMemberId }).catch((err: Error) =>
+        void post(t, 'registered', { teamMemberId }).catch((err: Error) =>
           // Swallowing this is how a desk ends up connected but never routed
           // to: the browser believes it is on the phones and the server has
           // never heard of it.
-          setError(`Connected, but the server was not told: ${err.message}`)
+          setError(t('shared.call.err.notTold', { message: err.message }))
         );
 
         const queued = pendingDial.current;
@@ -458,15 +532,15 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
           // Guarded on the live socket, not on the tab. This is the line that
           // decides whether a call rings here or on a phone.
           if (clientRef.current?.connected) {
-            void post('heartbeat', { teamMemberId }).catch((err: Error) =>
-              setError(`Lost touch with the server: ${err.message}`)
+            void post(t, 'heartbeat', { teamMemberId }).catch((err: Error) =>
+              setError(t('shared.call.err.lostServer', { message: err.message }))
             );
           }
         }, 30_000);
       });
 
       client.on('telnyx.error', (event: any) => {
-        setError(event?.error?.message ?? 'The phone connection failed.');
+        setError(event?.error?.message ?? t('shared.call.err.phoneFailed'));
         setStatus('error');
         stopHeartbeat();
       });
@@ -482,7 +556,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
           // dispatcher ends up believing they are on the phones when they
           // are not.
           if (was === 'connecting') {
-            setError('The phone network closed the connection. Try again.');
+            setError(t('shared.call.err.closed'));
             return 'error';
           }
           return 'off';
@@ -534,7 +608,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
               const spent = startedAt.current
                 ? Math.round((Date.now() - startedAt.current) / 1000)
                 : 0;
-              void post('ended', {
+              void post(t, 'ended', {
                 callId: outbound.current.callId,
                 answered: outbound.current.answered,
                 durationSec: spent,
@@ -565,16 +639,16 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
         setError(
           (was) =>
             was ??
-            `The phone network did not answer${
-              stageRef.current ? ` — it stopped at: ${stageRef.current}` : ''
-            }. Try again.`
+            t('shared.call.err.noAnswer', {
+              stage: stageRef.current
+                ? t('shared.call.err.stoppedAt', { stage: stageRef.current })
+                : '',
+            })
         );
       }, 15_000);
 
       await client.connect().catch((err: unknown) => {
-        throw new Error(
-          err instanceof Error ? err.message : 'Could not reach the phone network.'
-        );
+        throw new Error(err instanceof Error ? err.message : t('shared.call.err.unreachable'));
       });
     } catch (err) {
       if (watchdog.current) clearTimeout(watchdog.current);
@@ -586,10 +660,10 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
         setStatus('off');
         return;
       }
-      setError(err instanceof Error ? err.message : 'Could not start the phone.');
+      setError(err instanceof Error ? err.message : t('shared.call.err.startPhone'));
       setStatus('error');
     }
-  }, [teamMemberId, stopHeartbeat, startRinging, stopRinging]);
+  }, [teamMemberId, stopHeartbeat, startRinging, stopRinging, t]);
 
   /** Put the far end's audio into the page's own element. */
   const attachAudio = (call: any) => {
@@ -600,7 +674,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
     void element.play().catch(() => {
       // Autoplay policy: the answer was a click, so this should not happen —
       // but a muted call is worse than a noisy console.
-      setError('The browser blocked the call audio. Click the page and try again.');
+      setError(t('shared.call.err.audioBlocked'));
     });
   };
 
@@ -616,13 +690,13 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
    * calls apart.
    */
   const lookUpCaller = async (from: string) => {
-    setCaller({ fromDisplay: 'Incoming call', ...EMPTY_CARD });
+    setCaller({ fromDisplay: null, ...EMPTY_CARD });
     try {
       const response = await fetch(`/api/admin/dispatch/caller?from=${encodeURIComponent(from)}`);
       const body = await response.json();
       if (body?.context) {
         setCaller({
-          fromDisplay: body.context.fromDisplay ?? 'Incoming call',
+          fromDisplay: body.context.fromDisplay ?? null,
           match: body.context.match ?? 'new',
           client: body.context.client,
           history: body.context.history,
@@ -672,7 +746,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
           name: 'microphone' as PermissionName,
         });
         if (!cancelled && permission && permission.state !== 'granted') {
-          setNotice('The microphone will be asked for on the first call.');
+          setNotice(t('shared.call.notice.micLater'));
         }
       } catch {
         /* Safari has no such query; the prompt on Answer works there anyway */
@@ -774,7 +848,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
       // where it cannot be missed.
       callRef.current?.answer({ remoteElement: 'coastpro-call-audio' });
     } catch {
-      setError('Could not pick that up.');
+      setError(t('shared.call.err.answer'));
     }
   };
 
@@ -807,26 +881,24 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
               onClick={() => void connect()}
               className="h-8 rounded-card bg-ink px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-cream"
             >
-              Take calls here
+              {t('shared.call.takeCalls')}
             </button>
             <span className={`text-xs ${error ? 'text-[#b3261e]' : 'text-gray-600'}`}>
-              {error ?? 'Calls are going to the phone.'}
+              {error ?? t('shared.call.goingToPhone')}
             </span>
           </>
         ) : status === 'connecting' ? (
-          <span className="text-xs text-gray-600">{stage ?? 'Connecting the phone'}…</span>
+          <span className="text-xs text-gray-600">{stage ?? t('shared.call.connecting')}…</span>
         ) : status === 'ready' ? (
           <>
             <Dot colour="#0ca30c" />
-            <span className="text-xs text-gray-600">
-              {notice ?? 'On duty — calls ring here and on the phone.'}
-            </span>
+            <span className="text-xs text-gray-600">{notice ?? t('shared.call.onDuty')}</span>
             <button
               type="button"
               onClick={disconnect}
               className="ml-auto h-8 rounded-card border border-primary-500/30 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 hover:border-ink hover:text-ink"
             >
-              Stop
+              {t('shared.call.stop')}
             </button>
           </>
         ) : (
@@ -835,36 +907,40 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                 <span className="truncate text-sm font-medium text-ink">
-                  {caller?.client?.name ?? caller?.fromDisplay ?? 'Incoming call'}
+                  {caller?.client?.name ?? caller?.fromDisplay ?? t('shared.call.incoming')}
                 </span>
                 {/* The number they are ringing from, always — it is not always
                     the one on their record, and the dispatcher may need to
                     ring back on this one. */}
-                {caller?.client && caller.fromDisplay !== 'Incoming call' && (
+                {caller?.client && caller.fromDisplay && (
                   <span className="text-xs text-gray-600">{caller.fromDisplay}</span>
                 )}
                 <span className="text-[11px] text-gray-500">
-                  {status === 'ringing' ? 'Ringing' : formatDuration(seconds)}
+                  {status === 'ringing' ? t('shared.call.ringing') : formatDuration(seconds)}
                 </span>
 
                 {caller?.match === 'new' && caller.client === null && (
-                  <Chip tone="neutral">First time</Chip>
+                  <Chip tone="neutral">{t('shared.call.firstTime')}</Chip>
                 )}
                 {caller?.history && caller.history.jobCount > 0 && (
-                  <Chip tone="neutral">
-                    {caller.history.jobCount} {caller.history.jobCount === 1 ? 'job' : 'jobs'}
-                  </Chip>
+                  <Chip tone="neutral">{t.plural(caller.history.jobCount, 'plural.job')}</Chip>
                 )}
                 {/* Money is said plainly or not at all. */}
                 {caller?.history && caller.history.balanceDue > 0 && (
                   <Chip tone="warn">
-                    Owes {money(caller.history.balanceDue)}
-                    {caller.history.unpaidCount > 1 ? ` · ${caller.history.unpaidCount} invoices` : ''}
+                    {t('shared.call.owes', {
+                      amount: money(caller.history.balanceDue, t.lang),
+                    })}
+                    {caller.history.unpaidCount > 1
+                      ? ` · ${t.plural(caller.history.unpaidCount, 'plural.invoice')}`
+                      : ''}
                   </Chip>
                 )}
                 {/* One number, several people on it: naming one of them would
                     be a guess, so say there is a choice to make. */}
-                {caller?.match === 'multiple' && <Chip tone="warn">Several customers on this number</Chip>}
+                {caller?.match === 'multiple' && (
+                  <Chip tone="warn">{t('shared.call.multiple')}</Chip>
+                )}
               </div>
 
               <div className="truncate text-xs text-gray-600">
@@ -874,16 +950,14 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
               {caller?.activeJob && (
                 <div className="truncate text-xs text-ink">
                   <span className="font-medium">
-                    {caller.activeJob.jobNumber ?? 'Booked'}
+                    {caller.activeJob.jobNumber ?? t('shared.call.booked')}
                   </span>
                   {caller.activeJob.type ? ` · ${caller.activeJob.type}` : ''}
                   {caller.activeJob.appliance ? ` · ${caller.activeJob.appliance}` : ''}
-                  {whenLabel(caller.activeJob.scheduledAt)
-                    ? ` · ${whenLabel(caller.activeJob.scheduledAt)}`
+                  {whenLabel(caller.activeJob.scheduledAt, t.lang)
+                    ? ` · ${whenLabel(caller.activeJob.scheduledAt, t.lang)}`
                     : ''}
-                  {caller.activeJob.status
-                    ? ` · ${caller.activeJob.status.toLowerCase().replace(/_/g, ' ')}`
-                    : ''}
+                  {caller.activeJob.status ? ` · ${statusLabel(t, caller.activeJob.status)}` : ''}
                 </div>
               )}
 
@@ -891,8 +965,10 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
                   last time" is the second question, never the first. */}
               {!caller?.activeJob && caller?.lastJob && (
                 <div className="truncate text-xs text-gray-600">
-                  Last visit
-                  {dayLabel(caller.lastJob.completedAt) ? ` ${dayLabel(caller.lastJob.completedAt)}` : ''}
+                  {t('shared.call.lastVisit')}
+                  {dayLabel(caller.lastJob.completedAt, t.lang)
+                    ? ` ${dayLabel(caller.lastJob.completedAt, t.lang)}`
+                    : ''}
                   {caller.lastJob.appliance ? ` · ${caller.lastJob.appliance}` : ''}
                   {caller.lastJob.diagnosis ? ` · ${caller.lastJob.diagnosis}` : ''}
                 </div>
@@ -907,7 +983,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
                   className="h-8 rounded-card px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-cream"
                   style={{ backgroundColor: '#0ca30c' }}
                 >
-                  Answer
+                  {t('shared.call.answer')}
                 </button>
               )}
               {status === 'live' && (
@@ -920,7 +996,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
                       : 'border-primary-500/30 text-gray-600 hover:border-ink hover:text-ink'
                   }`}
                 >
-                  {muted ? 'Unmute' : 'Mute'}
+                  {muted ? t('shared.call.unmute') : t('shared.call.mute')}
                 </button>
               )}
               <button
@@ -929,7 +1005,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
                 className="h-8 rounded-card px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-cream"
                 style={{ backgroundColor: '#d03b3b' }}
               >
-                {status === 'ringing' ? 'Decline' : 'Hang up'}
+                {status === 'ringing' ? t('shared.call.decline') : t('shared.call.hangUp')}
               </button>
             </div>
           </>
@@ -946,8 +1022,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
             onClick={() => setHistoryOpen((open) => !open)}
             className="font-heading text-[10px] uppercase tracking-label text-gray-500 hover:text-ink"
           >
-            {historyOpen ? '▾' : '▸'} Last {caller.recentJobs.length}{' '}
-            {caller.recentJobs.length === 1 ? 'job' : 'jobs'}
+            {historyOpen ? '▾' : '▸'} {t.plural(caller.recentJobs.length, 'shared.lastJobs')}
           </button>
 
           {historyOpen && (
@@ -957,7 +1032,7 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
                   {caller.recentJobs.map((job) => (
                     <tr key={job.id} className="border-t border-primary-500/10">
                       <td className="whitespace-nowrap py-1 pr-3 text-gray-500">
-                        {dayLabel(job.at) ?? '—'}
+                        {dayLabel(job.at, t.lang) ?? '—'}
                       </td>
                       <td className="whitespace-nowrap py-1 pr-3">
                         {/* A Link, emphatically not an anchor. A plain href
@@ -969,20 +1044,22 @@ export function CallBar({ teamMemberId }: { teamMemberId: string | null }) {
                           href={`/admin/calendar/${job.id}`}
                           className="font-medium text-ink hover:text-primary-600"
                         >
-                          {job.jobNumber ?? 'Job'}
+                          {job.jobNumber ?? t('common.job')}
                         </Link>
                       </td>
                       <td className="py-1 pr-3 text-gray-600">
                         {[job.type, job.appliance].filter(Boolean).join(' · ') || '—'}
                       </td>
                       <td className="whitespace-nowrap py-1 pr-2">
-                        <Chip tone={jobTone(job.status)}>{humanise(job.status)}</Chip>
+                        <Chip tone={jobTone(job.status)}>{statusLabel(t, job.status)}</Chip>
                       </td>
                       <td className="whitespace-nowrap py-1 pr-3">
-                        <Chip tone={payTone(job.paymentStatus)}>{humanise(job.paymentStatus)}</Chip>
+                        <Chip tone={payTone(job.paymentStatus)}>
+                          {payLabel(t, job.paymentStatus)}
+                        </Chip>
                       </td>
                       <td className="whitespace-nowrap py-1 text-right text-gray-600">
-                        {job.total > 0 ? money(job.total) : ''}
+                        {job.total > 0 ? money(job.total, t.lang) : ''}
                       </td>
                     </tr>
                   ))}

@@ -2,19 +2,34 @@ import Link from 'next/link';
 import { parseRange } from '@/lib/admin/range';
 import { getCampaigns, getChannels } from '@/lib/admin/queries';
 import { count, money, percent } from '@/lib/admin/format';
-import { channelLabel, isPaidChannel } from '@/lib/attribution';
+import { CHANNEL_LABELS, channelLabel, isPaidChannel } from '@/lib/attribution';
+import { serverTranslator } from '@/lib/i18n/server';
+import { numberLocale, type Lang, type TranslationKey } from '@/lib/i18n';
 import { Empty, Hint, Panel, SetupNotice, Table, Td, Th } from '@/components/admin/ui';
 import { RankedBars } from '@/components/admin/charts';
 import { channelColor } from '@/components/admin/palette';
 import { MoneyBasisLine } from '@/components/admin/MoneyBasis';
+import { rangeLabel } from '@/lib/i18n/range';
 
 export const dynamic = 'force-dynamic';
 
+// `key` is the query-string value and stays English; only the label moves.
 const GROUPINGS = [
-  { key: 'campaign', label: 'Campaign' },
-  { key: 'content', label: 'Ad / creative' },
-  { key: 'term', label: 'Keyword' },
+  { key: 'campaign', labelKey: 'marketing.channels.group.campaign' },
+  { key: 'content', labelKey: 'marketing.channels.group.content' },
+  { key: 'term', labelKey: 'marketing.channels.group.term' },
 ] as const;
+
+/**
+ * A return like `2,40×`. Through `Intl` rather than `toFixed`, or it is the one
+ * number on a Ukrainian screen still written with a full stop.
+ */
+function ratio(value: number, lang: Lang): string {
+  return value.toLocaleString(numberLocale(lang), {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
 
 export default async function ChannelsPage({
   searchParams,
@@ -29,6 +44,15 @@ export default async function ChannelsPage({
   const attribution = (searchParams.attribution as string) === 'first' ? 'first' : 'last';
   const groupBy = (GROUPINGS.find((entry) => entry.key === searchParams.group)?.key ??
     'campaign') as 'campaign' | 'content' | 'term';
+  const t = serverTranslator();
+
+  // The slug is a JOIN key and never moves; only what the reader sees does.
+  // A channel the dictionary has not heard of keeps the name attribution.ts
+  // gives it rather than showing a raw key.
+  const channelName = (channel: string | null | undefined) =>
+    channel && channel in CHANNEL_LABELS
+      ? t(`marketing.channel.${channel}` as TranslationKey)
+      : channelLabel(channel);
 
   try {
     const [channels, campaigns] = await Promise.all([
@@ -46,14 +70,14 @@ export default async function ChannelsPage({
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">
-              Channels
+              {t('marketing.channels.title')}
             </h1>
-            <p className="mt-1 text-sm text-gray-600">{range.label}</p>
+            <p className="mt-1 text-sm text-gray-600">{rangeLabel(range, t)}</p>
           </div>
 
           <div className="flex items-center gap-2">
             <span className="font-heading text-[10px] uppercase tracking-label text-gray-500">
-              Credit the
+              {t('marketing.channels.creditThe')}
             </span>
             {(['last', 'first'] as const).map((mode) => (
               <Link
@@ -65,57 +89,59 @@ export default async function ChannelsPage({
                     : 'border-primary-500/25 text-gray-600 hover:border-ink hover:text-ink'
                 }`}
               >
-                {mode === 'last' ? 'Last click' : 'First click'}
+                {mode === 'last'
+                  ? t('marketing.channels.lastClick')
+                  : t('marketing.channels.firstClick')}
               </Link>
             ))}
           </div>
         </header>
 
-        <Hint>
-          Last click credits whichever channel was in play when the person got in touch. First
-          click credits whatever introduced them, which is often weeks earlier — usually an ad,
-          even when the visit that converted came from a Google search for the business name.
-          Switching between the two is the fastest way to see which channels are being quietly
-          underpaid by the ad platforms&apos; own reporting.
-        </Hint>
+        <Hint>{t('marketing.channels.attributionHint')}</Hint>
 
         <MoneyBasisLine attributedCents={totalRevenue} reportedCents={totalMarked} />
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <Panel title="Spend" subtitle="Where the money went">
+          <Panel
+            title={t('marketing.channels.spend')}
+            subtitle={t('marketing.channels.spendSub')}
+          >
             {totalSpend === 0 ? (
               <Empty>
-                No spend recorded for this period.{' '}
+                {t('marketing.channels.noSpendBefore')}{' '}
                 <Link href="/admin/spend" className="underline">
-                  Add it
-                </Link>{' '}
-                to unlock cost per lead and ROAS.
+                  {t('marketing.channels.noSpendLink')}
+                </Link>
+                {t('marketing.channels.noSpendAfter')}
               </Empty>
             ) : (
               <RankedBars
                 items={paid.map((row) => ({
-                  label: channelLabel(row.channel),
+                  label: channelName(row.channel),
                   value: row.spendCents / 100,
                   color: channelColor(row.channel),
-                  note: percent(row.spendCents / totalSpend, 0),
+                  note: percent(row.spendCents / totalSpend, 0, t.lang),
                 }))}
                 format="money"
               />
             )}
           </Panel>
 
-          <Panel title="Revenue" subtitle="Invoiced in JobPocket, for work that began as an enquiry">
+          <Panel
+            title={t('marketing.channels.revenue')}
+            subtitle={t('marketing.channels.revenueSub')}
+          >
             {totalRevenue === 0 ? (
-              <Empty>No won jobs with a value recorded yet.</Empty>
+              <Empty>{t('marketing.channels.noWon')}</Empty>
             ) : (
               <RankedBars
                 items={channels
                   .filter((row) => row.invoicedCents > 0)
                   .map((row) => ({
-                    label: channelLabel(row.channel),
+                    label: channelName(row.channel),
                     value: row.invoicedCents / 100,
                     color: channelColor(row.channel),
-                    note: percent(row.invoicedCents / totalRevenue, 0),
+                    note: percent(row.invoicedCents / totalRevenue, 0, t.lang),
                   }))}
                 format="money"
               />
@@ -123,27 +149,30 @@ export default async function ChannelsPage({
           </Panel>
         </div>
 
-        <Panel title="Every channel" subtitle="Traffic, requests, cost and what came back">
+        <Panel
+          title={t('marketing.channels.every')}
+          subtitle={t('marketing.channels.everySub')}
+        >
           {channels.length === 0 ? (
-            <Empty>Nothing recorded in this period.</Empty>
+            <Empty>{t('marketing.channels.nothing')}</Empty>
           ) : (
             <Table>
               <thead>
                 <tr>
-                  <Th>Channel</Th>
-                  <Th numeric>Visits</Th>
-                  <Th numeric>Leads</Th>
-                  <Th numeric>Calls</Th>
-                  <Th numeric>Conv. rate</Th>
-                  <Th numeric>Booked</Th>
-                  <Th numeric>Won</Th>
-                  <Th numeric>Close rate</Th>
-                  <Th numeric>Spend</Th>
-                  <Th numeric>Cost / request</Th>
-                  <Th numeric>Cost / job</Th>
-                  <Th numeric>Invoiced</Th>
-                  <Th numeric>Marked</Th>
-                  <Th numeric>ROAS</Th>
+                  <Th>{t('marketing.col.channel')}</Th>
+                  <Th numeric>{t('marketing.col.visits')}</Th>
+                  <Th numeric>{t('marketing.col.leads')}</Th>
+                  <Th numeric>{t('marketing.col.calls')}</Th>
+                  <Th numeric>{t('marketing.col.convRate')}</Th>
+                  <Th numeric>{t('marketing.col.booked')}</Th>
+                  <Th numeric>{t('marketing.col.won')}</Th>
+                  <Th numeric>{t('marketing.col.closeRate')}</Th>
+                  <Th numeric>{t('marketing.col.spend')}</Th>
+                  <Th numeric>{t('marketing.col.costPerRequest')}</Th>
+                  <Th numeric>{t('marketing.col.costPerJob')}</Th>
+                  <Th numeric>{t('marketing.col.invoiced')}</Th>
+                  <Th numeric>{t('marketing.col.marked')}</Th>
+                  <Th numeric>{t('marketing.col.roas')}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -159,31 +188,37 @@ export default async function ChannelsPage({
                             className="inline-block h-2.5 w-2.5 rounded-full"
                             style={{ backgroundColor: channelColor(row.channel) }}
                           />
-                          {channelLabel(row.channel)}
+                          {channelName(row.channel)}
                         </span>
                       </Td>
-                      <Td numeric>{count(row.sessions)}</Td>
-                      <Td numeric>{count(row.leads)}</Td>
-                      <Td numeric>{count(row.calls)}</Td>
-                      <Td numeric>{row.sessions ? percent(requests / row.sessions) : '—'}</Td>
-                      <Td numeric>{count(row.booked)}</Td>
-                      <Td numeric>{count(row.won)}</Td>
-                      <Td numeric>{requests ? percent(row.won / requests) : '—'}</Td>
-                      <Td numeric>{row.spendCents ? money(row.spendCents) : '—'}</Td>
+                      <Td numeric>{count(row.sessions, t.lang)}</Td>
+                      <Td numeric>{count(row.leads, t.lang)}</Td>
+                      <Td numeric>{count(row.calls, t.lang)}</Td>
                       <Td numeric>
-                        {row.spendCents && requests ? money(row.spendCents / requests) : '—'}
+                        {row.sessions ? percent(requests / row.sessions, 1, t.lang) : '—'}
                       </Td>
-                      <Td numeric>{row.spendCents && row.won ? money(row.spendCents / row.won) : '—'}</Td>
-                      <Td numeric>{row.invoicedCents ? money(row.invoicedCents) : '—'}</Td>
+                      <Td numeric>{count(row.booked, t.lang)}</Td>
+                      <Td numeric>{count(row.won, t.lang)}</Td>
+                      <Td numeric>{requests ? percent(row.won / requests, 1, t.lang) : '—'}</Td>
+                      <Td numeric>{row.spendCents ? money(row.spendCents, t.lang) : '—'}</Td>
+                      <Td numeric>
+                        {row.spendCents && requests
+                          ? money(row.spendCents / requests, t.lang)
+                          : '—'}
+                      </Td>
+                      <Td numeric>
+                        {row.spendCents && row.won ? money(row.spendCents / row.won, t.lang) : '—'}
+                      </Td>
+                      <Td numeric>{row.invoicedCents ? money(row.invoicedCents, t.lang) : '—'}</Td>
                       <Td numeric className="text-gray-500">
-                        {row.revenueCents ? money(row.revenueCents) : '—'}
+                        {row.revenueCents ? money(row.revenueCents, t.lang) : '—'}
                       </Td>
                       <Td numeric>
                         {roas === null ? (
                           '—'
                         ) : (
                           <span style={{ color: roas >= 1 ? '#006300' : '#d03b3b' }}>
-                            {roas.toFixed(2)}×
+                            {ratio(roas, t.lang)}×
                           </span>
                         )}
                       </Td>
@@ -196,8 +231,8 @@ export default async function ChannelsPage({
         </Panel>
 
         <Panel
-          title="Inside the channels"
-          subtitle="The same numbers, one level down"
+          title={t('marketing.channels.inside')}
+          subtitle={t('marketing.channels.insideSub')}
           action={
             <div className="flex gap-1">
               {GROUPINGS.map((entry) => (
@@ -210,27 +245,32 @@ export default async function ChannelsPage({
                       : 'border-primary-500/25 text-gray-600 hover:border-ink hover:text-ink'
                   }`}
                 >
-                  {entry.label}
+                  {t(entry.labelKey)}
                 </Link>
               ))}
             </div>
           }
         >
           {campaigns.length === 0 ? (
-            <Empty>Nothing tagged at this level yet.</Empty>
+            <Empty>{t('marketing.channels.untagged')}</Empty>
           ) : (
             <Table>
               <thead>
                 <tr>
-                  <Th>Channel</Th>
-                  <Th>{GROUPINGS.find((entry) => entry.key === groupBy)?.label}</Th>
-                  <Th numeric>Visits</Th>
-                  <Th numeric>Leads</Th>
-                  <Th numeric>Booked</Th>
-                  <Th numeric>Won</Th>
-                  <Th numeric>Spend</Th>
-                  <Th numeric>Cost / lead</Th>
-                  <Th numeric>Revenue</Th>
+                  <Th>{t('marketing.col.channel')}</Th>
+                  <Th>
+                    {t(
+                      GROUPINGS.find((entry) => entry.key === groupBy)?.labelKey ??
+                        'marketing.channels.group.campaign'
+                    )}
+                  </Th>
+                  <Th numeric>{t('marketing.col.visits')}</Th>
+                  <Th numeric>{t('marketing.col.leads')}</Th>
+                  <Th numeric>{t('marketing.col.booked')}</Th>
+                  <Th numeric>{t('marketing.col.won')}</Th>
+                  <Th numeric>{t('marketing.col.spend')}</Th>
+                  <Th numeric>{t('marketing.col.costPerLead')}</Th>
+                  <Th numeric>{t('marketing.col.revenue')}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -243,31 +283,32 @@ export default async function ChannelsPage({
                           className="inline-block h-2.5 w-2.5 rounded-full"
                           style={{ backgroundColor: channelColor(row.channel) }}
                         />
-                        {channelLabel(row.channel)}
+                        {channelName(row.channel)}
                       </span>
                     </Td>
                     <Td className="max-w-[280px] truncate">{row.label}</Td>
-                    <Td numeric>{count(row.sessions)}</Td>
-                    <Td numeric>{count(row.leads)}</Td>
-                    <Td numeric>{count(row.booked)}</Td>
-                    <Td numeric>{count(row.won)}</Td>
-                    <Td numeric>{row.spendCents ? money(row.spendCents) : '—'}</Td>
+                    <Td numeric>{count(row.sessions, t.lang)}</Td>
+                    <Td numeric>{count(row.leads, t.lang)}</Td>
+                    <Td numeric>{count(row.booked, t.lang)}</Td>
+                    <Td numeric>{count(row.won, t.lang)}</Td>
+                    <Td numeric>{row.spendCents ? money(row.spendCents, t.lang) : '—'}</Td>
                     <Td numeric>
-                      {row.spendCents && row.leads ? money(row.spendCents / row.leads) : '—'}
+                      {row.spendCents && row.leads
+                        ? money(row.spendCents / row.leads, t.lang)
+                        : '—'}
                     </Td>
-                    <Td numeric>{row.revenueCents ? money(row.revenueCents) : '—'}</Td>
+                    <Td numeric>{row.revenueCents ? money(row.revenueCents, t.lang) : '—'}</Td>
                   </tr>
                 ))}
               </tbody>
             </Table>
           )}
           <Hint>
-            Keyword and creative rows only appear for traffic that arrived tagged. Google Ads
-            auto-tagging supplies the click id but not the keyword, so add{' '}
+            {t('marketing.channels.taggingHintBefore')}
             <code className="rounded bg-cream-dark px-1 py-0.5">
               utm_term={'{keyword}'}&amp;utm_content={'{creative}'}
-            </code>{' '}
-            to the tracking template if you want this level filled in.
+            </code>
+            {t('marketing.channels.taggingHintAfter')}
           </Hint>
         </Panel>
       </div>

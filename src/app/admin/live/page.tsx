@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { channelLabel } from '@/lib/attribution';
-import { count, relativeTime } from '@/lib/admin/format';
+import { count } from '@/lib/admin/format';
+import { useT } from '@/components/admin/LanguageProvider';
+import type { Translator } from '@/lib/i18n';
 import { Empty, Hint, Panel, Table, Td, Th } from '@/components/admin/ui';
 import { STATUS, channelColor } from '@/components/admin/palette';
 
@@ -39,24 +41,80 @@ interface LiveEvent {
   city: string | null;
 }
 
-const EVENT_LABELS: Record<string, string> = {
-  click_phone: 'tapped the phone number',
-  form_start: 'started a form',
-  form_submit: 'submitted a form',
-  calendly_booked: 'booked an appointment',
-  rage_click: 'clicked repeatedly on something',
-  js_error: 'hit a script error',
-};
-
 const NOTABLE = new Set(['click_phone', 'form_submit', 'calendly_booked']);
 
+/**
+ * What the visitor did, as a verb phrase.
+ *
+ * The event type is the key and stays in English; only the phrase is
+ * translated, and it is handed to the sentence below as one placeholder —
+ * Ukrainian does not put the verb where English does.
+ */
+function eventAction(t: Translator, type: string): string {
+  switch (type) {
+    case 'click_phone':
+      return t('website.live.act.clickPhone');
+    case 'form_start':
+      return t('website.live.act.formStart');
+    case 'form_submit':
+      return t('website.live.act.formSubmit');
+    case 'calendly_booked':
+      return t('website.live.act.calendlyBooked');
+    case 'rage_click':
+      return t('website.live.act.rageClick');
+    case 'js_error':
+      return t('website.live.act.jsError');
+    default:
+      return type;
+  }
+}
+
+/** The value in the database stays 'mobile' / 'tablet' / 'desktop'. */
+function deviceLabel(t: Translator, device: string | null): string {
+  switch (device) {
+    case 'mobile':
+      return t('website.device.mobile');
+    case 'tablet':
+      return t('website.device.tablet');
+    case 'desktop':
+      return t('website.device.desktop');
+    case 'unknown':
+      return t('website.device.unknown');
+    default:
+      return device || '—';
+  }
+}
+
+/**
+ * How long ago, in the reader's language.
+ *
+ * `relativeTime` in format.ts writes "ago" and takes no language — on a feed
+ * made of sentences that one English word is read as a word, so the same
+ * arithmetic is done here against the dictionary. The English wording is
+ * unchanged.
+ */
+function ago(t: Translator, value: string): string {
+  const seconds = Math.round((Date.now() - new Date(value).getTime()) / 1000);
+  if (seconds < 60) return t('website.time.secondsAgo', { n: seconds });
+  if (seconds < 3600) return t('website.time.minutesAgo', { n: Math.round(seconds / 60) });
+  if (seconds < 86_400) return t('website.time.hoursAgo', { n: Math.round(seconds / 3600) });
+  return t('website.time.daysAgo', { n: Math.round(seconds / 86_400) });
+}
+
 export default function LivePage() {
+  const t = useT();
   const [data, setData] = useState<{
     sessions: LiveSession[];
     recent: LiveEvent[];
     today: { sessions: number; leads: number; calls: number };
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // `useT()` hands back a fresh function every render, so it cannot go in the
+  // dependency list — the poller would be torn down and rebuilt ten times a
+  // second. A ref keeps the effect mounted once and the wording current.
+  const tRef = useRef(t);
+  tRef.current = t;
 
   useEffect(() => {
     let cancelled = false;
@@ -67,13 +125,13 @@ export default function LivePage() {
         const body = await response.json();
         if (cancelled) return;
         if (!response.ok) {
-          setError(body?.error ?? 'Could not load.');
+          setError(body?.error ?? tRef.current('website.live.loadFailed'));
           return;
         }
         setError(null);
         setData(body);
       } catch {
-        if (!cancelled) setError('Could not reach the server.');
+        if (!cancelled) setError(tRef.current('website.live.unreachable'));
       }
     };
 
@@ -88,14 +146,16 @@ export default function LivePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-baseline gap-3">
-        <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">Live</h1>
+        <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">
+          {t('website.live.title')}
+        </h1>
         <span className="flex items-center gap-2 text-xs text-gray-500">
           <span
             aria-hidden
             className="inline-block h-2 w-2 animate-pulse rounded-full"
             style={{ backgroundColor: STATUS.good }}
           />
-          refreshing every 10 seconds
+          {t('website.live.refreshing')}
         </span>
       </div>
 
@@ -106,32 +166,45 @@ export default function LivePage() {
       )}
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Tile label="On the site now" value={data ? count(data.sessions.length) : '—'} />
-        <Tile label="Visits today" value={data ? count(data.today.sessions) : '—'} />
         <Tile
-          label="Requests today"
-          value={data ? count(data.today.leads + data.today.calls) : '—'}
-          note={data ? `${data.today.leads} forms · ${data.today.calls} calls` : undefined}
+          label={t('website.live.onSiteNow')}
+          value={data ? count(data.sessions.length, t.lang) : '—'}
+        />
+        <Tile
+          label={t('website.live.visitsToday')}
+          value={data ? count(data.today.sessions, t.lang) : '—'}
+        />
+        <Tile
+          label={t('website.live.requestsToday')}
+          value={data ? count(data.today.leads + data.today.calls, t.lang) : '—'}
+          note={
+            data
+              ? t('website.live.formsAndCalls', {
+                  forms: t.plural(data.today.leads, 'website.plural.form'),
+                  calls: t.plural(data.today.calls, 'website.plural.call'),
+                })
+              : undefined
+          }
         />
       </div>
 
-      <Panel title="Right now" subtitle="Visits with activity in the last five minutes">
+      <Panel title={t('website.live.rightNow')} subtitle={t('website.live.rightNowSub')}>
         {!data ? (
-          <Empty>Loading…</Empty>
+          <Empty>{t('website.live.loading')}</Empty>
         ) : data.sessions.length === 0 ? (
-          <Empty>Nobody on the site at the moment.</Empty>
+          <Empty>{t('website.live.nobody')}</Empty>
         ) : (
           <Table>
             <thead>
               <tr>
-                <Th>Channel</Th>
-                <Th>Campaign</Th>
-                <Th>Where</Th>
-                <Th>Device</Th>
-                <Th>Landed on</Th>
-                <Th>Now reading</Th>
-                <Th numeric>Pages</Th>
-                <Th numeric>Last seen</Th>
+                <Th>{t('website.live.channel')}</Th>
+                <Th>{t('website.live.campaign')}</Th>
+                <Th>{t('website.live.where')}</Th>
+                <Th>{t('website.live.device')}</Th>
+                <Th>{t('website.live.landedOn')}</Th>
+                <Th>{t('website.live.nowReading')}</Th>
+                <Th numeric>{t('website.live.pages')}</Th>
+                <Th numeric>{t('website.live.lastSeen')}</Th>
               </tr>
             </thead>
             <tbody>
@@ -149,10 +222,10 @@ export default function LivePage() {
                   </Td>
                   <Td className="max-w-[160px] truncate">{session.campaign || '—'}</Td>
                   <Td className="whitespace-nowrap">
-                    {session.city || 'Unknown'}
+                    {session.city || t('website.live.unknownCity')}
                     {session.region ? `, ${session.region}` : ''}
                   </Td>
-                  <Td className="capitalize">{session.device || '—'}</Td>
+                  <Td>{deviceLabel(t, session.device)}</Td>
                   <Td className="max-w-[180px] truncate font-mono text-xs">
                     {session.landing_path || '—'}
                   </Td>
@@ -161,31 +234,27 @@ export default function LivePage() {
                   </Td>
                   <Td numeric>{session.pageviews}</Td>
                   <Td numeric className="whitespace-nowrap text-xs">
-                    {relativeTime(session.last_seen_at)}
+                    {ago(t, session.last_seen_at)}
                   </Td>
                 </tr>
               ))}
             </tbody>
           </Table>
         )}
-        <Hint>
-          A green row means that visit has already asked for service. Watching this while a new
-          campaign goes live is the fastest way to catch a broken landing page or a mis-targeted
-          location.
-        </Hint>
+        <Hint>{t('website.live.greenRowHint')}</Hint>
       </Panel>
 
-      <Panel title="Last hour" subtitle="Things worth noticing as they happen">
+      <Panel title={t('website.live.lastHour')} subtitle={t('website.live.lastHourSub')}>
         {!data ? (
-          <Empty>Loading…</Empty>
+          <Empty>{t('website.live.loading')}</Empty>
         ) : data.recent.length === 0 ? (
-          <Empty>Nothing notable in the last hour.</Empty>
+          <Empty>{t('website.live.nothingNotable')}</Empty>
         ) : (
           <ul className="space-y-2">
             {data.recent.map((event, index) => (
               <li key={index} className="flex items-baseline gap-3 text-sm">
                 <span className="w-16 shrink-0 text-xs tabular-nums text-gray-500">
-                  {relativeTime(event.ts)}
+                  {ago(t, event.ts)}
                 </span>
                 <span
                   aria-hidden
@@ -193,11 +262,21 @@ export default function LivePage() {
                   style={{ backgroundColor: channelColor(event.channel ?? '') }}
                 />
                 <span className={NOTABLE.has(event.type) ? 'font-medium text-ink' : 'text-gray-700'}>
-                  Someone from {channelLabel(event.channel)}
-                  {event.city ? ` in ${event.city}` : ''}{' '}
-                  {EVENT_LABELS[event.type] ?? event.type}
+                  {/* One key, not four fragments: the channel, the town and the
+                      verb all move about between languages, and only a whole
+                      sentence can put them where they belong. */}
+                  {event.city
+                    ? t('website.live.someoneIn', {
+                        channel: channelLabel(event.channel),
+                        city: event.city,
+                        action: eventAction(t, event.type),
+                      })
+                    : t('website.live.someone', {
+                        channel: channelLabel(event.channel),
+                        action: eventAction(t, event.type),
+                      })}
                   {event.path ? (
-                    <span className="text-gray-500"> on {event.path}</span>
+                    <span className="text-gray-500"> {t('website.live.onPath', { path: event.path })}</span>
                   ) : null}
                 </span>
               </li>
@@ -208,9 +287,9 @@ export default function LivePage() {
 
       <p className="text-center text-xs text-gray-500">
         <Link href="/admin/leads" className="underline">
-          Leads
+          {t('website.live.leadsLink')}
         </Link>{' '}
-        holds everything that turned into a request.
+        {t('website.live.leadsHolds')}
       </p>
     </div>
   );

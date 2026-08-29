@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useT } from '@/components/admin/LanguageProvider';
 
 /**
  * Who is going.
@@ -20,6 +21,7 @@ export function AssignForm({
   team: { id: string; name: string; isYou: boolean }[];
   current: string[];
 }) {
+  const t = useT();
   const router = useRouter();
   const [picked, setPicked] = useState<string[]>(current);
   const [busy, setBusy] = useState(false);
@@ -27,11 +29,7 @@ export function AssignForm({
   const [done, setDone] = useState<string | null>(null);
 
   if (team.length === 0) {
-    return (
-      <p className="text-sm text-gray-600">
-        No team yet. Add somebody in the app and they will appear here as a lane on the calendar.
-      </p>
-    );
+    return <p className="text-sm text-gray-600">{t('work.assign.noTeam')}</p>;
   }
 
   const toggle = (id: string) =>
@@ -57,20 +55,21 @@ export function AssignForm({
         | null;
 
       if (!response.ok) {
-        setError(body?.error ?? 'Could not change who is going.');
+        // The server's own wording when it has one.
+        setError(body?.error ?? t('work.assign.failed'));
         return;
       }
 
       setDone(
         body?.newlyAdded?.length
-          ? 'Saved. They have been told.'
+          ? t('work.assign.told')
           : picked.length === 0
-            ? 'Taken off everybody.'
-            : 'Saved.'
+            ? t('work.assign.clearedDone')
+            : t('work.form.saved')
       );
       router.refresh();
     } catch {
-      setError('Could not reach the server.');
+      setError(t('work.form.noServer'));
     } finally {
       setBusy(false);
     }
@@ -88,7 +87,9 @@ export function AssignForm({
               className="h-4 w-4 rounded border-primary-500/40"
             />
             {member.name}
-            {member.isYou && <span className="text-xs text-gray-500">(you)</span>}
+            {member.isYou && (
+              <span className="text-xs text-gray-500">{t('work.assign.you')}</span>
+            )}
           </label>
         ))}
       </div>
@@ -99,7 +100,11 @@ export function AssignForm({
         disabled={busy || unchanged}
         className="h-9 w-full rounded-card bg-ink px-4 font-heading text-[10px] font-semibold uppercase tracking-label text-cream disabled:opacity-50"
       >
-        {busy ? 'Saving…' : picked.length === 0 ? 'Take it off everybody' : 'Save'}
+        {busy
+          ? t('work.form.saving')
+          : picked.length === 0
+            ? t('work.assign.clear')
+            : t('work.form.save')}
       </button>
 
       {error && <p className="text-xs" style={{ color: '#8f2323' }}>{error}</p>}

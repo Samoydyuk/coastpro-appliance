@@ -1,4 +1,4 @@
-import type { en } from './en';
+import type { core as source } from '../en/core';
 
 /**
  * The console in Ukrainian.
@@ -10,7 +10,7 @@ import type { en } from './en';
  * робіт. `t.plural` picks between them through `Intl.PluralRules`; no code
  * anywhere should choose with `n === 1`.
  */
-export const uk: Record<keyof typeof en, string> = {
+export const core: Record<keyof typeof source, string> = {
   // Навігація
   'nav.overview': 'Огляд',
   'nav.settings': 'Налаштування',

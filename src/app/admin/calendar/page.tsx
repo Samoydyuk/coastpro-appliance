@@ -20,13 +20,13 @@ import {
   weekOf,
   weekWindow,
   dayWindow,
-  dayLabel,
   shiftDay,
   isDayKey,
-  WEEKDAY_LABELS,
 } from '@/lib/bookings/month';
 import { buildLanes, filterToLane, primaryLane, UNASSIGNED } from '@/lib/bookings/lanes';
 import { money } from '@/lib/admin/format';
+import { serverTranslator } from '@/lib/i18n/server';
+import { numberLocale } from '@/lib/i18n';
 import { Empty, Hint, Panel, SetupNotice, Warning } from '@/components/admin/ui';
 import { STATUS, SERIES, INK_MUTED } from '@/components/admin/palette';
 
@@ -46,12 +46,39 @@ export const dynamic = 'force-dynamic';
  */
 
 const VIEWS = [
-  { key: 'month', label: 'Month' },
-  { key: 'week', label: 'Week' },
-  { key: 'day', label: 'Day' },
+  { key: 'month', label: 'work.calendar.view.month' },
+  { key: 'week', label: 'work.calendar.view.week' },
+  { key: 'day', label: 'work.calendar.view.day' },
 ] as const;
 
 type ViewKey = (typeof VIEWS)[number]['key'];
+
+/**
+ * The headings, in the reader's language.
+ *
+ * `month.ts` formats through `en-US` on purpose: the same file builds the ISO
+ * day keys that travel in the query string, and those must not move with the
+ * interface language. The keys stay exactly as they are — only the words shown
+ * above the board are formatted again, here.
+ */
+const LONG_DAY: Intl.DateTimeFormatOptions = {
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric',
+  timeZone: 'UTC',
+};
+
+const SHORT_DAY: Intl.DateTimeFormatOptions = {
+  weekday: 'short',
+  month: 'short',
+  day: 'numeric',
+  timeZone: 'UTC',
+};
+
+function formatDayKey(key: string, locale: string, options: Intl.DateTimeFormatOptions): string {
+  const [year, month, day] = key.split('-').map(Number);
+  return new Intl.DateTimeFormat(locale, options).format(new Date(Date.UTC(year, month - 1, day)));
+}
 
 /** What the colour means when there is only ever one answer to "who". */
 const STATUS_COLOUR: Record<string, string> = {
@@ -72,6 +99,9 @@ export default async function CalendarPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
+  const t = serverTranslator();
+  const locale = numberLocale(t.lang);
+
   const view = (
     typeof searchParams.view === 'string' && VIEWS.some((v) => v.key === searchParams.view)
       ? searchParams.view
@@ -141,12 +171,18 @@ export default async function CalendarPage({
   const back = view === 'month' ? `${month.previousKey}-15` : shiftDay(anchor, view === 'week' ? -7 : -1);
   const forward = view === 'month' ? `${month.nextKey}-15` : shiftDay(anchor, view === 'week' ? 7 : 1);
 
+  // The week's own labels come out of `weekOf` in English; the day keys are
+  // what the board is actually built from, so only the labels are replaced.
+  const weekDays = week.map((day) => ({ ...day, label: formatDayKey(day.key, locale, SHORT_DAY) }));
+
   const heading =
     view === 'month'
-      ? month.label
+      ? new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
+          new Date(Date.UTC(month.year, month.month - 1, 15))
+        )
       : view === 'week'
-        ? `${week[0].label} – ${week[6].label}`
-        : dayLabel(anchor);
+        ? `${weekDays[0].label} – ${weekDays[6].label}`
+        : formatDayKey(anchor, locale, LONG_DAY);
 
   const booked = visible.length;
   const value = visible.reduce((sum, job) => sum + job.totalCents, 0);
@@ -157,12 +193,14 @@ export default async function CalendarPage({
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">
-            Calendar
+            {t('work.calendar.title')}
           </h1>
           <p className="mt-1 text-sm text-gray-600">
             {booked === 0
-              ? 'Nothing booked'
-              : `${booked} ${booked === 1 ? 'visit' : 'visits'}${value > 0 ? ` · ${money(value)}` : ''}`}
+              ? t('work.calendar.nothingBooked')
+              : `${t.plural(booked, 'work.plural.visit')}${
+                  value > 0 ? ` · ${money(value, t.lang)}` : ''
+                }`}
           </p>
         </div>
 
@@ -178,22 +216,22 @@ export default async function CalendarPage({
                     : 'border-primary-500/25 text-gray-600 hover:border-ink hover:text-ink'
                 }`}
               >
-                {option.label}
+                {t(option.label)}
               </Link>
             ))}
           </div>
 
           <div className="flex items-center gap-2">
-            <Step href={link({ on: back })} label="←" />
+            <Step href={link({ on: back })} label="←" aria={t('work.calendar.stepBack')} />
             <span className="min-w-[12rem] text-center font-heading text-[11px] font-semibold uppercase tracking-label text-ink">
               {heading}
             </span>
-            <Step href={link({ on: forward })} label="→" />
+            <Step href={link({ on: forward })} label="→" aria={t('work.calendar.stepForward')} />
             <Link
               href={link({ on: todayInShopTz() })}
               className="rounded-card border border-primary-500/25 px-2.5 py-1 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 hover:border-ink hover:text-ink"
             >
-              Today
+              {t('work.calendar.today')}
             </Link>
           </div>
         </div>
@@ -202,7 +240,7 @@ export default async function CalendarPage({
       {failure && <Warning>{failure}</Warning>}
 
       {unconfigured ? (
-        <NotConnected what="Jobs and bookings" />
+        <NotConnected what={t('work.calendar.notConnectedWhat')} />
       ) : (
         <>
           {/* One lane list, one colour per person, across all three views. A
@@ -218,7 +256,7 @@ export default async function CalendarPage({
                     : 'border-primary-500/25 text-gray-600 hover:border-ink hover:text-ink'
                 }`}
               >
-                Everyone
+                {t('work.calendar.everyone')}
               </Link>
               {lanes.map((lane) => (
                 <Link
@@ -235,7 +273,8 @@ export default async function CalendarPage({
                     className="inline-block h-2 w-2 rounded-full"
                     style={{ backgroundColor: lane.colour }}
                   />
-                  {lane.name} · {filterToLane(jobs, lane.id).length}
+                  {lane.id === UNASSIGNED ? t('work.calendar.nobodyYet') : lane.name} ·{' '}
+                  {filterToLane(jobs, lane.id).length}
                 </Link>
               ))}
             </div>
@@ -245,37 +284,37 @@ export default async function CalendarPage({
             title={heading}
             subtitle={
               view === 'month'
-                ? 'Straight from JobPocket — the same jobs the app shows'
-                : 'A lane is a person; the empty stretch is what you are looking for'
+                ? t('work.calendar.monthSubtitle')
+                : t('work.calendar.laneSubtitle')
             }
           >
             {view === 'month' ? (
               <MonthGrid month={month} byDay={byDay} lanes={lanes} showLaneColour={hasTeam} />
             ) : view === 'week' ? (
-              <WeekBoard jobs={visible} lanes={lanes} days={week} />
+              <WeekBoard jobs={visible} lanes={lanes} days={weekDays} />
             ) : (
               <DayBoard jobs={visible} lanes={lanes} day={anchor} />
             )}
 
             {booked === 0 && !failure && (
               <div className="mt-4">
-                <Empty>
-                  Nothing booked here. Requests waiting for an answer are on the Bookings screen.
-                </Empty>
+                <Empty>{t('work.calendar.emptyHere')}</Empty>
               </div>
             )}
           </Panel>
 
-          <Panel title="Book a visit" subtitle="Somebody rang — put it in the diary">
+          <Panel
+            title={t('work.calendar.bookTitle')}
+            subtitle={t('work.calendar.bookSubtitle')}
+          >
             <BookJobForm services={services.map((s) => ({ id: s.id, name: s.name }))} />
           </Panel>
         </>
       )}
 
       <Hint>
-        A live view of JobPocket, not a copy — accept a request here or in the app and both show the
-        same job a moment later. Times are in the shop&apos;s timezone; cancelled work is left out.
-        {ownBusiness ? ' Visits with no brand are your own work.' : ''}
+        {t('work.calendar.hint')}
+        {ownBusiness ? t('work.calendar.hintOwn') : ''}
       </Hint>
     </div>
   );
@@ -292,15 +331,25 @@ function MonthGrid({
   lanes: ReturnType<typeof buildLanes>;
   showLaneColour: boolean;
 }) {
+  const t = serverTranslator();
+  const locale = numberLocale(t.lang);
   const weeks = buildWeeks(month);
+
+  // Sunday first, matching the grid `buildWeeks` pads. 7 January 2024 was a
+  // Sunday, and is only ever used as an anchor to name the seven weekdays.
+  const weekdays = Array.from({ length: 7 }, (_, index) =>
+    new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' }).format(
+      new Date(Date.UTC(2024, 0, 7 + index))
+    )
+  );
 
   return (
     <div className="-mx-5 overflow-x-auto px-5">
       <div className="min-w-[840px]">
         <div className="grid grid-cols-7 gap-px">
-          {WEEKDAY_LABELS.map((label) => (
+          {weekdays.map((label, index) => (
             <div
-              key={label}
+              key={index}
               className="pb-2 text-center font-heading text-[10px] font-semibold uppercase tracking-label text-gray-500"
             >
               {label}
@@ -356,12 +405,13 @@ function MonthGrid({
                         title={`${job.jobNumber ?? ''} ${job.status}${job.address ? ` · ${job.address}` : ''}`}
                       >
                         <div className="truncate text-[11px] font-medium text-ink">
-                          {timeOfDay(job.scheduledAt)} {job.clientName ?? 'No name'}
+                          {timeOfDay(job.scheduledAt)}{' '}
+                          {job.clientName ?? t('work.calendar.noName')}
                         </div>
                         <div className="truncate text-[10px] text-gray-600">
                           {showLaneColour
                             ? lane.id === UNASSIGNED
-                              ? 'Nobody yet'
+                              ? t('work.calendar.nobodyYet')
                               : lane.name
                             : job.type}
                         </div>
@@ -370,7 +420,7 @@ function MonthGrid({
                   })}
                   {dayJobs.length > 3 && (
                     <div className="px-1.5 text-[10px] text-gray-500">
-                      +{dayJobs.length - 3} more
+                      {t('work.calendar.more', { n: dayJobs.length - 3 })}
                     </div>
                   )}
                 </div>
@@ -383,12 +433,12 @@ function MonthGrid({
   );
 }
 
-function Step({ href, label }: { href: string; label: string }) {
+function Step({ href, label, aria }: { href: string; label: string; aria: string }) {
   return (
     <Link
       href={href}
       className="inline-flex h-8 w-8 items-center justify-center rounded-card border border-primary-500/30 text-sm text-gray-600 transition-colors hover:border-ink hover:text-ink"
-      aria-label={label === '←' ? 'Back' : 'Forward'}
+      aria-label={aria}
     >
       {label}
     </Link>

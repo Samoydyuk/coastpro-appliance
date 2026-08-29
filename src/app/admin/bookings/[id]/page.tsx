@@ -4,6 +4,7 @@ import { getBookingRequest, OperationsApiError } from '@/lib/bookings/client';
 import { attributionForRequests } from '@/lib/bookings/queries';
 import { channelLabel } from '@/lib/attribution';
 import { dateTime, relativeTime, money } from '@/lib/admin/format';
+import { serverTranslator } from '@/lib/i18n/server';
 import { timeOfDay } from '@/lib/bookings/month';
 import {
   ChannelDot,
@@ -30,7 +31,23 @@ export const dynamic = 'force-dynamic';
  * something but who looked.
  */
 
+/** Labels for the disagreement codes `jobpocket.ts` records. */
+const CONFLICTS = {
+  accepted_after_lost: 'work.conflict.accepted_after_lost',
+  accepted_after_spam: 'work.conflict.accepted_after_spam',
+  working_after_lost: 'work.conflict.working_after_lost',
+  working_after_spam: 'work.conflict.working_after_spam',
+  invoiced_after_lost: 'work.conflict.invoiced_after_lost',
+  invoiced_after_spam: 'work.conflict.invoiced_after_spam',
+  paid_after_lost: 'work.conflict.paid_after_lost',
+  paid_after_spam: 'work.conflict.paid_after_spam',
+  declined_after_booked: 'work.conflict.declined_after_booked',
+  cancelled_after_booked: 'work.conflict.cancelled_after_booked',
+  refund_after_won: 'work.conflict.refund_after_won',
+} as const;
+
 export default async function BookingRequestPage({ params }: { params: { id: string } }) {
+  const t = serverTranslator();
   let request;
 
   try {
@@ -67,7 +84,8 @@ export default async function BookingRequestPage({ params }: { params: { id: str
             {request.clientName}
           </h1>
           <p className="mt-1 text-sm text-gray-600">
-            {dateTime(request.createdAt)} · {relativeTime(request.createdAt)} · {request.serviceType}
+            {dateTime(request.createdAt, t.lang)} · {relativeTime(request.createdAt)} ·{' '}
+            {request.serviceType}
           </p>
         </div>
         <StatusPill status={request.status} />
@@ -75,12 +93,15 @@ export default async function BookingRequestPage({ params }: { params: { id: str
 
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-4">
-          <Panel title="Contact" subtitle="Shown here and nowhere else in this console">
+          <Panel
+            title={t('work.booking.contact')}
+            subtitle={t('work.booking.contactSubtitle')}
+          >
             <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-              <Field label="Phone">
+              <Field label={t('work.booking.phone')}>
                 <CallButton phone={request.clientPhone} name={request.clientName ?? ''} />
               </Field>
-              <Field label="Email">
+              <Field label={t('work.booking.email')}>
                 {request.clientEmail ? (
                   <a
                     href={`mailto:${request.clientEmail}`}
@@ -89,29 +110,31 @@ export default async function BookingRequestPage({ params }: { params: { id: str
                     {request.clientEmail}
                   </a>
                 ) : (
-                  <span className="text-gray-500">Not given</span>
+                  <span className="text-gray-500">{t('work.booking.notGiven')}</span>
                 )}
               </Field>
-              <Field label="Address">
-                {request.clientAddress || <span className="text-gray-500">Not given</span>}
+              <Field label={t('work.booking.address')}>
+                {request.clientAddress || (
+                  <span className="text-gray-500">{t('work.booking.notGiven')}</span>
+                )}
               </Field>
-              <Field label="Appliance">
-                {appliance || <span className="text-gray-500">Not given</span>}
+              <Field label={t('work.booking.appliance')}>
+                {appliance || <span className="text-gray-500">{t('work.booking.notGiven')}</span>}
               </Field>
             </dl>
           </Panel>
 
-          <Panel title="What they asked for">
+          <Panel title={t('work.booking.asked')}>
             <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-              <Field label="Service">{request.serviceType}</Field>
-              <Field label="Arrival window">
+              <Field label={t('work.booking.service')}>{request.serviceType}</Field>
+              <Field label={t('work.booking.window')}>
                 {request.scheduledStart ? (
                   <>
-                    {dateTime(request.scheduledStart)}
+                    {dateTime(request.scheduledStart, t.lang)}
                     {request.scheduledEnd && ` – ${timeOfDay(request.scheduledEnd)}`}
                   </>
                 ) : (
-                  <span className="text-gray-500">None picked — call to arrange</span>
+                  <span className="text-gray-500">{t('work.booking.noWindow')}</span>
                 )}
               </Field>
             </dl>
@@ -122,14 +145,14 @@ export default async function BookingRequestPage({ params }: { params: { id: str
               </p>
             ) : (
               <div className="mt-4 border-t border-primary-500/15 pt-4">
-                <Empty>They did not describe the problem.</Empty>
+                <Empty>{t('work.booking.noDescription')}</Empty>
               </div>
             )}
 
             {formData.accessNotes && (
               <p className="mt-3 text-sm text-gray-700">
                 <span className="font-heading text-[10px] uppercase tracking-label text-gray-500">
-                  Access
+                  {t('work.booking.access')}
                 </span>
                 <br />
                 {formData.accessNotes}
@@ -137,7 +160,10 @@ export default async function BookingRequestPage({ params }: { params: { id: str
             )}
           </Panel>
 
-          <Panel title="Where they came from" subtitle="Known only here, not in the app">
+          <Panel
+            title={t('work.booking.origin')}
+            subtitle={t('work.booking.originSubtitle')}
+          >
             {from ? (
               <div className="space-y-3">
                 <ChannelDot
@@ -145,31 +171,28 @@ export default async function BookingRequestPage({ params }: { params: { id: str
                   label={channelLabel(from.channel ?? 'direct')}
                 />
                 <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-                  <Field label="Source">{from.source ?? '—'}</Field>
-                  <Field label="Campaign">{from.campaign ?? '—'}</Field>
-                  <Field label="Search term">{from.term ?? '—'}</Field>
-                  <Field label="Recorded value">
-                    {from.valueCents ? money(from.valueCents) : '—'}
+                  <Field label={t('work.booking.source')}>{from.source ?? '—'}</Field>
+                  <Field label={t('work.booking.campaign')}>{from.campaign ?? '—'}</Field>
+                  <Field label={t('work.booking.term')}>{from.term ?? '—'}</Field>
+                  <Field label={t('work.booking.recordedValue')}>
+                    {from.valueCents ? money(from.valueCents, t.lang) : '—'}
                   </Field>
                 </dl>
                 <Link
                   href={`/admin/leads/${from.leadId}`}
                   className="inline-block font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 hover:text-ink"
                 >
-                  Full enquiry →
+                  {t('work.booking.fullEnquiry')}
                 </Link>
               </div>
             ) : (
-              <Empty>
-                No matching enquiry on this site. This one came in another way — the booking page
-                directly, or somebody typed it in — so no advertising is being charged for it.
-              </Empty>
+              <Empty>{t('work.booking.noOrigin')}</Empty>
             )}
           </Panel>
         </div>
 
         <div className="space-y-4">
-          <Panel title="Answer">
+          <Panel title={t('work.booking.answer')}>
             <BookingActions
               requestId={request.id}
               status={request.status}
@@ -179,34 +202,39 @@ export default async function BookingRequestPage({ params }: { params: { id: str
           </Panel>
 
           {request.job && (
-            <Panel title="The job it became">
+            <Panel title={t('work.booking.becameJob')}>
               <dl className="grid gap-y-3">
-                <Field label="Number">{request.job.jobNumber ?? '—'}</Field>
-                <Field label="Status">
+                <Field label={t('work.booking.number')}>{request.job.jobNumber ?? '—'}</Field>
+                <Field label={t('common.status')}>
                   <StatusPill status={request.job.status} />
                 </Field>
-                <Field label="Payment">
+                <Field label={t('work.booking.payment')}>
                   <StatusPill status={request.job.paymentStatus} />
                 </Field>
-                <Field label="Total">{money(request.job.totalCents)}</Field>
-                <Field label="Scheduled">
-                  {request.job.scheduledAt ? dateTime(request.job.scheduledAt) : 'Not scheduled'}
+                <Field label={t('work.booking.total')}>
+                  {money(request.job.totalCents, t.lang)}
+                </Field>
+                <Field label={t('work.booking.scheduled')}>
+                  {request.job.scheduledAt
+                    ? dateTime(request.job.scheduledAt, t.lang)
+                    : t('work.booking.notScheduled')}
                 </Field>
               </dl>
             </Panel>
           )}
 
           {from?.conflict && (
-            <Panel title="Disagreement">
+            <Panel title={t('work.booking.conflictTitle')}>
               <p className="text-sm text-gray-700">
-                JobPocket and the outcome recorded on this site do not agree:{' '}
-                <strong className="text-ink">{from.conflict.replace(/_/g, ' ')}</strong>.
+                {t('work.booking.conflictBody')}{' '}
+                <strong className="text-ink">
+                  {from.conflict in CONFLICTS
+                    ? t(CONFLICTS[from.conflict as keyof typeof CONFLICTS])
+                    : from.conflict.replace(/_/g, ' ')}
+                </strong>
+                .
               </p>
-              <Hint>
-                Nothing has been changed automatically. A status set by a person who spoke to the
-                customer outranks anything a synchronisation concludes, so this is recorded and left
-                for you.
-              </Hint>
+              <Hint>{t('work.booking.conflictHint')}</Hint>
             </Panel>
           )}
         </div>
@@ -216,12 +244,13 @@ export default async function BookingRequestPage({ params }: { params: { id: str
 }
 
 function BackLink() {
+  const t = serverTranslator();
   return (
     <Link
       href="/admin/bookings"
       className="font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 hover:text-ink"
     >
-      ← All bookings
+      {t('work.booking.back')}
     </Link>
   );
 }

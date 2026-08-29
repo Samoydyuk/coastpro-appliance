@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { money, percent } from '@/lib/admin/format';
 import { Panel, Table, Td, Th } from '@/components/admin/ui';
+import { serverTranslator } from '@/lib/i18n/server';
 
 /**
  * Three revenue figures, and why they will never agree.
@@ -32,64 +33,58 @@ export function MoneyBasis({
   attributedCents: number;
   reportedCents: number;
 }) {
+  const t = serverTranslator();
   const share =
     invoicedCents && invoicedCents > 0 ? attributedCents / invoicedCents : null;
 
   return (
-    <Panel title="Three revenue figures, three different questions">
+    <Panel title={t('money.basis.title')}>
       <Table>
         <thead>
           <tr>
-            <Th>Figure</Th>
-            <Th numeric>Amount</Th>
-            <Th>What it answers</Th>
+            <Th>{t('money.basis.figure')}</Th>
+            <Th numeric>{t('common.amount')}</Th>
+            <Th>{t('money.basis.answers')}</Th>
           </tr>
         </thead>
         <tbody>
           {invoicedCents !== undefined && (
             <tr>
-              <Td>Invoiced in JobPocket</Td>
+              <Td>{t('money.basis.invoiced')}</Td>
               <Td numeric className="font-medium">
-                {money(invoicedCents)}
+                {money(invoicedCents, t.lang)}
               </Td>
-              <Td className="text-gray-600">All the work, whoever it came from.</Td>
+              <Td className="text-gray-600">{t('money.basis.invoicedAnswer')}</Td>
             </tr>
           )}
           <tr>
-            <Td>Traceable to an enquiry</Td>
+            <Td>{t('money.basis.traceable')}</Td>
             <Td numeric className="font-medium">
-              {money(attributedCents)}
+              {money(attributedCents, t.lang)}
               {share !== null ? (
                 <span className="ml-2 text-[11px] font-normal text-gray-500">
-                  {percent(share, 0)}
+                  {percent(share, 0, t.lang)}
                 </span>
               ) : null}
             </Td>
-            <Td className="text-gray-600">
-              The jobs that began as a website form or a call to a tracked number.
-            </Td>
+            <Td className="text-gray-600">{t('money.basis.traceableAnswer')}</Td>
           </tr>
           <tr>
-            <Td>Reported to Google Ads</Td>
+            <Td>{t('money.basis.reported')}</Td>
             <Td numeric className="font-medium">
-              {money(reportedCents)}
+              {money(reportedCents, t.lang)}
             </Td>
-            <Td className="text-gray-600">
-              Fixed when the job was marked won. Never amended.
-            </Td>
+            <Td className="text-gray-600">{t('money.basis.reportedAnswer')}</Td>
           </tr>
         </tbody>
       </Table>
 
       <p className="mt-3 text-xs leading-relaxed text-gray-600">
-        These do not add up, and they are not meant to. The first is the business. The second is the
-        part of it advertising can be judged on — dispatcher work, calls to the shop&apos;s own
-        number and customers who already had it arrive with nothing to trace, so channel revenue can
-        never reach the business total. The third is the figure Google Ads holds: it was uploaded
-        against a click on the day the job was marked won and cannot be amended from here, so it
-        stays where it is and the invoice figure is shown beside it rather than written over it.{' '}
+        {t('money.basis.note')}{' '}
+        {/* The link carries a whole sentence rather than one word: which word
+            the link falls on is not the same in both languages. */}
         <Link href="/admin/money" className="text-ink underline underline-offset-2">
-          The whole picture is under Money.
+          {t('money.basis.wholePicture')}
         </Link>
       </p>
     </Panel>
@@ -109,17 +104,18 @@ export function MoneyBasisLine({
   attributedCents: number;
   reportedCents: number;
 }) {
+  const t = serverTranslator();
   return (
     <p className="text-xs leading-relaxed text-gray-600">
-      Revenue here is real invoice money, and it covers only the work that started as an enquiry or
-      a call to a tracked number — {money(attributedCents)}. Anything from a dispatcher, from the
-      shop&apos;s own line, or from a customer who already had us has nothing to attribute it to.
-      The figure Google Ads holds is different again — {money(reportedCents)} — because it was fixed
-      when each job was marked won.{' '}
+      {t('money.basis.line', {
+        attributed: money(attributedCents, t.lang),
+        reported: money(reportedCents, t.lang),
+      })}{' '}
+      {/* A whole sentence, not the word "Money": Ukrainian does not put the
+          section name where English does. */}
       <Link href="/admin/money" className="text-ink underline underline-offset-2">
-        Money
-      </Link>{' '}
-      has the business total.
+        {t('money.basis.businessTotal')}
+      </Link>
     </p>
   );
 }

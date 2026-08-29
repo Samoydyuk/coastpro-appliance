@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { numberLocale } from '@/lib/i18n';
+import { useT } from '@/components/admin/LanguageProvider';
 
 /**
  * Writing, reading and correcting the drafts for one job.
@@ -44,6 +46,7 @@ const button =
   'h-8 rounded-card px-3 font-heading text-[10px] font-semibold uppercase tracking-label disabled:opacity-50';
 
 export function MarketingContent({ jobId, channels, pieces, thin = false }: Props) {
+  const t = useT();
   const router = useRouter();
   const [open, setOpen] = useState<string | null>(pieces[0]?.channel ?? null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -266,12 +269,15 @@ export function MarketingContent({ jobId, channels, pieces, thin = false }: Prop
                 {piece.history.length > 1 && (
                   <details className="text-[11px] text-gray-500">
                     <summary className="cursor-pointer font-heading uppercase tracking-label">
-                      {piece.history.length} versions
+                      {t.plural(piece.history.length, 'marketing.version')}
                     </summary>
                     <ul className="mt-2 space-y-1">
                       {piece.history.map((version) => (
                         <li key={version.id}>
-                          {new Date(version.at).toLocaleString()} —{' '}
+                          {/* Was `toLocaleString()` with no locale: it followed the browser, so two
+                              people reading the same page in the same language saw
+                              different clocks. */}
+                          {new Date(version.at).toLocaleString(numberLocale(t.lang))} —{' '}
                           {version.source === 'human' ? 'saved by hand' : version.model || 'model'}
                         </li>
                       ))}

@@ -2,10 +2,19 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CHANNEL_LABELS, PAID_CHANNELS } from '@/lib/attribution';
+import { PAID_CHANNELS, type Channel } from '@/lib/attribution';
+import { useT } from '@/components/admin/LanguageProvider';
+import type { TranslationKey } from '@/lib/i18n';
+
+/**
+ * The unpaid sources still worth their own number: someone who found the site
+ * on Google, typed the address in, or was sent by a neighbour.
+ */
+const UNPAID_CHANNELS: Channel[] = ['google_organic', 'direct', 'referral'];
 
 /** Adding and retiring tracking numbers. */
 export function NumberEditor() {
+  const t = useT();
   const router = useRouter();
   const [number, setNumber] = useState('');
   const [channel, setChannel] = useState('google_ads');
@@ -25,14 +34,14 @@ export function NumberEditor() {
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null);
-        setError(body?.error ?? 'Could not save.');
+        setError(body?.error ?? t('settings.numbers.saveFailed'));
         return;
       }
       setNumber('');
       setLabel('');
       router.refresh();
     } catch {
-      setError('Could not reach the server.');
+      setError(t('settings.unreachable'));
     } finally {
       setBusy(false);
     }
@@ -42,7 +51,7 @@ export function NumberEditor() {
     <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
       <label className="flex flex-col gap-1">
         <span className="font-heading text-[10px] uppercase tracking-label text-gray-500">
-          Number
+          {t('settings.numbers.number')}
         </span>
         <input
           type="tel"
@@ -56,34 +65,37 @@ export function NumberEditor() {
 
       <label className="flex flex-col gap-1">
         <span className="font-heading text-[10px] uppercase tracking-label text-gray-500">
-          Shown to
+          {t('settings.numbers.shownTo')}
         </span>
+        {/* The option values are channel keys and stay in English — they are
+            what gets stored and joined on. Only the names shown are translated,
+            and they come from the same `marketing.channel.*` entries the
+            channels report reads, so a number can never be filed under one name
+            here and listed under another there. `default` is not a channel: it
+            is the number everyone unmatched sees. */}
         <select
           value={channel}
           onChange={(event) => setChannel(event.target.value)}
           className="h-9 rounded-card border border-primary-500/30 bg-[#fcfcfb] px-3 text-sm"
         >
-          {PAID_CHANNELS.map((entry) => (
+          {[...PAID_CHANNELS, ...UNPAID_CHANNELS].map((entry) => (
             <option key={entry} value={entry}>
-              {CHANNEL_LABELS[entry]}
+              {t(`marketing.channel.${entry}` as TranslationKey)}
             </option>
           ))}
-          <option value="google_organic">Google organic</option>
-          <option value="direct">Direct</option>
-          <option value="referral">Referral</option>
-          <option value="default">Everyone else (fallback)</option>
+          <option value="default">{t('settings.numbers.fallback')}</option>
         </select>
       </label>
 
       <label className="flex flex-col gap-1">
         <span className="font-heading text-[10px] uppercase tracking-label text-gray-500">
-          Label
+          {t('settings.numbers.label')}
         </span>
         <input
           type="text"
           value={label}
           onChange={(event) => setLabel(event.target.value)}
-          placeholder="Optional note"
+          placeholder={t('settings.numbers.labelPlaceholder')}
           className="h-9 w-48 rounded-card border border-primary-500/30 bg-[#fcfcfb] px-3 text-sm"
         />
       </label>
@@ -93,7 +105,7 @@ export function NumberEditor() {
         disabled={busy}
         className="h-9 rounded-card bg-ink px-4 font-heading text-[10px] font-semibold uppercase tracking-label text-cream disabled:opacity-50"
       >
-        Add
+        {t('settings.numbers.add')}
       </button>
 
       {error && <span className="h-9 self-end text-xs leading-9 text-[#8f2323]">{error}</span>}
@@ -102,6 +114,7 @@ export function NumberEditor() {
 }
 
 export function RetireNumberButton({ id }: { id: string }) {
+  const t = useT();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
@@ -117,7 +130,7 @@ export function RetireNumberButton({ id }: { id: string }) {
       }}
       className="font-heading text-[10px] uppercase tracking-label text-gray-500 hover:text-[#8f2323]"
     >
-      Retire
+      {t('settings.numbers.retire')}
     </button>
   );
 }

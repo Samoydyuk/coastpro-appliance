@@ -1,5 +1,5 @@
-import { en } from './en';
-import { uk } from './uk';
+import { en } from './en/index';
+import { uk } from './uk/index';
 
 /**
  * Two languages in the console, without a dependency and without moving a file.

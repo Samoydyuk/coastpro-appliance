@@ -5,6 +5,8 @@ import { OperationsApiError } from '@/lib/bookings/client';
 import { Empty, Hint, Panel, SetupNotice, StatTile, Table, Td, Th, Warning } from '@/components/admin/ui';
 import { NotConnected } from '@/components/admin/NotConnected';
 import { STATUS } from '@/components/admin/palette';
+import { serverTranslator } from '@/lib/i18n/server';
+import type { Lang } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,13 +19,13 @@ export const dynamic = 'force-dynamic';
 const SEVERE = new Set(['not_invoiced', 'unpaid', 'invoice_scan']);
 
 /** The date on a stalled job depends on how it stalled. */
-function whenLabel(group: string, job: { completedAt: string | null; scheduledAt: string | null; startedAt: string | null; createdAt: string }): string {
+function whenLabel(group: string, job: { completedAt: string | null; scheduledAt: string | null; startedAt: string | null; createdAt: string }, lang: Lang): string {
   const pick =
     group === 'never_started' ? job.scheduledAt :
     group === 'left_open' ? job.startedAt :
     group === 'quiet_estimate' || group === 'estimate_cold' ? job.createdAt :
     job.completedAt ?? job.createdAt;
-  return pick ? shortDate(new Date(pick)) : '—';
+  return pick ? shortDate(new Date(pick), lang) : '—';
 }
 
 function daysSince(iso: string | null): number | null {
@@ -32,6 +34,7 @@ function daysSince(iso: string | null): number | null {
 }
 
 export default async function StuckPage() {
+  const t = serverTranslator();
   let report: Awaited<ReturnType<typeof getStuck>> | null = null;
   let unconfigured = false;
   let failure: string | null = null;
@@ -51,7 +54,7 @@ export default async function StuckPage() {
     return (
       <div className="space-y-6">
         <Header />
-        <NotConnected what="Jobs and payments" />
+        <NotConnected what={t('money.notConnected')} />
       </div>
     );
   }
@@ -60,7 +63,7 @@ export default async function StuckPage() {
     return (
       <div className="space-y-6">
         <Header />
-        <Warning>{failure ?? 'JobPocket did not answer.'}</Warning>
+        <Warning>{failure ?? t('money.noAnswer')}</Warning>
       </div>
     );
   }
@@ -77,52 +80,54 @@ export default async function StuckPage() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
-          label="Never invoiced"
-          value={money(notInvoiced?.valueCents ?? 0)}
+          label={t('stuck.neverInvoiced')}
+          value={money(notInvoiced?.valueCents ?? 0, t.lang)}
           emphasis
           higherIsBetter={false}
-          hint={`${count(notInvoiced?.jobs ?? 0)} finished jobs`}
+          hint={t.plural(notInvoiced?.jobs ?? 0, 'money.finishedJob')}
         />
         <StatTile
-          label="No paper scan"
-          value={count(unscanned?.jobs ?? 0)}
+          label={t('stuck.noScan')}
+          value={count(unscanned?.jobs ?? 0, t.lang)}
           higherIsBetter={false}
-          hint="finished, nothing scanned onto them"
+          hint={t('money.nothingScanned')}
         />
         <StatTile
-          label="Things to fix"
-          value={count(totalJobs)}
+          label={t('stuck.toFix')}
+          value={count(totalJobs, t.lang)}
           higherIsBetter={false}
-          hint={`across ${count(withWork.length)} kinds`}
+          hint={t.plural(withWork.length, 'money.acrossKinds')}
         />
         <StatTile
-          label="Checked"
-          value={count(report.groups.length)}
-          hint="the same list the app watches"
+          label={t('stuck.checked')}
+          value={count(report.groups.length, t.lang)}
+          hint={t('money.sameListApp')}
         />
       </div>
 
       {withWork.length === 0 ? (
-        <Panel title="Nothing is stuck">
-          <Empty>Every job is where it should be — invoiced, scanned, closed and assigned.</Empty>
+        <Panel title={t('stuck.nothing')}>
+          <Empty>{t('money.everyJobWhereItShouldBe')}</Empty>
         </Panel>
       ) : (
         withWork.map((group) => (
+          // The title, the noun and the `why` footnote are written by
+          // JobPocket. The console must not paraphrase a check it does not own.
           <Panel
             key={group.key}
             title={group.title}
-            subtitle={`${count(group.jobs)} ${group.noun}${
-              group.valueCents > 0 ? ` · ${money(group.valueCents)}` : ''
+            subtitle={`${count(group.jobs, t.lang)} ${group.noun}${
+              group.valueCents > 0 ? ` · ${money(group.valueCents, t.lang)}` : ''
             }`}
           >
             <Table>
               <thead>
                 <tr>
-                  <Th>Client</Th>
-                  <Th>Job</Th>
-                  <Th>Since</Th>
-                  <Th numeric>Days</Th>
-                  <Th numeric>Value</Th>
+                  <Th>{t('common.client')}</Th>
+                  <Th>{t('common.job')}</Th>
+                  <Th>{t('stuck.since')}</Th>
+                  <Th numeric>{t('common.days')}</Th>
+                  <Th numeric>{t('common.value')}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -140,11 +145,11 @@ export default async function StuckPage() {
                           href={`/admin/calendar/${job.id}`}
                           className="text-ink underline decoration-primary-500/40 underline-offset-2 hover:text-primary-600"
                         >
-                          {job.jobNumber ?? 'Job'}
+                          {job.jobNumber ?? t('common.job')}
                         </Link>
                         {job.type ? <span className="ml-2 text-[11px] text-gray-500">{job.type}</span> : null}
                       </Td>
-                      <Td className="text-gray-600">{whenLabel(group.key, job)}</Td>
+                      <Td className="text-gray-600">{whenLabel(group.key, job, t.lang)}</Td>
                       <Td numeric>
                         <span
                           className="font-medium"
@@ -158,7 +163,7 @@ export default async function StuckPage() {
                         </span>
                       </Td>
                       <Td numeric className="text-gray-600">
-                        {job.totalCents > 0 ? money(job.totalCents) : '—'}
+                        {job.totalCents > 0 ? money(job.totalCents, t.lang) : '—'}
                       </Td>
                     </tr>
                   );
@@ -170,22 +175,19 @@ export default async function StuckPage() {
         ))
       )}
 
-      <Hint>
-        This list is not the console&apos;s own. It comes from the checks JobPocket already watches,
-        so the app and this page cannot come to different conclusions about what counts as
-        unscanned or never invoiced — and a new check added there appears here by itself.
-      </Hint>
+      <Hint>{t('money.stuckHint')}</Hint>
     </div>
   );
 }
 
 function Header() {
+  const t = serverTranslator();
   return (
     <div>
-      <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">Stuck</h1>
-      <p className="mt-1 text-sm text-gray-600">
-        Work that has stopped moving, as things stand today
-      </p>
+      <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">
+        {t('stuck.title')}
+      </h1>
+      <p className="mt-1 text-sm text-gray-600">{t('stuck.subtitle')}</p>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import {
 import { attributionForRequests, type LeadAttribution } from '@/lib/bookings/queries';
 import { channelLabel } from '@/lib/attribution';
 import { dateTime, relativeTime, money } from '@/lib/admin/format';
+import { serverTranslator } from '@/lib/i18n/server';
 import { timeOfDay } from '@/lib/bookings/month';
 import {
   ChannelDot,
@@ -34,18 +35,39 @@ export const dynamic = 'force-dynamic';
  * this database — so this screen is the one place the two halves meet.
  */
 
+/**
+ * The `value` is what JobPocket stores and what travels in the query string;
+ * only `label` is a dictionary key. Translating the value would filter for a
+ * status no row has.
+ */
 const FILTERS = [
-  { value: '', label: 'All' },
-  { value: 'PENDING', label: 'Waiting' },
-  { value: 'ACCEPTED', label: 'Accepted' },
-  { value: 'DECLINED', label: 'Declined' },
-];
+  { value: '', label: 'work.bookings.filter.all' },
+  { value: 'PENDING', label: 'work.bookings.filter.PENDING' },
+  { value: 'ACCEPTED', label: 'work.bookings.filter.ACCEPTED' },
+  { value: 'DECLINED', label: 'work.bookings.filter.DECLINED' },
+] as const;
+
+/** Labels for the disagreement codes `jobpocket.ts` records. */
+const CONFLICTS = {
+  accepted_after_lost: 'work.conflict.accepted_after_lost',
+  accepted_after_spam: 'work.conflict.accepted_after_spam',
+  working_after_lost: 'work.conflict.working_after_lost',
+  working_after_spam: 'work.conflict.working_after_spam',
+  invoiced_after_lost: 'work.conflict.invoiced_after_lost',
+  invoiced_after_spam: 'work.conflict.invoiced_after_spam',
+  paid_after_lost: 'work.conflict.paid_after_lost',
+  paid_after_spam: 'work.conflict.paid_after_spam',
+  declined_after_booked: 'work.conflict.declined_after_booked',
+  cancelled_after_booked: 'work.conflict.cancelled_after_booked',
+  refund_after_won: 'work.conflict.refund_after_won',
+} as const;
 
 export default async function BookingsPage({
   searchParams,
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
+  const t = serverTranslator();
   const status = typeof searchParams.status === 'string' ? searchParams.status : '';
   const cursor = typeof searchParams.cursor === 'string' ? searchParams.cursor : undefined;
 
@@ -78,20 +100,20 @@ export default async function BookingsPage({
     <div className="space-y-6">
       <div>
         <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">
-          Bookings
+          {t('work.bookings.title')}
         </h1>
         <p className="mt-1 text-sm text-gray-600">
           {waiting === 0
-            ? 'Nothing waiting for an answer'
-            : `${waiting} waiting for an answer`}
+            ? t('work.bookings.nothingWaiting')
+            : t.plural(waiting, 'work.plural.waiting')}
         </p>
       </div>
 
       {failure && <Warning>{failure}</Warning>}
 
       <Panel
-        title="Requests"
-        subtitle="What came in, and what brought it"
+        title={t('work.bookings.requests')}
+        subtitle={t('work.bookings.requestsSubtitle')}
         action={
           <div className="flex flex-wrap gap-1.5">
             {FILTERS.map((filter) => {
@@ -106,7 +128,7 @@ export default async function BookingsPage({
                       : 'border-primary-500/25 text-gray-600 hover:border-ink hover:text-ink'
                   }`}
                 >
-                  {filter.label}
+                  {t(filter.label)}
                 </Link>
               );
             })}
@@ -116,21 +138,21 @@ export default async function BookingsPage({
         {requests.length === 0 ? (
           <Empty>
             {failure
-              ? 'Nothing to show until the key is connected.'
+              ? t('work.bookings.emptyNoKey')
               : status
-                ? 'No requests with that status.'
-                : 'No booking requests yet. They arrive here the moment somebody books on the website.'}
+                ? t('work.bookings.emptyFiltered')
+                : t('work.bookings.empty')}
           </Empty>
         ) : (
           <Table>
             <thead>
               <tr>
-                <Th>Who</Th>
-                <Th>What</Th>
-                <Th>Asked for</Th>
-                <Th>Came from</Th>
-                <Th>Status</Th>
-                <Th numeric>Received</Th>
+                <Th>{t('work.bookings.who')}</Th>
+                <Th>{t('work.bookings.what')}</Th>
+                <Th>{t('work.bookings.askedFor')}</Th>
+                <Th>{t('work.bookings.cameFrom')}</Th>
+                <Th>{t('common.status')}</Th>
+                <Th numeric>{t('work.bookings.received')}</Th>
               </tr>
             </thead>
             <tbody>
@@ -153,15 +175,17 @@ export default async function BookingsPage({
                     <Td>
                       {request.scheduledStart ? (
                         <>
-                          <div>{dateTime(request.scheduledStart)}</div>
+                          <div>{dateTime(request.scheduledStart, t.lang)}</div>
                           {request.scheduledEnd && (
                             <div className="text-xs text-gray-500">
-                              until {timeOfDay(request.scheduledEnd)}
+                              {t('work.bookings.until', {
+                                time: timeOfDay(request.scheduledEnd),
+                              })}
                             </div>
                           )}
                         </>
                       ) : (
-                        <span className="text-gray-500">Call to arrange</span>
+                        <span className="text-gray-500">{t('work.bookings.callToArrange')}</span>
                       )}
                     </Td>
                     <Td>
@@ -178,7 +202,12 @@ export default async function BookingsPage({
                           )}
                           {from.conflict && (
                             <div className="mt-0.5 text-xs" style={{ color: '#8a5a12' }}>
-                              Disagreement: {from.conflict.replace(/_/g, ' ')}
+                              {t('work.bookings.disagreement', {
+                                what:
+                                  from.conflict in CONFLICTS
+                                    ? t(CONFLICTS[from.conflict as keyof typeof CONFLICTS])
+                                    : from.conflict.replace(/_/g, ' '),
+                              })}
                             </div>
                           )}
                         </>
@@ -186,18 +215,24 @@ export default async function BookingsPage({
                         // Not a gap in the data — a booking that advertising did
                         // not pay for, which is worth seeing as plainly as one
                         // that did.
-                        <span className="text-xs text-gray-500">Not from the website</span>
+                        <span className="text-xs text-gray-500">
+                          {t('work.bookings.notFromWebsite')}
+                        </span>
                       )}
                     </Td>
                     <Td>
                       <StatusPill status={request.status} />
                       {from?.valueCents ? (
-                        <div className="mt-0.5 text-xs text-gray-500">{money(from.valueCents)}</div>
+                        <div className="mt-0.5 text-xs text-gray-500">
+                          {money(from.valueCents, t.lang)}
+                        </div>
                       ) : null}
                     </Td>
                     <Td numeric>
                       <div>{relativeTime(request.createdAt)}</div>
-                      <div className="text-xs text-gray-500">{dateTime(request.createdAt)}</div>
+                      <div className="text-xs text-gray-500">
+                        {dateTime(request.createdAt, t.lang)}
+                      </div>
                     </Td>
                   </tr>
                 );
@@ -215,17 +250,13 @@ export default async function BookingsPage({
               })}`}
               className="rounded-card border border-primary-500/30 px-3 py-1.5 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 hover:border-ink hover:text-ink"
             >
-              Older →
+              {t('work.bookings.older')}
             </Link>
           </div>
         )}
       </Panel>
 
-      <Hint>
-        These come live from JobPocket — nothing is copied into this site, so the list cannot drift
-        out of step with the app. &ldquo;Came from&rdquo; is the part only this console knows: it is
-        matched from the enquiry the website captured before the request was filed.
-      </Hint>
+      <Hint>{t('work.bookings.hint')}</Hint>
     </div>
   );
 }

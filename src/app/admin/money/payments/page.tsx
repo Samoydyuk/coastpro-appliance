@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { parseRange } from '@/lib/admin/range';
-import { count, money, shortDate } from '@/lib/admin/format';
+import { count, money, percent, shortDate } from '@/lib/admin/format';
 import { getPayments } from '@/lib/money/client';
 import { OperationsApiError } from '@/lib/bookings/client';
 import { Empty, Hint, Panel, SetupNotice, StatTile, Table, Td, Th, Warning } from '@/components/admin/ui';
@@ -8,13 +8,50 @@ import { NotConnected } from '@/components/admin/NotConnected';
 import { RankedBars } from '@/components/admin/charts';
 import { paymentColor, STATUS } from '@/components/admin/palette';
 import { Pager } from '@/components/admin/Pager';
+import { serverTranslator } from '@/lib/i18n/server';
+import type { TranslationKey, Translator } from '@/lib/i18n';
+import { rangeLabel } from '@/lib/i18n/range';
 
 export const dynamic = 'force-dynamic';
 
-/** STRIPE → Stripe, BANK_TRANSFER → Bank transfer. */
-function methodLabel(method: string): string {
-  const words = method.toLowerCase().replace(/_/g, ' ');
-  return words.charAt(0).toUpperCase() + words.slice(1);
+/**
+ * `STRIPE` is the filter, the colour and the grouping key — never the label.
+ *
+ * Lower-casing the code and capitalising the first letter produced English out
+ * of an enum, which is fine until the screen is in another language: there is
+ * no rule that turns `BANK_TRANSFER` into "Банківський переказ". The map is the
+ * rule. A method JobPocket adds later falls through to its own code, which
+ * reads as untranslated rather than disappearing.
+ */
+const METHOD_KEYS: Record<string, TranslationKey> = {
+  STRIPE: 'money.method.STRIPE',
+  CASH: 'money.method.CASH',
+  CHECK: 'money.method.CHECK',
+  BANK_TRANSFER: 'money.method.BANK_TRANSFER',
+  ZELLE: 'money.method.ZELLE',
+  VENMO: 'money.method.VENMO',
+  OTHER: 'money.method.OTHER',
+};
+
+/** What became of a payment that is in no total. */
+const STATUS_KEYS: Record<string, TranslationKey> = {
+  pending: 'money.status.pending',
+  processing: 'money.status.processing',
+  failed: 'money.status.failed',
+  canceled: 'money.status.canceled',
+  voided: 'money.status.voided',
+  refunded: 'money.status.refunded',
+  partially_refunded: 'money.status.partially_refunded',
+};
+
+function methodLabel(method: string, t: Translator): string {
+  const key = METHOD_KEYS[method];
+  return key ? t(key) : method;
+}
+
+function statusLabel(status: string, t: Translator): string {
+  const key = STATUS_KEYS[status];
+  return key ? t(key) : status.replace(/_/g, ' ');
 }
 
 export default async function PaymentsPage({
@@ -22,6 +59,7 @@ export default async function PaymentsPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
+  const t = serverTranslator();
   const range = parseRange({
     range: searchParams.range as string,
     from: searchParams.from as string,
@@ -49,8 +87,8 @@ export default async function PaymentsPage({
   if (unconfigured) {
     return (
       <div className="space-y-6">
-        <Header subtitle={range.label} />
-        <NotConnected what="Jobs and payments" />
+        <Header subtitle={rangeLabel(range, t)} />
+        <NotConnected what={t('money.notConnected')} />
       </div>
     );
   }
@@ -58,8 +96,8 @@ export default async function PaymentsPage({
   if (!report) {
     return (
       <div className="space-y-6">
-        <Header subtitle={range.label} />
-        <Warning>{failure ?? 'JobPocket did not answer.'}</Warning>
+        <Header subtitle={rangeLabel(range, t)} />
+        <Warning>{failure ?? t('money.noAnswer')}</Warning>
       </div>
     );
   }
@@ -72,22 +110,28 @@ export default async function PaymentsPage({
 
   return (
     <div className="space-y-6">
-      <Header subtitle={range.label} />
+      <Header subtitle={rangeLabel(range, t)} />
       {failure ? <Warning>{failure}</Warning> : null}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="Taken" value={money(totals.succeededCents)} emphasis />
-        <StatTile label="Payments" value={count(totals.succeededCount)} />
+        <StatTile label={t('payments.taken')} value={money(totals.succeededCents, t.lang)} emphasis />
+        <StatTile label={t('payments.count')} value={count(totals.succeededCount, t.lang)} />
         <StatTile
-          label="Average payment"
-          value={totals.succeededCount ? money(Math.round(totals.succeededCents / totals.succeededCount)) : '—'}
+          label={t('payments.average')}
+          value={
+            totals.succeededCount
+              ? money(Math.round(totals.succeededCents / totals.succeededCount), t.lang)
+              : '—'
+          }
         />
         <StatTile
-          label="Cash"
-          value={money(cash)}
+          label={t('payments.cash')}
+          value={money(cash, t.lang)}
           hint={
             totals.succeededCents
-              ? `${Math.round((cash / totals.succeededCents) * 100)}% of what was taken`
+              ? t('money.ofWhatWasTaken', {
+                  pct: percent(cash / totals.succeededCents, 0, t.lang),
+                })
               : undefined
           }
         />
@@ -95,41 +139,48 @@ export default async function PaymentsPage({
 
       {excludedTotal > 0 && (
         <Warning>
-          {money(excludedTotal)} is in the log below but not in the total above:{' '}
-          {[
-            excluded.voidedCount ? `${count(excluded.voidedCount)} voided` : null,
-            excluded.refundedCount ? `${count(excluded.refundedCount)} refunded` : null,
-            excluded.partiallyRefundedCount
-              ? `${count(excluded.partiallyRefundedCount)} partly refunded`
-              : null,
-            excluded.pendingCount ? `${count(excluded.pendingCount)} still pending` : null,
-          ]
-            .filter(Boolean)
-            .join(', ')}
-          . A partly refunded payment counts for nothing in any total in the system, which is worth
-          knowing before this figure is compared with a bank statement.
+          {t('money.excludedWarning', {
+            amount: money(excludedTotal, t.lang),
+            list: [
+              excluded.voidedCount ? t.plural(excluded.voidedCount, 'money.voided') : null,
+              excluded.refundedCount ? t.plural(excluded.refundedCount, 'money.refunded') : null,
+              excluded.partiallyRefundedCount
+                ? t.plural(excluded.partiallyRefundedCount, 'money.partlyRefunded')
+                : null,
+              excluded.pendingCount ? t.plural(excluded.pendingCount, 'money.stillPending') : null,
+            ]
+              .filter(Boolean)
+              .join(', '),
+          })}
         </Warning>
       )}
 
       <Panel
-        title="How it arrived"
-        subtitle={method ? `Showing ${methodLabel(method)} only` : 'Only payments that went through'}
+        title={t('payments.howArrived')}
+        subtitle={
+          method
+            ? t('money.showingOnly', { method: methodLabel(method, t) })
+            : t('money.onlyWentThrough')
+        }
       >
         {totals.byMethod.length === 0 ? (
-          <Empty>Nothing was taken in this window.</Empty>
+          <Empty>{t('money.nothingTaken')}</Empty>
         ) : (
           <RankedBars
             format="money"
             items={totals.byMethod.map((row) => ({
-              label: methodLabel(row.method),
+              label: methodLabel(row.method, t),
               value: row.cents / 100,
               color: paymentColor(row.method),
-              note: `${count(row.count)} ${row.count === 1 ? 'payment' : 'payments'}`,
+              note: t.plural(row.count, 'plural.payment'),
             }))}
           />
         )}
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {[{ m: '', l: 'All' }, ...totals.byMethod.map((row) => ({ m: row.method, l: methodLabel(row.method) }))].map((option) => (
+          {[
+            { m: '', l: t('money.methodAll') },
+            ...totals.byMethod.map((row) => ({ m: row.method, l: methodLabel(row.method, t) })),
+          ].map((option) => (
             <Link
               key={option.m || 'all'}
               href={`/admin/money/payments?range=${range.key}${option.m ? `&method=${option.m}` : ''}`}
@@ -146,27 +197,27 @@ export default async function PaymentsPage({
       </Panel>
 
       <Panel
-        title="Every payment"
-        subtitle="Newest first"
+        title={t('payments.every')}
+        subtitle={t('payments.newestFirst')}
         action={<a
               href={`/api/admin/export?type=payments&range=${range.key}`}
               className="inline-flex h-8 items-center rounded-card border border-primary-500/30 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 hover:border-ink hover:text-ink"
             >
-              Export CSV
+              {t('common.exportCsv')}
             </a>}
       >
         {payments.length === 0 ? (
-          <Empty>Nothing was taken in this window.</Empty>
+          <Empty>{t('money.nothingTaken')}</Empty>
         ) : (
           <Table>
             <thead>
               <tr>
-                <Th>Date</Th>
-                <Th>Client</Th>
-                <Th>Job</Th>
-                <Th>How</Th>
-                <Th numeric>Amount</Th>
-                <Th numeric>Invoice</Th>
+                <Th>{t('common.date')}</Th>
+                <Th>{t('common.client')}</Th>
+                <Th>{t('common.job')}</Th>
+                <Th>{t('payments.how')}</Th>
+                <Th numeric>{t('common.amount')}</Th>
+                <Th numeric>{t('common.invoice')}</Th>
               </tr>
             </thead>
             <tbody>
@@ -175,7 +226,7 @@ export default async function PaymentsPage({
                 return (
                   <tr key={payment.id}>
                     <Td className="text-gray-600">
-                      {shortDate(new Date(payment.paidAt ?? payment.createdAt))}
+                      {shortDate(new Date(payment.paidAt ?? payment.createdAt), t.lang)}
                     </Td>
                     <Td>{payment.clientName ?? '—'}</Td>
                     <Td>
@@ -183,13 +234,13 @@ export default async function PaymentsPage({
                         href={`/admin/calendar/${payment.jobId}`}
                         className="text-ink underline decoration-primary-500/40 underline-offset-2 hover:text-primary-600"
                       >
-                        {payment.jobNumber ?? 'Job'}
+                        {payment.jobNumber ?? t('common.job')}
                       </Link>
                     </Td>
                     <Td>
-                      {methodLabel(payment.method)}
+                      {methodLabel(payment.method, t)}
                       {payment.isDeposit ? (
-                        <span className="ml-2 text-[11px] text-gray-500">deposit</span>
+                        <span className="ml-2 text-[11px] text-gray-500">{t('money.deposit')}</span>
                       ) : null}
                       {/* A log that hid these would not be a log. */}
                       {!counted ? (
@@ -197,15 +248,15 @@ export default async function PaymentsPage({
                           className="ml-2 text-[11px] font-medium"
                           style={{ color: STATUS.warning }}
                         >
-                          {payment.status.replace(/_/g, ' ')}
+                          {statusLabel(payment.status, t)}
                         </span>
                       ) : null}
                     </Td>
                     <Td numeric className={counted ? 'font-medium' : 'text-gray-500 line-through'}>
-                      {money(payment.amountCents)}
+                      {money(payment.amountCents, t.lang)}
                     </Td>
                     <Td numeric className="text-gray-600">
-                      {money(payment.jobTotalCents)}
+                      {money(payment.jobTotalCents, t.lang)}
                     </Td>
                   </tr>
                 );
@@ -220,20 +271,19 @@ export default async function PaymentsPage({
           total={report.total}
           hasMore={report.hasMore}
         />
-        <Hint>
-          Dated by when the money arrived, not when the invoice was raised. A voided payment keeps
-          its amount here so it can be accounted for, and is struck through because it is in no
-          total.
-        </Hint>
+        <Hint>{t('money.paymentsHint')}</Hint>
       </Panel>
     </div>
   );
 }
 
 function Header({ subtitle }: { subtitle: string }) {
+  const t = serverTranslator();
   return (
     <div>
-      <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">Payments</h1>
+      <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">
+        {t('payments.title')}
+      </h1>
       <p className="mt-1 text-sm text-gray-600">{subtitle}</p>
     </div>
   );

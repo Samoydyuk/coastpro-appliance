@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useT } from '@/components/admin/LanguageProvider';
 
 /**
  * The one place in the console where data is written by hand.
@@ -12,14 +13,19 @@ import { cn } from '@/lib/utils';
  * the ad platforms. Everything else on this screen is observed; this is judged.
  */
 
+/**
+ * The key is what is written to the database and read back by every report;
+ * only the label is a dictionary key. Saving a translated word here would
+ * write a status nothing else recognises.
+ */
 const STATUSES = [
-  { key: 'new', label: 'New' },
-  { key: 'contacted', label: 'Contacted' },
-  { key: 'booked', label: 'Booked' },
-  { key: 'won', label: 'Won' },
-  { key: 'lost', label: 'Lost' },
-  { key: 'spam', label: 'Spam' },
-];
+  { key: 'new', label: 'work.leadStatus.new' },
+  { key: 'contacted', label: 'work.leadStatus.contacted' },
+  { key: 'booked', label: 'work.leadStatus.booked' },
+  { key: 'won', label: 'work.leadStatus.won' },
+  { key: 'lost', label: 'work.leadStatus.lost' },
+  { key: 'spam', label: 'work.leadStatus.spam' },
+] as const;
 
 export function LeadEditor({
   leadId,
@@ -32,6 +38,7 @@ export function LeadEditor({
   valueCents: number | null;
   notes: string | null;
 }) {
+  const t = useT();
   const router = useRouter();
   const [currentStatus, setCurrentStatus] = useState(status);
   const [value, setValue] = useState(valueCents ? String(valueCents / 100) : '');
@@ -51,14 +58,14 @@ export function LeadEditor({
       });
       if (!response.ok) {
         const body = await response.json().catch(() => null);
-        setError(body?.error ?? 'Could not save.');
+        setError(body?.error ?? t('work.editor.saveFailed'));
         return;
       }
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
       router.refresh();
     } catch {
-      setError('Could not reach the server.');
+      setError(t('work.form.noServer'));
     } finally {
       setSaving(false);
     }
@@ -67,7 +74,9 @@ export function LeadEditor({
   return (
     <div className="space-y-4">
       <div>
-        <p className="font-heading text-[10px] uppercase tracking-label text-gray-500">Status</p>
+        <p className="font-heading text-[10px] uppercase tracking-label text-gray-500">
+          {t('common.status')}
+        </p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {STATUSES.map((entry) => (
             <button
@@ -85,7 +94,7 @@ export function LeadEditor({
                   : 'border-primary-500/25 text-gray-600 hover:border-ink hover:text-ink'
               )}
             >
-              {entry.label}
+              {t(entry.label)}
             </button>
           ))}
         </div>
@@ -93,7 +102,7 @@ export function LeadEditor({
 
       <div>
         <label className="font-heading text-[10px] uppercase tracking-label text-gray-500">
-          Job value
+          {t('work.editor.jobValue')}
         </label>
         <div className="mt-2 flex gap-2">
           <div className="relative">
@@ -118,17 +127,15 @@ export function LeadEditor({
             }
             className="h-9 rounded-card bg-ink px-4 font-heading text-[10px] font-semibold uppercase tracking-label text-cream disabled:opacity-50"
           >
-            Save
+            {t('work.form.save')}
           </button>
         </div>
-        <p className="mt-1.5 text-xs text-gray-500">
-          What the job actually invoiced. Blank means unknown, which is different from zero.
-        </p>
+        <p className="mt-1.5 text-xs text-gray-500">{t('work.editor.valueHint')}</p>
       </div>
 
       <div>
         <label className="font-heading text-[10px] uppercase tracking-label text-gray-500">
-          Notes
+          {t('work.editor.notes')}
         </label>
         <textarea
           value={note}
@@ -136,13 +143,13 @@ export function LeadEditor({
           onBlur={() => note !== (notes ?? '') && save({ notes: note })}
           rows={4}
           className="mt-2 w-full rounded-card border border-primary-500/30 bg-[#fcfcfb] p-3 text-sm"
-          placeholder="What happened when you called."
+          placeholder={t('work.editor.notesPlaceholder')}
         />
       </div>
 
       <div className="h-4 text-xs">
         {error && <span className="text-[#8f2323]">{error}</span>}
-        {saved && !error && <span className="text-[#006300]">Saved.</span>}
+        {saved && !error && <span className="text-[#006300]">{t('work.form.saved')}</span>}
       </div>
     </div>
   );

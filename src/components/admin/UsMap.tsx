@@ -5,6 +5,7 @@ import { US_STATES } from '@/data/us-states';
 import { SOCAL_COAST } from '@/data/socal-coast';
 import { MAP_HEIGHT, MAP_WIDTH, inFrame, project } from '@/lib/geo/albers';
 import { serviceAreas } from '@/data/service-areas';
+import { useT } from '@/components/admin/LanguageProvider';
 import { SERIES } from '@/components/admin/palette';
 
 /**
@@ -82,6 +83,7 @@ export function UsMap({
   /** Which scale to open at, so the county view can be linked to directly. */
   initialView?: 'us' | 'oc';
 }) {
+  const t = useT();
   const [zoomed, setZoomed] = useState(initialView === 'oc');
   const view = zoomed ? OC_VIEW : US_VIEW;
   const { k } = view;
@@ -129,7 +131,11 @@ export function UsMap({
   const labelSize = 14 / k;
   const charWidth = 7 / k;
 
-  if (!zoomed) reserve(home[0], home[1] + 34 / k, 24 / k, labelSize);
+  const hqLabel = t('website.map.hq');
+  // Measured from the label rather than fixed at 24, because the word is not
+  // the same length in every language and this box is what stops a town name
+  // being written over it.
+  if (!zoomed) reserve(home[0], home[1] + 34 / k, hqLabel.length * charWidth, labelSize);
 
   // The dots go on the board before the words do, so a name is never written
   // across a bubble. Learnt from the county view, where "Mission Viejo" landed
@@ -180,12 +186,15 @@ export function UsMap({
           onClick={() => setZoomed(!zoomed)}
           className="h-8 rounded-card bg-ink px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-cream"
         >
-          {zoomed ? 'Back to the country' : 'Zoom to Orange County'}
+          {zoomed ? t('website.map.backToCountry') : t('website.map.zoomToOc')}
         </button>
         <span className="text-xs text-gray-600">
           {zoomed
-            ? `${inViewVisits} of ${plotted.reduce((s, p) => s + p.sessions, 0)} located visits are in this frame`
-            : 'Every located visit. The service area is one dot at this scale — go in to tell the towns apart.'}
+            ? t('website.map.inFrame', {
+                shown: inViewVisits,
+                total: plotted.reduce((s, p) => s + p.sessions, 0),
+              })
+            : t('website.map.wholeCountry')}
         </span>
       </div>
 
@@ -193,11 +202,7 @@ export function UsMap({
         viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
         className="w-full overflow-hidden rounded-card bg-[#f6f4f0]"
         role="img"
-        aria-label={
-          zoomed
-            ? 'Visits across the Orange County service area'
-            : 'Visits by location across the United States'
-        }
+        aria-label={zoomed ? t('website.map.altOc') : t('website.map.altUs')}
       >
         <g
           style={{
@@ -260,7 +265,7 @@ export function UsMap({
                 fontWeight={600}
                 fill="#1a1a1a"
               >
-                HQ
+                {hqLabel}
               </text>
             )}
           </g>
@@ -282,11 +287,14 @@ export function UsMap({
                     strokeWidth={1.5}
                   >
                     <title>
-                      {p.city}
-                      {p.region ? `, ${p.region}` : ''} — {p.sessions}{' '}
-                      {p.sessions === 1 ? 'visit' : 'visits'}
-                      {p.conversions ? `, ${p.conversions} converted` : ''}
-                      {served ? '' : ' (outside the service area)'}
+                      {t('website.map.tooltip', {
+                        place: p.region
+                          ? t('website.map.place', { city: p.city, region: p.region })
+                          : p.city,
+                        visits: t.plural(p.sessions, 'website.plural.visit'),
+                      })}
+                      {p.conversions ? t('website.map.tooltipConverted', { n: p.conversions }) : ''}
+                      {served ? '' : t('website.map.tooltipOutside')}
                     </title>
                   </circle>
                   {p.conversions > 0 && (
@@ -335,29 +343,35 @@ export function UsMap({
             className="inline-block h-3 w-3 rounded-full"
             style={{ backgroundColor: SERIES[0], opacity: 0.6 }}
           />
-          In the service area
+          {t('website.map.legendInside')}
         </span>
         <span className="inline-flex items-center gap-2">
           <span
             className="inline-block h-3 w-3 rounded-full"
             style={{ backgroundColor: '#9a9186', opacity: 0.6 }}
           />
-          Outside it
+          {t('website.map.legendOutside')}
         </span>
         <span className="inline-flex items-center gap-2">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-ink" />
-          Converted
+          {t('website.map.legendConverted')}
         </span>
         {zoomed && (
           <span className="inline-flex items-center gap-2">
             <span className="inline-block h-2.5 w-2.5 rounded-full border border-[#7d7469]" />
-            On the service-area list
+            {t('website.map.legendListed')}
           </span>
         )}
         {offMapVisits > 0 && !zoomed && (
           <span className="ml-auto">
-            {offMapVisits} {offMapVisits === 1 ? 'visit' : 'visits'} from outside the lower 48
-            {offMap.length <= 3 ? ` (${offMap.map((p) => p.city).filter(Boolean).join(', ')})` : ''}
+            {t('website.map.offMap', {
+              visits: t.plural(offMapVisits, 'website.plural.visit'),
+            })}
+            {offMap.length <= 3
+              ? t('website.map.offMapWhere', {
+                  cities: offMap.map((p) => p.city).filter(Boolean).join(', '),
+                })
+              : ''}
           </span>
         )}
       </div>
@@ -368,7 +382,7 @@ export function UsMap({
       {zoomed && (
         <div className="mt-5 border-t border-primary-500/15 pt-4">
           <p className="font-heading text-[10px] font-semibold uppercase tracking-label text-gray-500">
-            Service area, by town
+            {t('website.map.areaByTown')}
           </p>
           <div className="mt-3 grid gap-x-8 gap-y-1 text-sm sm:grid-cols-2 lg:grid-cols-3">
             {areaRows.map((row) => (
@@ -380,7 +394,9 @@ export function UsMap({
                 <span className="font-heading text-xs tabular-nums text-gray-600">
                   {row.sessions === 0 ? '—' : row.sessions}
                   {row.conversions > 0 && (
-                    <span className="ml-2 text-ink">{row.conversions} won</span>
+                    <span className="ml-2 text-ink">
+                      {t('website.map.wonInTown', { n: row.conversions })}
+                    </span>
                   )}
                 </span>
               </div>

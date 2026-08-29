@@ -2,26 +2,70 @@ import { parseRange } from '@/lib/admin/range';
 import Link from 'next/link';
 import { getChannels } from '@/lib/admin/queries';
 import { MoneyBasis } from '@/components/admin/MoneyBasis';
-import { count, money, percent } from '@/lib/admin/format';
+import { count, money, percent, shortDate } from '@/lib/admin/format';
 import { getProfit, getTrend, getBreakdown, type Waterfall } from '@/lib/money/client';
 import { OperationsApiError } from '@/lib/bookings/client';
 import { Empty, Hint, Panel, SetupNotice, StatTile, Table, Td, Th, Warning } from '@/components/admin/ui';
 import { NotConnected } from '@/components/admin/NotConnected';
 import { TimeSeries } from '@/components/admin/charts';
 import { SERIES, STATUS } from '@/components/admin/palette';
+import { serverTranslator } from '@/lib/i18n/server';
+import { numberLocale, type Lang, type TranslationKey, type Translator } from '@/lib/i18n';
+import { rangeLabel } from '@/lib/i18n/range';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Expense categories and overhead cadences arrive as enum codes.
+ *
+ * The code is what the app stores and what a total is grouped by; the label is
+ * the only part that has a language. Anything unrecognised falls through to the
+ * code itself rather than to a blank cell — a category added in JobPocket
+ * should look untranslated, not invisible.
+ */
+const CATEGORY_KEYS: Record<string, TranslationKey> = {
+  MATERIALS: 'money.category.MATERIALS',
+  TOOLS: 'money.category.TOOLS',
+  FUEL: 'money.category.FUEL',
+  VEHICLE: 'money.category.VEHICLE',
+  INSURANCE: 'money.category.INSURANCE',
+  LICENSE: 'money.category.LICENSE',
+  MARKETING: 'money.category.MARKETING',
+  OFFICE: 'money.category.OFFICE',
+  UTILITIES: 'money.category.UTILITIES',
+  LABOR: 'money.category.LABOR',
+  OTHER: 'money.category.OTHER',
+};
+
+const CADENCE_KEYS: Record<string, TranslationKey> = {
+  WEEKLY: 'money.cadence.WEEKLY',
+  MONTHLY: 'money.cadence.MONTHLY',
+  QUARTERLY: 'money.cadence.QUARTERLY',
+  YEARLY: 'money.cadence.YEARLY',
+};
+
+function categoryLabel(code: string, t: Translator): string {
+  const key = CATEGORY_KEYS[code];
+  return key ? t(key) : code;
+}
+
+function cadenceLabel(code: string, t: Translator): string {
+  const key = CADENCE_KEYS[code];
+  return key ? t(key) : code.toLowerCase();
+}
+
 /** `+$3,120` / `−$840`. Signed, because the sign is the whole message. */
-function signed(cents: number): string {
-  return `${cents >= 0 ? '+' : '−'}${money(Math.abs(cents))}`;
+function signed(cents: number, lang: Lang): string {
+  return `${cents >= 0 ? '+' : '−'}${money(Math.abs(cents), lang)}`;
 }
 
 /** `2026-08` → `Aug 2026`; a day bucket is already readable. */
-function bucketLabel(bucket: string): string {
+function bucketLabel(bucket: string, lang: Lang): string {
   if (bucket.length > 7) return bucket.slice(5).replace('-', '/');
   const [year, month] = bucket.split('-').map(Number);
-  return new Date(Date.UTC(year!, (month ?? 1) - 1, 1)).toLocaleDateString(undefined, {
+  // The month is read by a person, so it follows the language rather than the
+  // ISO formatter the rest of this codebase uses `en-CA` for.
+  return new Date(Date.UTC(year!, (month ?? 1) - 1, 1)).toLocaleDateString(numberLocale(lang), {
     month: 'short',
     year: 'numeric',
   });
@@ -60,6 +104,7 @@ function Line({
    */
   detail?: React.ReactNode;
 }) {
+  const t = serverTranslator();
   const negative = strong && cents < 0;
   const name = href ? (
     <Link
@@ -99,11 +144,11 @@ function Line({
         {/* Deductions are not alarming, they are arithmetic. Only a loss earns
             a colour, or the reader stops seeing the colour at all. */}
         <span style={negative ? { color: STATUS.critical } : undefined}>
-          {deduction ? `−${money(Math.abs(cents))}` : money(cents)}
+          {deduction ? `−${money(Math.abs(cents), t.lang)}` : money(cents, t.lang)}
         </span>
       </Td>
       <Td numeric className="text-gray-500">
-        {billed > 0 ? percent(Math.abs(cents) / billed, 0) : '—'}
+        {billed > 0 ? percent(Math.abs(cents) / billed, 0, t.lang) : '—'}
       </Td>
     </tr>
   );
@@ -116,7 +161,8 @@ function Rows({
   rows: Array<{ key: string; left: string; middle?: string; right: string; href?: string }>;
 }) {
   if (rows.length === 0) {
-    return <p className="text-xs text-gray-500">Nothing recorded against this line.</p>;
+    const t = serverTranslator();
+    return <p className="text-xs text-gray-500">{t('money.nothingOnThisLine')}</p>;
   }
   return (
     <table className="w-full text-xs">
@@ -149,6 +195,7 @@ export default async function MoneyPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
+  const t = serverTranslator();
   const range = parseRange({
     range: searchParams.range as string,
     from: searchParams.from as string,
@@ -193,8 +240,8 @@ export default async function MoneyPage({
   if (unconfigured) {
     return (
       <div className="space-y-6">
-        <Header label={range.label} />
-        <NotConnected what="Jobs and payments" />
+        <Header label={rangeLabel(range, t)} />
+        <NotConnected what={t('money.notConnected')} />
       </div>
     );
   }
@@ -202,8 +249,8 @@ export default async function MoneyPage({
   if (!profit) {
     return (
       <div className="space-y-6">
-        <Header label={range.label} />
-        <Warning>{failure ?? 'JobPocket did not answer.'}</Warning>
+        <Header label={rangeLabel(range, t)} />
+        <Warning>{failure ?? t('money.noAnswer')}</Warning>
       </div>
     );
   }
@@ -219,7 +266,7 @@ export default async function MoneyPage({
     : null;
 
   const points = (trend?.points ?? []).map((point) => ({
-    label: bucketLabel(point.bucket),
+    label: bucketLabel(point.bucket, t.lang),
     values: {
       // Charts take dollars; everything else on this page takes cents.
       billed: point.billedCents / 100,
@@ -229,21 +276,25 @@ export default async function MoneyPage({
 
   return (
     <div className="space-y-6">
-      <Header label={range.label} />
+      <Header label={rangeLabel(range, t)} />
       {failure ? <Warning>{failure}</Warning> : null}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
-          label="What the business made"
-          value={money(profit.businessEarningsCents)}
+          label={t('money.businessMade')}
+          value={money(profit.businessEarningsCents, t.lang)}
           emphasis
           // Never a percentage: a loss that shrank from −$500 to −$100 divides
           // out to "▼ 80%" in red, which is the opposite of what happened.
-          hint={profitDelta === null ? undefined : `${signed(profitDelta)} on the period before`}
+          hint={
+            profitDelta === null
+              ? undefined
+              : t('money.onPeriodBefore', { amount: signed(profitDelta, t.lang) })
+          }
         />
         <StatTile
-          label="Own revenue"
-          value={money(w.netRevenueCents)}
+          label={t('money.ownRevenue')}
+          value={money(w.netRevenueCents, t.lang)}
           emphasis
           change={
             previous && previous.waterfall.netRevenueCents
@@ -251,91 +302,107 @@ export default async function MoneyPage({
                 previous.waterfall.netRevenueCents
               : null
           }
-          hint={`${money(billed)} billed · ${billed ? percent(w.netRevenueCents / billed, 0) : '—'} kept`}
+          hint={t('money.billedKeptHint', {
+            billed: money(billed, t.lang),
+            pct: billed ? percent(w.netRevenueCents / billed, 0, t.lang) : '—',
+          })}
         />
         <StatTile
-          label="Jobs"
-          value={count(profit.jobs)}
+          label={t('money.jobs')}
+          value={count(profit.jobs, t.lang)}
           change={previous && previous.jobs ? (profit.jobs - previous.jobs) / previous.jobs : null}
-          hint="finished in this window"
+          hint={t('money.finishedInWindow')}
         />
         <StatTile
-          label="Average ticket"
-          value={money(profit.avgTicketCents)}
-          hint="own revenue ÷ jobs"
+          label={t('money.avgTicket')}
+          value={money(profit.avgTicketCents, t.lang)}
+          hint={t('money.ownRevenueOverJobs')}
         />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
-          label="Dispatchers' cut"
-          value={money(dispatchersCut)}
+          label={t('money.dispatchersCut')}
+          value={money(dispatchersCut, t.lang)}
           higherIsBetter={false}
-          hint={billed ? `${percent(dispatchersCut / billed, 0)} of what was billed` : undefined}
-        />
-        <StatTile label="Parts" value={money(w.partsCostCents)} higherIsBetter={false} />
-        <StatTile
-          label="Running costs"
-          value={money(w.recordedExpensesCents + w.overheadCents)}
-          higherIsBetter={false}
-          hint="expenses and overhead"
+          hint={
+            billed
+              ? t('money.ofWhatWasBilled', { pct: percent(dispatchersCut / billed, 0, t.lang) })
+              : undefined
+          }
         />
         <StatTile
-          label="Break-even"
-          value={money(profit.breakEvenBeforeOwnerPayCents)}
+          label={t('money.parts')}
+          value={money(w.partsCostCents, t.lang)}
+          higherIsBetter={false}
+        />
+        <StatTile
+          label={t('money.runningCosts')}
+          value={money(w.recordedExpensesCents + w.overheadCents, t.lang)}
+          higherIsBetter={false}
+          hint={t('money.expensesAndOverhead')}
+        />
+        <StatTile
+          label={t('money.breakEven')}
+          value={money(profit.breakEvenBeforeOwnerPayCents, t.lang)}
           higherIsBetter={false}
           hint={
             w.netRevenueCents >= profit.breakEvenBeforeOwnerPayCents
-              ? `${money(w.netRevenueCents - profit.breakEvenBeforeOwnerPayCents)} clear`
-              : `${money(profit.breakEvenBeforeOwnerPayCents - w.netRevenueCents)} short`
+              ? t('money.clear', {
+                  amount: money(w.netRevenueCents - profit.breakEvenBeforeOwnerPayCents, t.lang),
+                })
+              : t('money.short', {
+                  amount: money(profit.breakEvenBeforeOwnerPayCents - w.netRevenueCents, t.lang),
+                })
           }
         />
       </div>
 
-      <Panel title="Where the money went" subtitle={profit.verdict}>
+      {/* The verdict sentence is written by JobPocket and arrives finished. */}
+      <Panel title={t('money.whereItWent')} subtitle={profit.verdict}>
         <Table>
           <thead>
             <tr>
-              <Th>Line</Th>
-              <Th numeric>Amount</Th>
-              <Th numeric>Share of billed</Th>
+              <Th>{t('money.line')}</Th>
+              <Th numeric>{t('common.amount')}</Th>
+              <Th numeric>{t('money.shareOfBilled')}</Th>
             </tr>
           </thead>
           <tbody>
             <Line
-              label="Billed to customers"
+              label={t('money.billedToCustomers')}
               cents={billed}
               billed={billed}
-              href={`/admin/money/jobs?range=${range.key}&title=${encodeURIComponent('Billed')}&back=/admin/money`}
+              href={`/admin/money/jobs?range=${range.key}&title=${encodeURIComponent(t('common.billed'))}&back=/admin/money`}
             />
             <Line
-              label="Dispatchers' share"
+              label={t('money.dispatchersShare')}
               cents={dispatchersCut}
               billed={billed}
               deduction
-              note="what the companies sending you work keep"
+              note={t('money.dispatchersShareNote')}
             />
             <Line
-              label="Own revenue"
+              label={t('money.ownRevenue')}
               cents={w.netRevenueCents}
               billed={billed}
               strong
-              href={`/admin/money/jobs?range=${range.key}&title=${encodeURIComponent('Own revenue')}&back=/admin/money`}
+              href={`/admin/money/jobs?range=${range.key}&title=${encodeURIComponent(t('money.ownRevenue'))}&back=/admin/money`}
             />
             <Line
-              label="Parts"
+              label={t('money.parts')}
               cents={w.partsCostCents}
               billed={billed}
               deduction
-              note={breakdown ? `${count(breakdown.parts.jobs)} jobs carried parts` : undefined}
+              note={breakdown ? t.plural(breakdown.parts.jobs, 'money.partsJob') : undefined}
               detail={
                 breakdown ? (
                   <Rows
-                    rows={breakdown.parts.rows.slice(0, 25).map((row) => ({
+                    rows={breakdown.parts.rows.map((row) => ({
                       key: row.id,
-                      left: row.jobNumber ?? 'Job',
+                      left: row.jobNumber ?? t('common.job'),
                       middle: row.clientName ?? '',
-                      right: money(row.partsCents),
+                      right: money(row.partsCents, t.lang),
                       href: `/admin/calendar/${row.id}`,
                     }))}
                   />
@@ -343,46 +410,83 @@ export default async function MoneyPage({
               }
             />
             <Line
-              label="Expenses"
+              label={t('money.expenses')}
               cents={w.recordedExpensesCents}
               billed={billed}
               deduction
               detail={
                 breakdown ? (
-                  <Rows
-                    rows={breakdown.expenses.rows.map((row) => ({
-                      key: row.category,
-                      left: row.category.charAt(0) + row.category.slice(1).toLowerCase(),
-                      right: money(row.cents),
-                    }))}
-                  />
+                  <table className="w-full text-xs">
+                    <tbody>
+                      {breakdown.expenses.rows.map((row) => (
+                        <tr key={row.category} className="border-b border-primary-500/10 last:border-0">
+                          <td className="py-1 pr-3" colSpan={2}>
+                            {/* A category opens too: "Vehicle $578" answers
+                                nothing, three fuel stops and a tyre answers it. */}
+                            <details className="group/cat">
+                              <summary className="flex cursor-pointer list-none items-center justify-between marker:content-none">
+                                <span>
+                                  <span className="mr-1 inline-block text-[10px] text-gray-400 transition-transform group-open/cat:rotate-90">
+                                    ▸
+                                  </span>
+                                  {categoryLabel(row.category, t)}
+                                  <span className="ml-2 text-[11px] text-gray-500">
+                                    {t.plural(row.count, 'money.entry')}
+                                  </span>
+                                </span>
+                                <span className="tabular-nums">{money(row.cents, t.lang)}</span>
+                              </summary>
+                              <table className="mt-1 w-full">
+                                <tbody>
+                                  {row.items.map((item) => (
+                                    <tr key={item.id}>
+                                      <td className="py-0.5 pr-3 text-gray-500">
+                                        {item.at ? shortDate(new Date(item.at), t.lang) : '—'}
+                                      </td>
+                                      <td className="py-0.5 pr-3">
+                                        {[item.vendor, item.description].filter(Boolean).join(' · ') || '—'}
+                                      </td>
+                                      <td className="py-0.5 text-right tabular-nums">
+                                        {money(item.cents, t.lang)}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </details>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 ) : undefined
               }
             />
             {w.fuelFromMileageCents > 0 && (
               <Line
-                label="Fuel"
+                label={t('money.fuel')}
                 cents={w.fuelFromMileageCents}
                 billed={billed}
                 deduction
-                note="from the mileage log"
+                note={t('money.fuelNote')}
               />
             )}
             {w.writtenOffCents > 0 && (
               <Line
-                label="Written off"
+                label={t('money.writtenOff')}
                 cents={w.writtenOffCents}
                 billed={billed}
                 deduction
-                note="debts given up on in this window"
+                note={t('money.writtenOffNote')}
                 detail={
                   breakdown ? (
                     <Rows
                       rows={breakdown.writtenOff.rows.map((row) => ({
                         key: row.id,
-                        left: row.jobNumber ?? 'Job',
+                        left: row.jobNumber ?? t('common.job'),
+                        // The reason is what somebody typed into the app.
                         middle: [row.clientName, row.reason].filter(Boolean).join(' · '),
-                        right: money(row.ownShareCents),
+                        right: money(row.ownShareCents, t.lang),
                         href: `/admin/calendar/${row.id}`,
                       }))}
                     />
@@ -391,77 +495,77 @@ export default async function MoneyPage({
               />
             )}
             <Line
-              label="Overhead"
+              label={t('money.overhead')}
               cents={w.overheadCents}
               billed={billed}
               deduction
-              note="standing costs, shared across the days you picked"
+              note={t('money.overheadNote')}
               detail={
                 breakdown ? (
                   <Rows
                     rows={breakdown.overhead.rows.map((row) => ({
                       key: row.id,
                       left: row.name,
-                      middle: `${money(row.amountCents)} ${row.cadence.toLowerCase()}`,
-                      right: money(row.inPeriodCents),
+                      middle: `${money(row.amountCents, t.lang)} ${cadenceLabel(row.cadence, t)}`,
+                      right: money(row.inPeriodCents, t.lang),
                     }))}
                   />
                 ) : undefined
               }
             />
             <Line
-              label="What the business made"
+              label={t('money.businessMade')}
               cents={profit.businessEarningsCents}
               billed={billed}
               strong
             />
           </tbody>
         </Table>
-        <Hint>
-          This is what the business made, not what is left after paying yourself — a draw is a
-          share of the answer, not a cost against it. Every figure is worked out by JobPocket; the
-          console formats them and calculates nothing, so this page and the app cannot drift apart.
-          Underlined lines open onto the jobs behind them.
-        </Hint>
+        <Hint>{t('money.waterfallHint')}</Hint>
       </Panel>
 
       {profit.dataQuality.missingCategories.length > 0 && (
         <Warning>
-          Nothing has been entered under {profit.dataQuality.missingCategories.join(', ').toLowerCase()}.
-          A margin built on a few categories out of eleven looks excellent and is not.
+          {t('money.missingCategories', {
+            // The codes are what an expense is grouped by; only the labels are
+            // read, and lowercasing an English word here would leave Ukrainian
+            // untouched and English mid-sentence.
+            categories: profit.dataQuality.missingCategories
+              .map((code) => categoryLabel(code, t))
+              .join(', '),
+          })}
         </Warning>
       )}
       {profit.dataQuality.unsplitCompanies.length > 0 && (
         <Warning>
-          {profit.dataQuality.unsplitCompanies
-            .map((c) => `${c.name} (${money(c.billedCents)})`)
-            .join(', ')}{' '}
-          {profit.dataQuality.unsplitCompanies.length === 1 ? 'has' : 'have'} no split recorded, so
-          the whole ticket is counted as yours. If they take a cut, this profit is too high.
+          {t('money.unsplitWarning', {
+            companies: profit.dataQuality.unsplitCompanies
+              .map((c) => `${c.name} (${money(c.billedCents, t.lang)})`)
+              .join(', '),
+            // "has"/"have" in English, "не має"/"не мають" in Ukrainian — a
+            // choice `n === 1` cannot make in a language with four forms.
+            verb: t.plural(profit.dataQuality.unsplitCompanies.length, 'money.unsplitVerb'),
+          })}
         </Warning>
       )}
 
       <Panel
-        title="Billed and kept"
-        subtitle={trend?.granularity === 'month' ? 'By month' : 'By day'}
+        title={t('money.billedAndKept')}
+        subtitle={trend?.granularity === 'month' ? t('money.byMonth') : t('money.byDay')}
       >
         {points.length >= 3 ? (
           <TimeSeries
             points={points}
             format="money"
             series={[
-              { key: 'billed', label: 'Billed', color: SERIES[0]! },
-              { key: 'kept', label: 'Own revenue', color: SERIES[2]! },
+              { key: 'billed', label: t('common.billed'), color: SERIES[0]! },
+              { key: 'kept', label: t('money.ownRevenue'), color: SERIES[2]! },
             ]}
           />
         ) : (
-          <Empty>Pick a longer window to see the shape of it.</Empty>
+          <Empty>{t('money.pickLongerWindow')}</Empty>
         )}
-        <Hint>
-          Profit is deliberately not a third line here. Overhead and your own pay are spread across
-          whichever window you picked, so cutting them per day would draw a profit that does not add
-          up to the one in the table above.
-        </Hint>
+        <Hint>{t('money.trendHint')}</Hint>
       </Panel>
 
       {/* At the foot, not the head: this explains why the number above does not
@@ -476,9 +580,12 @@ export default async function MoneyPage({
 }
 
 function Header({ label }: { label: string }) {
+  const t = serverTranslator();
   return (
     <div>
-      <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">Profit</h1>
+      <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">
+        {t('money.title')}
+      </h1>
       <p className="mt-1 text-sm text-gray-600">{label}</p>
     </div>
   );

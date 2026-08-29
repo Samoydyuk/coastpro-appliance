@@ -1,5 +1,5 @@
 import { getTrackingNumbers } from '@/lib/admin/queries';
-import { channelLabel } from '@/lib/attribution';
+import { CHANNEL_LABELS, channelLabel } from '@/lib/attribution';
 import { googleAdsConfigured, metaConfigured } from '@/lib/conversions';
 import { jobPocketConfig } from '@/lib/jobpocket';
 import { secretsConfigured } from '@/lib/secrets';
@@ -10,11 +10,30 @@ import { IntegrationKeyEditor } from '@/components/admin/IntegrationKeyEditor';
 import { DispatchSetup } from '@/components/admin/DispatchSetup';
 import { getSeat } from '@/lib/dispatch/client';
 import { STATUS } from '@/components/admin/palette';
+import { serverTranslator } from '@/lib/i18n/server';
+import type { TranslationKey, Translator } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * What a channel is called, in the language being read.
+ *
+ * The names live under `marketing.channel.*` because that is where the rest of
+ * the console reads them from, and a number listed as "Прямі" here while the
+ * channels report says something else would be two names for one thing. The
+ * stored value is the key and is never touched; anything that was written into
+ * the database but never added to the map falls back to `channelLabel`, so an
+ * unrecognised channel reads as itself rather than as a dictionary key.
+ */
+function channelName(t: Translator, channel: string): string {
+  return channel in CHANNEL_LABELS
+    ? t(`marketing.channel.${channel}` as TranslationKey)
+    : channelLabel(channel);
+}
+
 export default async function SettingsPage() {
   try {
+    const t = serverTranslator();
     const numbers = (await getTrackingNumbers()) as Record<
       string,
       string | boolean | Date | null
@@ -22,49 +41,58 @@ export default async function SettingsPage() {
     const jobPocket = await jobPocketConfig();
     const desk = await getSeat().catch(() => ({ seat: null, ringing: false }));
 
+    // `id` rather than `name` as the React key: the name is display text, and a
+    // list keyed on display text re-mounts itself the moment the language
+    // changes.
     const integrations = [
       {
-        name: 'Database',
+        id: 'database',
+        name: t('settings.integ.database'),
         ready: true,
-        detail: 'Connected. Visits, leads and calls are being recorded.',
+        detail: t('settings.integ.database.on'),
       },
       {
-        name: 'Lead notifications (Resend)',
+        id: 'resend',
+        name: t('settings.integ.resend'),
         ready: Boolean(process.env.RESEND_API_KEY),
         detail: process.env.RESEND_API_KEY
-          ? `Delivered to ${process.env.CONTACT_TO_EMAIL ?? siteConfig.contact.email}`
-          : 'RESEND_API_KEY is not set — form submissions are recorded but nobody is emailed.',
+          ? t('settings.integ.resend.on', {
+              email: process.env.CONTACT_TO_EMAIL ?? siteConfig.contact.email,
+            })
+          : t('settings.integ.resend.off'),
       },
       {
-        name: 'JobPocket bookings',
+        id: 'jobpocket',
+        name: t('settings.integ.jobpocket'),
         ready: Boolean(jobPocket?.enabled),
         detail: jobPocket?.enabled
-          ? 'Enquiries go straight to the phone as booking requests, and the outcome of each job comes back here.'
+          ? t('settings.integ.jobpocket.on')
           : jobPocket
-            ? 'Configured but switched off — enquiries are being recorded and queued, not dispatched.'
-            : 'No plugin key. Enquiries are recorded here but nobody is notified.',
+            ? t('settings.integ.jobpocket.paused')
+            : t('settings.integ.jobpocket.off'),
       },
       {
-        name: 'Call tracking (Telnyx)',
+        id: 'telnyx',
+        name: t('settings.integ.telnyx'),
         ready: Boolean(process.env.TELNYX_PUBLIC_KEY || process.env.TELNYX_WEBHOOK_TOKEN),
         detail:
           process.env.TELNYX_PUBLIC_KEY || process.env.TELNYX_WEBHOOK_TOKEN
-            ? 'Webhook authenticated. Point each tracking number at /api/telnyx/webhook.'
-            : 'No public key or token set — the call webhook will accept anything, which is fine only while testing.',
+            ? t('settings.integ.telnyx.on')
+            : t('settings.integ.telnyx.off'),
       },
       {
-        name: 'Google Ads conversions',
+        id: 'google_ads',
+        name: t('settings.integ.googleAds'),
         ready: googleAdsConfigured(),
         detail: googleAdsConfigured()
-          ? 'Won jobs are uploaded against the original click.'
-          : 'Not configured. Google is optimising on form fills rather than on paid jobs.',
+          ? t('settings.integ.googleAds.on')
+          : t('settings.integ.googleAds.off'),
       },
       {
-        name: 'Meta conversions',
+        id: 'meta',
+        name: t('settings.integ.meta'),
         ready: metaConfigured(),
-        detail: metaConfigured()
-          ? 'Events are sent server-side through the Conversions API.'
-          : 'Not configured. Meta sees only what survives the browser, which is a minority of it.',
+        detail: metaConfigured() ? t('settings.integ.meta.on') : t('settings.integ.meta.off'),
       },
     ];
 
@@ -75,18 +103,20 @@ export default async function SettingsPage() {
      */
     const protections = [
       {
-        name: 'Code from an authenticator app',
+        id: 'totp',
+        name: t('settings.access.totp'),
         ready: Boolean(process.env.ADMIN_TOTP_SECRET),
         detail: process.env.ADMIN_TOTP_SECRET
-          ? 'Signing in needs the password and a six-digit code.'
-          : 'ADMIN_TOTP_SECRET is not set — the password on its own opens everything here.',
+          ? t('settings.access.totp.on')
+          : t('settings.access.totp.off'),
       },
       {
-        name: 'Keys sealed in the database',
+        id: 'sealed',
+        name: t('settings.access.sealed'),
         ready: secretsConfigured(),
         detail: secretsConfigured()
-          ? 'A copy of the database does not reveal the JobPocket keys.'
-          : 'SETTINGS_ENCRYPTION_KEY is not set — keys would sit in the database in plain text.',
+          ? t('settings.access.sealed.on')
+          : t('settings.access.sealed.off'),
       },
     ];
 
@@ -94,15 +124,18 @@ export default async function SettingsPage() {
       <div className="space-y-6">
         <div>
           <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">
-            Settings
+            {t('settings.title')}
           </h1>
-          <p className="mt-1 text-sm text-gray-600">Numbers, integrations and what is still missing</p>
+          <p className="mt-1 text-sm text-gray-600">{t('settings.subtitle')}</p>
         </div>
 
-        <Panel title="Integrations" subtitle="What is connected right now">
+        <Panel
+          title={t('settings.integrations.title')}
+          subtitle={t('settings.integrations.subtitle')}
+        >
           <ul className="divide-y divide-primary-500/10">
             {integrations.map((entry) => (
-              <li key={entry.name} className="flex items-start gap-3 py-3">
+              <li key={entry.id} className="flex items-start gap-3 py-3">
                 <span
                   aria-hidden
                   className="mt-1.5 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
@@ -115,7 +148,9 @@ export default async function SettingsPage() {
                       className="ml-2 font-heading text-[10px] uppercase tracking-label"
                       style={{ color: entry.ready ? '#006300' : '#8a5a12' }}
                     >
-                      {entry.ready ? 'ready' : 'not set up'}
+                      {entry.ready
+                        ? t('settings.integrations.ready')
+                        : t('settings.integrations.notReady')}
                     </span>
                   </p>
                   <p className="mt-0.5 text-xs text-gray-600">{entry.detail}</p>
@@ -125,13 +160,10 @@ export default async function SettingsPage() {
           </ul>
         </Panel>
 
-        <Panel
-          title="Who can get in"
-          subtitle="This console shows customers' names, addresses and the week's schedule"
-        >
+        <Panel title={t('settings.access.title')} subtitle={t('settings.access.subtitle')}>
           <ul className="divide-y divide-primary-500/10">
             {protections.map((entry) => (
-              <li key={entry.name} className="flex items-start gap-3 py-3">
+              <li key={entry.id} className="flex items-start gap-3 py-3">
                 <span
                   aria-hidden
                   className="mt-1.5 inline-block h-2.5 w-2.5 shrink-0 rounded-full"
@@ -144,7 +176,7 @@ export default async function SettingsPage() {
                       className="ml-2 font-heading text-[10px] uppercase tracking-label"
                       style={{ color: entry.ready ? '#006300' : '#8f2323' }}
                     >
-                      {entry.ready ? 'on' : 'off'}
+                      {entry.ready ? t('settings.access.on') : t('settings.access.off')}
                     </span>
                   </p>
                   <p className="mt-0.5 text-xs text-gray-600">{entry.detail}</p>
@@ -154,40 +186,28 @@ export default async function SettingsPage() {
           </ul>
         </Panel>
 
-        <Panel
-          title="Answering calls here"
-          subtitle="Take the business number at a desk instead of on the phone"
-        >
+        <Panel title={t('settings.desk.title')} subtitle={t('settings.desk.subtitle')}>
           <DispatchSetup seat={desk.seat} ringing={desk.ringing} />
         </Panel>
 
-        <Panel
-          title="JobPocket keys"
-          subtitle="Paste a key here when you mint or rotate one"
-        >
+        <Panel title={t('settings.keys.title')} subtitle={t('settings.keys.subtitle')}>
           <IntegrationKeyEditor />
         </Panel>
 
-        <Panel
-          title="Tracking numbers"
-          subtitle="One per channel — whichever rings tells us which ad paid for the call"
-        >
+        <Panel title={t('settings.numbers.title')} subtitle={t('settings.numbers.subtitle')}>
           <NumberEditor />
 
           <div className="mt-5">
             {numbers.length === 0 ? (
-              <Empty>
-                No numbers yet. Until one is added, every visitor sees {siteConfig.contact.phone}{' '}
-                and calls cannot be attributed.
-              </Empty>
+              <Empty>{t('settings.numbers.empty', { phone: siteConfig.contact.phone })}</Empty>
             ) : (
               <Table>
                 <thead>
                   <tr>
-                    <Th>Number</Th>
-                    <Th>Shown to</Th>
-                    <Th>Label</Th>
-                    <Th>Status</Th>
+                    <Th>{t('settings.numbers.number')}</Th>
+                    <Th>{t('settings.numbers.shownTo')}</Th>
+                    <Th>{t('settings.numbers.label')}</Th>
+                    <Th>{t('settings.numbers.status')}</Th>
                     <Th />
                   </tr>
                 </thead>
@@ -197,13 +217,15 @@ export default async function SettingsPage() {
                       <Td className="font-mono text-xs">{row.number_e164 as string}</Td>
                       <Td>
                         {row.channel === 'default'
-                          ? 'Everyone else'
-                          : channelLabel(row.channel as string)}
+                          ? t('settings.numbers.everyoneElse')
+                          : channelName(t, row.channel as string)}
                       </Td>
                       <Td>{(row.label as string) || '—'}</Td>
                       <Td>
                         <span style={{ color: row.active ? '#006300' : '#898781' }}>
-                          {row.active ? 'Active' : 'Retired'}
+                          {row.active
+                            ? t('settings.numbers.active')
+                            : t('settings.numbers.retired')}
                         </span>
                       </Td>
                       <Td numeric>{row.active ? <RetireNumberButton id={String(row.id)} /> : null}</Td>
@@ -214,55 +236,59 @@ export default async function SettingsPage() {
             )}
           </div>
 
+          {/* The `<code>` samples stay out of the dictionary — a tracking
+              template is a literal to copy, not language. The prose around them
+              is split only where a sample sits mid-sentence. */}
           <Hint>
-            Buy the numbers in Telnyx, forward each to {siteConfig.contact.phone}, and point their
-            voice webhook at <code className="rounded bg-cream-dark px-1 py-0.5">/api/telnyx/webhook</code>.
-            The site then shows each visitor the number for their channel; anyone whose channel has
-            no number keeps the main line, so no call can ever be lost to a missing row here.
+            {t('settings.numbers.hint.1', { phone: siteConfig.contact.phone })}{' '}
+            <code className="rounded bg-cream-dark px-1 py-0.5">/api/telnyx/webhook</code>
+            {'. '}
+            {t('settings.numbers.hint.2')}
           </Hint>
         </Panel>
 
-        <Panel title="How to tag your ads" subtitle="What each platform needs on its links">
+        <Panel title={t('settings.tag.title')} subtitle={t('settings.tag.subtitle')}>
           <dl className="space-y-4 text-sm">
             <div>
-              <dt className="font-medium text-ink">Google Ads</dt>
+              <dt className="font-medium text-ink">{t('settings.tag.google')}</dt>
               <dd className="mt-1 text-gray-600">
-                Leave auto-tagging on — it supplies the click id by itself. To get keyword and
-                creative reporting, set the account tracking template to{' '}
+                {t('settings.tag.google.body')}{' '}
                 <code className="break-all rounded bg-cream-dark px-1 py-0.5">
                   {'{lpurl}?utm_source=google&utm_medium=cpc&utm_campaign={campaignid}&utm_content={creative}&utm_term={keyword}'}
                 </code>
               </dd>
             </div>
             <div>
-              <dt className="font-medium text-ink">Local Services Ads</dt>
+              <dt className="font-medium text-ink">{t('settings.tag.lsa')}</dt>
               <dd className="mt-1 text-gray-600">
-                LSA has no click id, so tag the profile&apos;s website link with{' '}
+                {t('settings.tag.lsa.1')}{' '}
                 <code className="rounded bg-cream-dark px-1 py-0.5">
                   ?utm_source=google&amp;utm_medium=lsa
                 </code>
-                . Most LSA leads arrive by phone, so its tracking number matters more than the tag.
+                {'. '}
+                {t('settings.tag.lsa.2')}
               </dd>
             </div>
             <div>
-              <dt className="font-medium text-ink">Meta</dt>
+              <dt className="font-medium text-ink">{t('settings.tag.meta')}</dt>
               <dd className="mt-1 text-gray-600">
-                Add{' '}
+                {t('settings.tag.meta.1')}{' '}
                 <code className="break-all rounded bg-cream-dark px-1 py-0.5">
                   utm_source=facebook&amp;utm_medium=paid-social&amp;utm_campaign=
                   {'{{campaign.name}}'}&amp;utm_content={'{{ad.name}}'}
                 </code>{' '}
-                to the URL parameters field. Without the medium, Meta traffic cannot be told apart
-                from an ordinary post.
+                {t('settings.tag.meta.2')}
               </dd>
             </div>
             <div>
-              <dt className="font-medium text-ink">Yelp, Nextdoor, anything else</dt>
+              <dt className="font-medium text-ink">{t('settings.tag.other')}</dt>
               <dd className="mt-1 text-gray-600">
-                Any link works as long as it carries{' '}
-                <code className="rounded bg-cream-dark px-1 py-0.5">utm_source</code> and{' '}
-                <code className="rounded bg-cream-dark px-1 py-0.5">utm_medium=cpc</code>. Untagged
-                traffic still gets classified by its referrer, just less precisely.
+                {t('settings.tag.other.1')}{' '}
+                <code className="rounded bg-cream-dark px-1 py-0.5">utm_source</code>{' '}
+                {t('settings.tag.other.2')}{' '}
+                <code className="rounded bg-cream-dark px-1 py-0.5">utm_medium=cpc</code>
+                {'. '}
+                {t('settings.tag.other.3')}
               </dd>
             </div>
           </dl>

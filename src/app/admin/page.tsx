@@ -1,24 +1,43 @@
 import Link from 'next/link';
-import { parseRange } from '@/lib/admin/range';
+import { parseRange, SHOP_TIMEZONE } from '@/lib/admin/range';
 import { getChannels, getDailySeries, getFunnel, getOverview } from '@/lib/admin/queries';
 import { count, delta, duration, money, percent, shortDate } from '@/lib/admin/format';
 import { channelLabel, isPaidChannel } from '@/lib/attribution';
+import { numberLocale, type TranslationKey } from '@/lib/i18n';
+import { serverTranslator } from '@/lib/i18n/server';
 import { Empty, Hint, Panel, SetupNotice, StatTile, Table, Td, Th, Warning } from '@/components/admin/ui';
 import { Funnel, RankedBars, TimeSeries } from '@/components/admin/charts';
 import { SERIES, channelColor } from '@/components/admin/palette';
+import { rangeLabel } from '@/lib/i18n/range';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * The heading names the window the same way the buttons above it do, through
+ * the dictionary rather than through the English label `parseRange` carries.
+ * Trimming "Last 30 days" down to "30 days" in code would be a no-op in
+ * Ukrainian; the picker already has both words.
+ */
 export default async function OverviewPage({
   searchParams,
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
+  const t = serverTranslator();
   const range = parseRange({
     range: searchParams.range as string,
     from: searchParams.from as string,
     to: searchParams.to as string,
   });
+
+
+  // Through Intl, or these are the only two numbers on the screen still written
+  // with a full stop while every figure beside them uses a comma.
+  const fixed = (value: number, digits: number) =>
+    value.toLocaleString(numberLocale(t.lang), {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    });
 
   try {
     const [{ current, previous }, series, channels, funnel] = await Promise.all([
@@ -41,10 +60,11 @@ export default async function OverviewPage({
     const previousLeadRate = previous.sessions ? previous.leads / previous.sessions : 0;
 
     // How a visit actually went, which is the part a visit count never says.
-    const per = (t: typeof current) => ({
-      pages: t.sessions ? t.pageviews / t.sessions : 0,
-      seconds: t.sessions ? t.engagedSeconds / t.sessions : 0,
-      bounce: t.sessions ? t.bouncedSessions / t.sessions : 0,
+    // Named `snapshot` rather than `t`, which now belongs to the translator.
+    const per = (snapshot: typeof current) => ({
+      pages: snapshot.sessions ? snapshot.pageviews / snapshot.sessions : 0,
+      seconds: snapshot.sessions ? snapshot.engagedSeconds / snapshot.sessions : 0,
+      bounce: snapshot.sessions ? snapshot.bouncedSessions / snapshot.sessions : 0,
     });
     const shape = per(current);
     const previousShape = per(previous);
@@ -54,7 +74,7 @@ export default async function OverviewPage({
     );
 
     const points = series.map((day) => ({
-      label: shortDate(day.day),
+      label: shortDate(day.day, t.lang),
       values: {
         sessions: day.sessions,
         leads: day.leads,
@@ -64,23 +84,29 @@ export default async function OverviewPage({
       },
     }));
 
+    const junkLeads = current.leads - current.qualityLeads;
+
     return (
       <div className="space-y-6">
         <div>
           <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">
-            Overview
+            {t('overview.title')}
           </h1>
           <p className="mt-1 text-sm text-gray-600">
-            {range.label} · compared with the {range.days} days before it
+            {t('overview.subtitle', {
+              range: rangeLabel(range, t),
+              days: t.plural(range.days, 'plural.day'),
+            })}
           </p>
         </div>
 
         {paidWithoutSpend.length > 0 && (
           <Warning>
-            {paidWithoutSpend.map((row) => channelLabel(row.channel)).join(', ')} sent traffic but
-            has no cost recorded for this period, so its cost per lead is blank. Add it under{' '}
+            {t('overview.paidNoSpend', {
+              channels: paidWithoutSpend.map((row) => channelLabel(row.channel)).join(', '),
+            })}{' '}
             <Link href="/admin/spend" className="underline">
-              Spend
+              {t('overview.paidNoSpendLink')}
             </Link>
             .
           </Warning>
@@ -88,131 +114,134 @@ export default async function OverviewPage({
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatTile
-            label="Service requests"
-            value={count(requests)}
+            label={t('overview.requests')}
+            value={count(requests, t.lang)}
             change={delta(requests, previousRequests)}
-            hint="forms + answered calls"
+            hint={t('overview.requestsHint')}
             emphasis
           />
           <StatTile
-            label="Cost per request"
-            value={costPerLead === null ? '—' : money(costPerLead)}
+            label={t('overview.costPerRequest')}
+            value={costPerLead === null ? '—' : money(costPerLead, t.lang)}
             change={
               costPerLead !== null && previousCostPerLead !== null
                 ? delta(costPerLead, previousCostPerLead)
                 : null
             }
             higherIsBetter={false}
-            hint={current.spendCents ? `on ${money(current.spendCents)} spent` : 'no spend recorded'}
+            hint={
+              current.spendCents
+                ? t('overview.costPerRequestHint', { amount: money(current.spendCents, t.lang) })
+                : t('overview.noSpend')
+            }
             emphasis
           />
           <StatTile
-            label="Jobs won"
-            value={count(current.won)}
+            label={t('overview.jobsWon')}
+            value={count(current.won, t.lang)}
             change={delta(current.won, previous.won)}
-            hint={`${money(current.revenueCents)} marked · ${money(current.invoicedCents)} invoiced`}
+            hint={t('overview.jobsWonHint', {
+              marked: money(current.revenueCents, t.lang),
+              invoiced: money(current.invoicedCents, t.lang),
+            })}
             emphasis
           />
           <StatTile
-            label="Return on ad spend"
-            value={roas === null ? '—' : `${roas.toFixed(2)}×`}
-            hint={roas === null ? 'needs spend + paid jobs' : 'invoiced money ÷ spend'}
+            label={t('overview.roas')}
+            value={roas === null ? '—' : `${fixed(roas, 2)}×`}
+            hint={roas === null ? t('overview.roasNeeds') : t('overview.roasHint')}
             emphasis
           />
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatTile
-            label="Visits"
-            value={count(current.sessions)}
+            label={t('overview.visits')}
+            value={count(current.sessions, t.lang)}
             change={delta(current.sessions, previous.sessions)}
-            hint={`${count(current.visitors)} people`}
+            hint={t.plural(current.visitors, 'overview.person')}
           />
           <StatTile
-            label="Form leads"
-            value={count(current.leads)}
+            label={t('overview.formLeads')}
+            value={count(current.leads, t.lang)}
             change={delta(current.leads, previous.leads)}
-            hint={current.leads - current.qualityLeads > 0 ? `${current.leads - current.qualityLeads} duplicate/spam` : 'all clean'}
+            hint={junkLeads > 0 ? t.plural(junkLeads, 'overview.dupe') : t('overview.allClean')}
           />
           <StatTile
-            label="Phone calls"
-            value={count(current.calls)}
+            label={t('overview.calls')}
+            value={count(current.calls, t.lang)}
             change={delta(current.calls, previous.calls)}
-            hint={`${count(current.answeredCalls)} answered`}
+            hint={t('overview.callsHint', { n: count(current.answeredCalls, t.lang) })}
           />
           <StatTile
-            label="Visit → request"
-            value={percent(leadRate)}
+            label={t('overview.visitToRequest')}
+            value={percent(leadRate, 1, t.lang)}
             change={delta(leadRate, previousLeadRate)}
-            hint="share of visits that ask for service"
+            hint={t('overview.visitToRequestHint')}
           />
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatTile
-            label="Pages per visit"
-            value={current.sessions ? shape.pages.toFixed(1) : '—'}
+            label={t('overview.pagesPerVisit')}
+            value={current.sessions ? fixed(shape.pages, 1) : '—'}
             change={delta(shape.pages, previousShape.pages)}
-            hint={`${count(current.pageviews)} pages seen`}
+            hint={t('overview.pagesSeen', { pages: t.plural(current.pageviews, 'overview.page') })}
           />
           <StatTile
-            label="Time on site"
+            label={t('overview.timeOnSite')}
             value={current.sessions ? duration(shape.seconds) : '—'}
             change={delta(shape.seconds, previousShape.seconds)}
-            hint="average across visits"
+            hint={t('overview.timeOnSiteHint')}
           />
           <StatTile
-            label="Bounced"
-            value={current.sessions ? percent(shape.bounce, 0) : '—'}
+            label={t('overview.bounced')}
+            value={current.sessions ? percent(shape.bounce, 0, t.lang) : '—'}
             change={delta(shape.bounce, previousShape.bounce)}
             higherIsBetter={false}
-            hint="one page, gone inside 5s"
+            hint={t('overview.bouncedHint')}
           />
           <StatTile
-            label="Engaged visits"
-            value={count(current.engagedSessions)}
+            label={t('overview.engagedVisits')}
+            value={count(current.engagedSessions, t.lang)}
             change={delta(current.engagedSessions, previous.engagedSessions)}
-            hint="15s+, or read more than one page"
+            hint={t('overview.engagedVisitsHint')}
           />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <Panel title="Visits" subtitle="Bots excluded">
+          <Panel title={t('overview.panel.visits')} subtitle={t('overview.panel.visitsSub')}>
             <TimeSeries
               points={points}
-              series={[{ key: 'sessions', label: 'Visits', color: SERIES[0] }]}
+              series={[{ key: 'sessions', label: t('overview.series.visits'), color: SERIES[0] }]}
             />
           </Panel>
 
-          <Panel title="Requests" subtitle="Forms and calls, day by day">
+          <Panel title={t('overview.panel.requests')} subtitle={t('overview.panel.requestsSub')}>
             <TimeSeries
               points={points}
               series={[
-                { key: 'leads', label: 'Form leads', color: SERIES[0] },
-                { key: 'calls', label: 'Calls', color: SERIES[1] },
+                { key: 'leads', label: t('overview.series.formLeads'), color: SERIES[0] },
+                { key: 'calls', label: t('overview.series.calls'), color: SERIES[1] },
               ]}
             />
-            <Hint>
-              Visits and requests are drawn separately on purpose. Put them on one chart and the
-              two scales have to be forced together, which makes the shapes say whatever the scale
-              was chosen to make them say.
-            </Hint>
+            <Hint>{t('overview.twoChartsHint')}</Hint>
           </Panel>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <Panel title="Money" subtitle="Ad spend against revenue from won jobs">
+          <Panel title={t('overview.panel.money')} subtitle={t('overview.panel.moneySub')}>
             <TimeSeries
               points={points}
               series={[
-                { key: 'spend', label: 'Spend', color: SERIES[1] },
-                { key: 'revenue', label: 'Invoiced', color: SERIES[2] },
+                { key: 'spend', label: t('overview.series.spend'), color: SERIES[1] },
+                { key: 'revenue', label: t('overview.series.invoiced'), color: SERIES[2] },
               ]}
               format="money"
             />
           </Panel>
 
-          <Panel title="Where requests come from" subtitle="Leads and calls by channel">
+          <Panel title={t('overview.panel.sources')} subtitle={t('overview.panel.sourcesSub')}>
             <RankedBars
               items={channels
                 .filter((row) => row.leads + row.calls > 0)
@@ -222,7 +251,12 @@ export default async function OverviewPage({
                   value: row.leads + row.calls,
                   color: channelColor(row.channel),
                   note: row.spendCents
-                    ? `${money(row.spendCents / Math.max(1, row.leads + row.calls))} each`
+                    ? t('overview.each', {
+                        amount: money(
+                          row.spendCents / Math.max(1, row.leads + row.calls),
+                          t.lang
+                        ),
+                      })
                     : undefined,
                 }))}
             />
@@ -230,14 +264,14 @@ export default async function OverviewPage({
         </div>
 
         <Panel
-          title="Funnel"
-          subtitle="Where people stop"
+          title={t('overview.panel.funnel')}
+          subtitle={t('overview.panel.funnelSub')}
           action={
             <Link
               href={`/admin/funnel?range=${range.key}`}
               className="font-heading text-[10px] uppercase tracking-label text-gray-500 hover:text-ink"
             >
-              Detail →
+              {t('common.detail')} →
             </Link>
           }
         >
@@ -245,33 +279,33 @@ export default async function OverviewPage({
         </Panel>
 
         <Panel
-          title="Channels"
-          subtitle="Everything that brought traffic or cost money"
+          title={t('overview.panel.channels')}
+          subtitle={t('overview.panel.channelsSub')}
           action={
             <Link
               href={`/admin/channels?range=${range.key}`}
               className="font-heading text-[10px] uppercase tracking-label text-gray-500 hover:text-ink"
             >
-              Detail →
+              {t('common.detail')} →
             </Link>
           }
         >
           {channels.length === 0 ? (
-            <Empty>No traffic recorded in this period yet.</Empty>
+            <Empty>{t('overview.noTraffic')}</Empty>
           ) : (
             <Table>
               <thead>
                 <tr>
-                  <Th>Channel</Th>
-                  <Th numeric>Visits</Th>
-                  <Th numeric>Leads</Th>
-                  <Th numeric>Calls</Th>
-                  <Th numeric>Booked</Th>
-                  <Th numeric>Won</Th>
-                  <Th numeric>Spend</Th>
-                  <Th numeric>Cost / request</Th>
-                  <Th numeric>Revenue</Th>
-                  <Th numeric>ROAS</Th>
+                  <Th>{t('overview.col.channel')}</Th>
+                  <Th numeric>{t('overview.col.visits')}</Th>
+                  <Th numeric>{t('overview.col.leads')}</Th>
+                  <Th numeric>{t('overview.col.calls')}</Th>
+                  <Th numeric>{t('overview.col.booked')}</Th>
+                  <Th numeric>{t('overview.col.won')}</Th>
+                  <Th numeric>{t('overview.col.spend')}</Th>
+                  <Th numeric>{t('overview.col.costPerRequest')}</Th>
+                  <Th numeric>{t('overview.col.revenue')}</Th>
+                  <Th numeric>{t('overview.col.roas')}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -290,28 +324,26 @@ export default async function OverviewPage({
                           {channelLabel(row.channel)}
                         </span>
                       </Td>
-                      <Td numeric>{count(row.sessions)}</Td>
-                      <Td numeric>{count(row.leads)}</Td>
-                      <Td numeric>{count(row.calls)}</Td>
-                      <Td numeric>{count(row.booked)}</Td>
-                      <Td numeric>{count(row.won)}</Td>
-                      <Td numeric>{row.spendCents ? money(row.spendCents) : '—'}</Td>
+                      <Td numeric>{count(row.sessions, t.lang)}</Td>
+                      <Td numeric>{count(row.leads, t.lang)}</Td>
+                      <Td numeric>{count(row.calls, t.lang)}</Td>
+                      <Td numeric>{count(row.booked, t.lang)}</Td>
+                      <Td numeric>{count(row.won, t.lang)}</Td>
+                      <Td numeric>{row.spendCents ? money(row.spendCents, t.lang) : '—'}</Td>
                       <Td numeric>
-                        {row.spendCents && rowRequests ? money(row.spendCents / rowRequests) : '—'}
+                        {row.spendCents && rowRequests
+                          ? money(row.spendCents / rowRequests, t.lang)
+                          : '—'}
                       </Td>
-                      <Td numeric>{row.revenueCents ? money(row.revenueCents) : '—'}</Td>
-                      <Td numeric>{rowRoas === null ? '—' : `${rowRoas.toFixed(2)}×`}</Td>
+                      <Td numeric>{row.revenueCents ? money(row.revenueCents, t.lang) : '—'}</Td>
+                      <Td numeric>{rowRoas === null ? '—' : `${fixed(rowRoas, 2)}×`}</Td>
                     </tr>
                   );
                 })}
               </tbody>
             </Table>
           )}
-          <Hint>
-            Cost per request divides spend by leads plus answered calls, not by leads alone.
-            Judging a phone-heavy channel on form fills only would make it look several times
-            worse than it is.
-          </Hint>
+          <Hint>{t('overview.channelsHint')}</Hint>
         </Panel>
       </div>
     );

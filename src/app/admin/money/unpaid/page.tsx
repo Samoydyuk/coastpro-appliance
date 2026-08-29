@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { count, money, shortDate } from '@/lib/admin/format';
+import { money, percent, shortDate } from '@/lib/admin/format';
 import { getUnpaid } from '@/lib/money/client';
 import { OperationsApiError } from '@/lib/bookings/client';
 import { Empty, Hint, Panel, SetupNotice, StatTile, Table, Td, Th, Warning } from '@/components/admin/ui';
@@ -7,6 +7,7 @@ import { NotConnected } from '@/components/admin/NotConnected';
 import { RankedBars } from '@/components/admin/charts';
 import { Pager } from '@/components/admin/Pager';
 import { STATUS } from '@/components/admin/palette';
+import { serverTranslator } from '@/lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +28,7 @@ export default async function UnpaidPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
+  const t = serverTranslator();
   const bucket = (searchParams.bucket as string) || undefined;
   const offset = Number(searchParams.offset ?? 0) || 0;
 
@@ -49,7 +51,7 @@ export default async function UnpaidPage({
     return (
       <div className="space-y-6">
         <Header />
-        <NotConnected what="Jobs and payments" />
+        <NotConnected what={t('money.notConnected')} />
       </div>
     );
   }
@@ -58,7 +60,7 @@ export default async function UnpaidPage({
     return (
       <div className="space-y-6">
         <Header />
-        <Warning>{failure ?? 'JobPocket did not answer.'}</Warning>
+        <Warning>{failure ?? t('money.noAnswer')}</Warning>
       </div>
     );
   }
@@ -67,10 +69,10 @@ export default async function UnpaidPage({
   const over60 = report.aging.days60.cents + report.aging.days90.cents;
 
   const buckets = [
-    { label: 'Under 30 days', value: report.aging.current.cents / 100, jobs: report.aging.current.jobs, colour: AGE_COLOURS[0]! },
-    { label: '31 to 60 days', value: report.aging.days30.cents / 100, jobs: report.aging.days30.jobs, colour: AGE_COLOURS[1]! },
-    { label: '61 to 90 days', value: report.aging.days60.cents / 100, jobs: report.aging.days60.jobs, colour: AGE_COLOURS[2]! },
-    { label: 'Over 90 days', value: report.aging.days90.cents / 100, jobs: report.aging.days90.jobs, colour: AGE_COLOURS[3]! },
+    { label: t('money.ageUnder30'), value: report.aging.current.cents / 100, jobs: report.aging.current.jobs, colour: AGE_COLOURS[0]! },
+    { label: t('money.age30to60'), value: report.aging.days30.cents / 100, jobs: report.aging.days30.jobs, colour: AGE_COLOURS[1]! },
+    { label: t('money.age60to90'), value: report.aging.days60.cents / 100, jobs: report.aging.days60.jobs, colour: AGE_COLOURS[2]! },
+    { label: t('money.ageOver90'), value: report.aging.days90.cents / 100, jobs: report.aging.days90.jobs, colour: AGE_COLOURS[3]! },
   ];
 
   return (
@@ -80,39 +82,41 @@ export default async function UnpaidPage({
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
-          label="Owed"
-          value={money(report.outstanding.totalCents)}
+          label={t('unpaid.owed')}
+          value={money(report.outstanding.totalCents, t.lang)}
           emphasis
           higherIsBetter={false}
-          hint={`${count(report.outstanding.jobs)} invoices`}
+          hint={t.plural(report.outstanding.jobs, 'plural.invoice')}
         />
         <StatTile
-          label="Yours of it"
-          value={money(report.outstanding.ownShareCents)}
+          label={t('unpaid.yoursOfIt')}
+          value={money(report.outstanding.ownShareCents, t.lang)}
           emphasis
           // The gross figure is a hole twice the size of the real one on a
           // dispatcher-heavy account: half of a split ticket was never yours.
-          hint="after the dispatchers' share"
+          hint={t('money.afterDispatchersShare')}
         />
         <StatTile
-          label="Over 60 days"
-          value={money(over60)}
+          label={t('unpaid.over60')}
+          value={money(over60, t.lang)}
           higherIsBetter={false}
           hint={
             report.outstanding.totalCents
-              ? `${Math.round((over60 / report.outstanding.totalCents) * 100)}% of what is owed`
+              ? t('money.ofWhatIsOwed', {
+                  pct: percent(over60 / report.outstanding.totalCents, 0, t.lang),
+                })
               : undefined
           }
         />
         <StatTile
-          label="Oldest"
-          value={oldest ? `${count(oldest.daysOwed)} days` : '—'}
+          label={t('unpaid.oldest')}
+          value={oldest ? t.plural(oldest.daysOwed, 'plural.day') : '—'}
           higherIsBetter={false}
           hint={oldest?.clientName ?? undefined}
         />
       </div>
 
-      <Panel title="How old the debts are" subtitle={`Measured to today, not to a date window`}>
+      <Panel title={t('unpaid.howOld')} subtitle={t('money.measuredToToday')}>
         {report.outstanding.jobs > 0 ? (
           <RankedBars
             format="money"
@@ -120,15 +124,21 @@ export default async function UnpaidPage({
               label: bucket.label,
               value: bucket.value,
               color: bucket.colour,
-              note: `${count(bucket.jobs)} ${bucket.jobs === 1 ? 'invoice' : 'invoices'}`,
+              note: t.plural(bucket.jobs, 'plural.invoice'),
             }))}
           />
         ) : (
-          <Empty>Nothing outstanding. Everything finished has been paid for.</Empty>
+          <Empty>{t('money.nothingOutstandingLong')}</Empty>
         )}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {/* The chart shows the shape; these open it. */}
-          {[{ k: '', l: 'All' }, { k: 'current', l: 'Under 30' }, { k: 'days30', l: '31–60' }, { k: 'days60', l: '61–90' }, { k: 'days90', l: 'Over 90' }].map((band) => (
+          {[
+            { k: '', l: t('unpaid.all') },
+            { k: 'current', l: t('unpaid.under30') },
+            { k: 'days30', l: t('unpaid.31to60') },
+            { k: 'days60', l: t('unpaid.61to90') },
+            { k: 'days90', l: t('unpaid.over90') },
+          ].map((band) => (
             <Link
               key={band.k || 'all'}
               href={band.k ? `/admin/money/unpaid?bucket=${band.k}` : '/admin/money/unpaid'}
@@ -142,37 +152,33 @@ export default async function UnpaidPage({
             </Link>
           ))}
         </div>
-        <Hint>
-          There is no date window on this page on purpose. A debt does not stop existing because the
-          report was narrowed to last week, and the oldest ones are the only ones that need a
-          decision.
-        </Hint>
+        <Hint>{t('money.unpaidNoWindowHint')}</Hint>
       </Panel>
 
       <Panel
-        title="Every unpaid invoice"
-        subtitle={`Oldest first — age decides who to ring, not size`}
+        title={t('unpaid.everyInvoice')}
+        subtitle={t('money.oldestFirst')}
         action={
           <a
             href="/api/admin/export?type=unpaid"
             className="inline-flex h-8 items-center rounded-card border border-primary-500/30 px-3 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 hover:border-ink hover:text-ink"
           >
-            Export CSV
+            {t('common.exportCsv')}
           </a>
         }
       >
         {report.jobs.length === 0 ? (
-          <Empty>Nothing outstanding.</Empty>
+          <Empty>{t('unpaid.nothing')}</Empty>
         ) : (
           <Table>
             <thead>
               <tr>
-                <Th>Client</Th>
-                <Th>Job</Th>
-                <Th>Finished</Th>
-                <Th numeric>Days</Th>
-                <Th numeric>Invoice</Th>
-                <Th numeric>Yours</Th>
+                <Th>{t('common.client')}</Th>
+                <Th>{t('common.job')}</Th>
+                <Th>{t('unpaid.finished')}</Th>
+                <Th numeric>{t('common.days')}</Th>
+                <Th numeric>{t('common.invoice')}</Th>
+                <Th numeric>{t('common.yours')}</Th>
               </tr>
             </thead>
             <tbody>
@@ -184,21 +190,21 @@ export default async function UnpaidPage({
                       href={`/admin/calendar/${job.id}`}
                       className="text-ink underline decoration-primary-500/40 underline-offset-2 hover:text-primary-600"
                     >
-                      {job.jobNumber ?? 'Job'}
+                      {job.jobNumber ?? t('common.job')}
                     </Link>
                     <span className="ml-2 text-[11px] text-gray-500">{job.brandName}</span>
                   </Td>
                   <Td className="text-gray-600">
-                    {job.completedAt ? shortDate(new Date(job.completedAt)) : '—'}
+                    {job.completedAt ? shortDate(new Date(job.completedAt), t.lang) : '—'}
                   </Td>
                   <Td numeric>
                     <span style={{ color: ageColour(job.daysOwed) }} className="font-medium">
                       {job.daysOwed}
                     </span>
                   </Td>
-                  <Td numeric>{money(job.totalCents)}</Td>
+                  <Td numeric>{money(job.totalCents, t.lang)}</Td>
                   <Td numeric className="text-gray-600">
-                    {money(job.ownShareCents)}
+                    {money(job.ownShareCents, t.lang)}
                   </Td>
                 </tr>
               ))}
@@ -212,20 +218,20 @@ export default async function UnpaidPage({
           total={report.total}
           hasMore={report.hasMore}
         />
-        <Hint>
-          A debt that has been given up on is not outstanding and is not here — writing one off in
-          the app takes it out of this list and books the loss in the period the decision was made.
-        </Hint>
+        <Hint>{t('money.writeOffHint')}</Hint>
       </Panel>
     </div>
   );
 }
 
 function Header() {
+  const t = serverTranslator();
   return (
     <div>
-      <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">Unpaid</h1>
-      <p className="mt-1 text-sm text-gray-600">As things stand today</p>
+      <h1 className="font-heading text-xl font-bold uppercase tracking-label text-ink">
+        {t('unpaid.title')}
+      </h1>
+      <p className="mt-1 text-sm text-gray-600">{t('unpaid.subtitle')}</p>
     </div>
   );
 }
