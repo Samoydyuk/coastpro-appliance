@@ -5,6 +5,8 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { RANGE_PRESETS } from '@/lib/admin/range';
+import type { TranslationKey } from '@/lib/i18n';
+import { useT } from '@/components/admin/LanguageProvider';
 
 /**
  * The way around the business.
@@ -22,74 +24,75 @@ import { RANGE_PRESETS } from '@/lib/admin/range';
 
 interface Section {
   href: string;
-  label: string;
+  /** A dictionary key, not a word — the sidebar is read in two languages. */
+  label: TranslationKey;
   /** Screens read through a date window; the rest ignore it. */
   ranged?: boolean;
 }
 
 interface Group {
-  title: string;
+  title: TranslationKey;
   sections: Section[];
 }
 
-const OVERVIEW: Section = { href: '/admin', label: 'Overview', ranged: true };
+const OVERVIEW: Section = { href: '/admin', label: 'nav.overview', ranged: true };
 
 const GROUPS: Group[] = [
   {
     // What is happening, and what needs an answer today. First because it is
     // what the business runs on.
-    title: 'Work',
+    title: 'nav.group.work',
     sections: [
-      { href: '/admin/calendar', label: 'Calendar' },
-      { href: '/admin/bookings', label: 'Bookings' },
-      { href: '/admin/leads', label: 'Enquiries', ranged: true },
-      { href: '/admin/calls', label: 'Calls', ranged: true },
+      { href: '/admin/calendar', label: 'nav.calendar' },
+      { href: '/admin/bookings', label: 'nav.bookings' },
+      { href: '/admin/leads', label: 'nav.leads', ranged: true },
+      { href: '/admin/calls', label: 'nav.calls', ranged: true },
     ],
   },
   {
     // What the work was worth, and what is still owed for it. Second because
     // money is the outcome of the work above and the justification for the
     // spending below.
-    title: 'Money',
+    title: 'nav.group.money',
     sections: [
-      { href: '/admin/money', label: 'Profit', ranged: true },
+      { href: '/admin/money', label: 'nav.profit', ranged: true },
       // Deliberately not ranged: ageing is measured to today, and a date window
       // on an ageing report hides the ninety-day debts, which are the only ones
       // that matter.
-      { href: '/admin/money/unpaid', label: 'Unpaid' },
+      { href: '/admin/money/unpaid', label: 'nav.unpaid' },
       // Also not ranged: a job that stalled in June is still stalled today.
-      { href: '/admin/money/stuck', label: 'Stuck' },
-      { href: '/admin/money/dispatchers', label: 'Dispatchers', ranged: true },
-      { href: '/admin/money/technicians', label: 'Technicians', ranged: true },
-      { href: '/admin/money/payments', label: 'Payments', ranged: true },
+      { href: '/admin/money/stuck', label: 'nav.stuck' },
+      { href: '/admin/money/dispatchers', label: 'nav.dispatchers', ranged: true },
+      { href: '/admin/money/technicians', label: 'nav.technicians', ranged: true },
+      { href: '/admin/money/payments', label: 'nav.payments', ranged: true },
     ],
   },
   {
     // What it costs to be found, and what that buys.
-    title: 'Getting found',
+    title: 'nav.group.found',
     sections: [
-      { href: '/admin/channels', label: 'Channels', ranged: true },
-      { href: '/admin/spend', label: 'Ad spend', ranged: true },
-      { href: '/admin/search', label: 'Search', ranged: true },
-      { href: '/admin/presence', label: 'Listings' },
-      { href: '/admin/marketing', label: 'Content' },
+      { href: '/admin/channels', label: 'nav.channels', ranged: true },
+      { href: '/admin/spend', label: 'nav.spend', ranged: true },
+      { href: '/admin/search', label: 'nav.search', ranged: true },
+      { href: '/admin/presence', label: 'nav.presence' },
+      { href: '/admin/marketing', label: 'nav.content' },
     ],
   },
   {
     // The site itself: whether it works, and where people give up on it.
-    title: 'Website',
+    title: 'nav.group.website',
     sections: [
-      { href: '/admin/live', label: 'Live now' },
-      { href: '/admin/funnel', label: 'Funnel', ranged: true },
-      { href: '/admin/pages', label: 'Pages', ranged: true },
-      { href: '/admin/geo', label: 'Geography', ranged: true },
-      { href: '/admin/quality', label: 'Lead quality', ranged: true },
-      { href: '/admin/speed', label: 'Speed', ranged: true },
+      { href: '/admin/live', label: 'nav.live' },
+      { href: '/admin/funnel', label: 'nav.funnel', ranged: true },
+      { href: '/admin/pages', label: 'nav.pages', ranged: true },
+      { href: '/admin/geo', label: 'nav.geo', ranged: true },
+      { href: '/admin/quality', label: 'nav.quality', ranged: true },
+      { href: '/admin/speed', label: 'nav.speed', ranged: true },
     ],
   },
 ];
 
-const SETTINGS: Section = { href: '/admin/settings', label: 'Settings' };
+const SETTINGS: Section = { href: '/admin/settings', label: 'nav.settings' };
 
 const ALL: Section[] = [OVERVIEW, ...GROUPS.flatMap((g) => g.sections), SETTINGS];
 
@@ -119,6 +122,7 @@ function currentIsRanged(pathname: string): boolean {
 }
 
 function Nav() {
+  const t = useT();
   const pathname = usePathname();
   const params = useSearchParams();
   const router = useRouter();
@@ -149,7 +153,7 @@ function Nav() {
           : 'text-gray-600 hover:bg-cream-dark hover:text-ink'
       )}
     >
-      {section.label}
+      {t(section.label)}
     </Link>
   );
 
@@ -164,7 +168,7 @@ function Nav() {
           aria-expanded={open}
           className="rounded-card border border-primary-500/30 px-3 py-1.5 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600"
         >
-          {open ? 'Close' : 'Menu'}
+          {open ? t('nav.close') : t('nav.menu')}
         </button>
         {currentIsRanged(pathname) && (
           <RangeButtons range={range} setRange={setRange} className="ml-auto" />
@@ -183,7 +187,7 @@ function Nav() {
           {GROUPS.map((group) => (
             <div key={group.title}>
               <div className="px-3 pb-1.5 font-heading text-[9px] uppercase tracking-label text-gray-400">
-                {group.title}
+                {t(group.title)}
               </div>
               <div className="space-y-0.5">{group.sections.map(link)}</div>
             </div>
@@ -205,6 +209,7 @@ function RangeButtons({
   setRange: (key: string) => void;
   className?: string;
 }) {
+  const t = useT();
   return (
     <div className={cn('flex items-center gap-1', className)}>
       {RANGE_PRESETS.map((preset) => (
@@ -219,7 +224,9 @@ function RangeButtons({
               : 'border-primary-500/25 text-gray-600 hover:border-ink hover:text-ink'
           )}
         >
-          {preset.label.replace('Last ', '')}
+          {/* Not `label.replace('Last ', '')` — string surgery on display text
+              is a silent no-op the moment the display text is not English. */}
+          {t(`range.${preset.key}` as TranslationKey)}
         </button>
       ))}
     </div>
@@ -245,6 +252,7 @@ function CustomRange({
   to: string;
   onPick: (from: string, to: string) => void;
 }) {
+  const t = useT();
   const [start, setStart] = useState(from);
   const [end, setEnd] = useState(to);
   const changed = start && end && (start !== from || end !== to);
@@ -256,16 +264,16 @@ function CustomRange({
     <div className="flex items-center gap-1">
       <input
         type="date"
-        aria-label="From"
+        aria-label={t('range.from')}
         value={start}
         max={end || undefined}
         onChange={(event) => setStart(event.target.value)}
         className={field}
       />
-      <span className="text-[10px] text-gray-500">to</span>
+      <span className="text-[10px] text-gray-500">{t('range.to')}</span>
       <input
         type="date"
-        aria-label="To"
+        aria-label={t('range.to')}
         value={end}
         min={start || undefined}
         onChange={(event) => setEnd(event.target.value)}
@@ -282,7 +290,7 @@ function CustomRange({
             : 'border-primary-500/20 text-gray-400'
         )}
       >
-        Apply
+        {t('range.apply')}
       </button>
     </div>
   );

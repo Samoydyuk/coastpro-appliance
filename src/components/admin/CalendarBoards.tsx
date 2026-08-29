@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { timeOfDay, dayKey } from '@/lib/bookings/month';
 import { groupByLane, lanesFor, type Lane } from '@/lib/bookings/lanes';
 import type { CalendarJob } from '@/lib/bookings/client';
+import { shopHour } from '@/lib/admin/clock';
 
 /**
  * The two dispatcher boards: a week by technician, and a day by technician.
@@ -103,13 +104,10 @@ export function DayBoard({ jobs, lanes, day }: { jobs: CalendarJob[]; lanes: Lan
   /** Where a visit sits, and how tall it is, in hour-rows. */
   const place = (job: CalendarJob) => {
     const start = new Date(job.scheduledAt);
-    const local = Number(
-      new Intl.DateTimeFormat('en-US', {
-        timeZone: process.env.NEXT_PUBLIC_SHOP_TIMEZONE || 'America/Los_Angeles',
-        hour: 'numeric',
-        hour12: false,
-      }).format(start)
-    );
+    // Not `Number(format(...))`: that reads 24 at midnight under one locale and
+    // 0 under another, which would make this layout move with the interface
+    // language. `shopHour` pins the format and normalises.
+    const local = shopHour(start);
     const top = Math.max(0, local - DAY_START);
     const span = Math.max(1, Math.round((job.estimatedDuration ?? 60) / 60));
     return { top, span: Math.min(span, DAY_END - DAY_START - top) };

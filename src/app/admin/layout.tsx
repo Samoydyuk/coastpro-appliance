@@ -3,6 +3,9 @@ import Image from 'next/image';
 import { AdminNav, AdminRangeBar } from '@/components/admin/AdminNav';
 import { CallBar } from '@/components/admin/CallBar';
 import { getSeat } from '@/lib/dispatch/client';
+import { currentLang, serverTranslator } from '@/lib/i18n/server';
+import { LanguageProvider } from '@/components/admin/LanguageProvider';
+import { LanguageSwitch } from '@/components/admin/LanguageSwitch';
 import { currentAdmin } from '@/lib/admin-guard';
 
 export const metadata = {
@@ -24,6 +27,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // HTML of /admin/login, along with a call bar offering to put a stranger on
   // the business line.
   const admin = await currentAdmin();
+  const lang = currentLang();
+  const t = serverTranslator();
 
   // A seat that is not in the ring group would show a bar that never rings, so
   // the bar appears only once calls can actually arrive.
@@ -31,6 +36,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     ? await getSeat().catch(() => ({ seat: null, ringing: false }))
     : { seat: null, ringing: false };
   return (
+    <LanguageProvider lang={lang}>
     <div className="flex min-h-screen flex-col bg-[#f2f0eb]">
       <header className="border-b border-primary-500/20 bg-[#fcfcfb]">
         <div className="mx-auto flex max-w-[1600px] items-center gap-6 px-5 py-3">
@@ -44,20 +50,21 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             />
           </Link>
           <span className="font-heading text-[10px] uppercase tracking-label text-gray-500">
-            Admin
+            {t('nav.admin')}
           </span>
           <div className="ml-auto flex items-center gap-4">
+            <LanguageSwitch />
             <Link
               href="/"
               className="font-heading text-[10px] uppercase tracking-label text-gray-500 hover:text-ink"
             >
-              View site
+              {t('nav.viewSite')}
             </Link>
             <a
               href="/api/admin/logout"
               className="font-heading text-[10px] uppercase tracking-label text-gray-500 hover:text-ink"
             >
-              Sign out
+              {t('nav.signOut')}
             </a>
           </div>
         </div>
@@ -78,5 +85,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         CoastPro Appliance Repair — jobs, enquiries and advertising in one place.
       </footer>
     </div>
+    </LanguageProvider>
   );
 }
