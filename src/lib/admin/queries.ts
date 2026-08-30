@@ -24,7 +24,7 @@ import type { DateRange } from '@/lib/admin/range';
  * traffic-quality screen is the one place both are counted deliberately, and it
  * spells out what it is counting.
  */
-const HUMAN = `coalesce(is_bot, false) = false and coalesce(is_internal, false) = false and coalesce(is_internal, false) = false`;
+const HUMAN = `coalesce(is_bot, false) = false and coalesce(is_internal, false) = false`;
 
 export interface Totals {
   sessions: number;
