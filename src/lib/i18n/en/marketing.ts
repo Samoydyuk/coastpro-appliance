@@ -453,6 +453,25 @@ export const marketing = {
   'marketplace.on': 'Taking leads',
   'marketplace.off': 'Switched off',
 
+  'marketplace.detail': 'What is in a lead',
+  'marketplace.detailSub':
+    'How much Thumbtack actually sent with the leads of the last {days} days',
+  'marketplace.col.arrivedWith': 'Arrived with',
+  'marketplace.col.share': 'Share',
+  'marketplace.withPhoto': 'A photo or a file',
+  'marketplace.withTime': 'A time the customer said they were free',
+  'marketplace.anonymousLead': 'Neither a name nor a town',
+  'marketplace.detailHint':
+    'A marketplace can start sending less without sending anything different — same webhook, same ' +
+    'event, same count — and nothing else on this page would move. A lead with a photo of the model ' +
+    'plate is one you can prepare for before driving out; a lead with neither a name nor a town is ' +
+    'barely an introduction. Read the shares rather than the counts: the counts follow how busy the ' +
+    'quarter was.',
+  'marketplace.detailPurged':
+    'Another {n} of {total} leads arrived in this window and have since been destroyed under ' +
+    'Thumbtack’s five-business-day rule. They are left out above rather than counted as empty — ' +
+    'that deletion was ours, not them sending less.',
+
   'marketplace.money': 'What the leads cost',
   'marketplace.moneySub': 'Every marketplace lead of the last {days} days, and the work it became',
   'marketplace.charged': 'Charged',

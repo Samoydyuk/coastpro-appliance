@@ -1,4 +1,4 @@
-import { count, dateTime, money } from '@/lib/admin/format';
+import { count, dateTime, money, percent } from '@/lib/admin/format';
 import { getMarketplace, providerLabel } from '@/lib/marketplace/client';
 import type { MarketplaceProvider } from '@/lib/marketplace/client';
 import { OperationsApiError } from '@/lib/bookings/client';
@@ -166,15 +166,15 @@ function Header({ t }: { t: Translator }) {
  * One marketplace, health first.
  *
  * The order of the panels is the order of the questions: is it working, which
- * businesses are wired up, what did the leads cost, and what actually arrived.
- * The setup instructions sit below all of it, where somebody who already has it
- * working never has to scroll past them.
+ * businesses are wired up, how much is inside what arrives, what the leads
+ * cost, and the deliveries themselves. The setup instructions sit below all of
+ * it, where somebody who already has it working never has to scroll past them.
  */
 function ProviderBlock({ provider, t }: { provider: MarketplaceProvider; t: Translator }) {
   const name = providerLabel(provider.provider);
   const age = ageInDays(provider.lastEventAt);
   const stale = age === null || age > STALE_AFTER_DAYS;
-  const { leads, money: figures, events } = provider;
+  const { leads, detail, money: figures, events } = provider;
 
   return (
     <div className="space-y-6">
@@ -282,6 +282,62 @@ function ProviderBlock({ provider, t }: { provider: MarketplaceProvider; t: Tran
             </tbody>
           </Table>
         )}
+      </Panel>
+
+      {/* Small numbers, and the only ones on the page that would notice
+          Thumbtack quietly sending less. A lead with a photograph of the model
+          plate is one a technician can prepare for before driving out; a lead
+          with neither a name nor a town is barely an introduction. */}
+      <Panel
+        title={t('marketplace.detail')}
+        subtitle={t('marketplace.detailSub', { days: WINDOW_DAYS })}
+      >
+        {/* No empty state, on purpose. A window with nothing readable in it is
+            a table of zeros with dashes for shares, which is the truth; an
+            "everything was destroyed" case would otherwise have to be told
+            twice, once as an empty state and once in the note below. */}
+        <Table>
+          <thead>
+            <tr>
+              <Th>{t('marketplace.col.arrivedWith')}</Th>
+              <Th numeric>{t('marketplace.col.leads')}</Th>
+              <Th numeric>{t('marketplace.col.share')}</Th>
+            </tr>
+          </thead>
+          <tbody>
+            <DetailRow
+              label={t('marketplace.withPhoto')}
+              n={detail.withAttachment}
+              of={detail.measured}
+              t={t}
+            />
+            <DetailRow
+              label={t('marketplace.withTime')}
+              n={detail.withProposedTime}
+              of={detail.measured}
+              t={t}
+            />
+            <DetailRow
+              label={t('marketplace.anonymousLead')}
+              n={detail.anonymous}
+              of={detail.measured}
+              t={t}
+              // The one row here where a bigger number is a worse quarter.
+              bad
+            />
+          </tbody>
+        </Table>
+
+        <Hint>{t('marketplace.detailHint')}</Hint>
+
+        {detail.purged > 0 ? (
+          <Hint>
+            {t('marketplace.detailPurged', {
+              n: count(detail.purged, t.lang),
+              total: count(detail.measured + detail.purged, t.lang),
+            })}
+          </Hint>
+        ) : null}
       </Panel>
 
       <Panel
@@ -392,6 +448,45 @@ function ProviderBlock({ provider, t }: { provider: MarketplaceProvider; t: Tran
         )}
       </Panel>
     </div>
+  );
+}
+
+/**
+ * One line of what a lead arrived with.
+ *
+ * The share is the figure to read and the count is there to stop it being read
+ * out of two leads: 50% of a quiet fortnight is one photograph. Rounded to
+ * whole percent, because a tenth of a point on a number this small is precision
+ * the count cannot support. With nothing to divide by, `percent` writes a dash
+ * rather than a zero — no leads and no photographs are different sentences.
+ */
+function DetailRow({
+  label,
+  n,
+  of,
+  t,
+  bad = false,
+}: {
+  label: string;
+  n: number;
+  of: number;
+  t: Translator;
+  bad?: boolean;
+}) {
+  return (
+    <tr>
+      <Td>{label}</Td>
+      <Td numeric className={n ? undefined : 'text-gray-400'}>
+        {count(n, t.lang)}
+      </Td>
+      <Td numeric className={bad && n ? 'font-medium' : 'text-gray-600'}>
+        {bad && n ? (
+          <span style={{ color: STATUS.warning }}>{percent(n / of, 0, t.lang)}</span>
+        ) : (
+          percent(n / of, 0, t.lang)
+        )}
+      </Td>
+    </tr>
   );
 }
 

@@ -69,6 +69,32 @@ export interface MarketplaceLeadCounts {
   declined: number;
 }
 
+/**
+ * How much of a lead actually arrives.
+ *
+ * The lead count says the channel is alive; it says nothing about what is in
+ * them. A marketplace that keeps delivering but starts sending less — no
+ * photograph, no name, no town — moves nothing else on this page, and only a
+ * share can show it.
+ */
+export interface MarketplaceDetail {
+  /**
+   * What the three counts below are out of, and deliberately not
+   * `leads.received`: the window's leads less the purged ones.
+   */
+  measured: number;
+  /** The customer's own photograph or file — usually the model plate. */
+  withAttachment: number;
+  withProposedTime: number;
+  /** Neither a name nor a town. */
+  anonymous: number;
+  /**
+   * Destroyed under Thumbtack's five-business-day rule, so no longer readable.
+   * Held out of `measured` rather than counted as empty — that deletion is ours.
+   */
+  purged: number;
+}
+
 export interface MarketplaceMoney {
   /** Charged less refunded. **Null means unknown, never zero** — a marketplace
    *  whose statement nobody has entered has not given its leads away. */
@@ -93,6 +119,7 @@ export interface MarketplaceConnection {
   lastEventAt: string | null;
   events: { received: number; failed: number };
   leads: MarketplaceLeadCounts;
+  detail: MarketplaceDetail;
   money: MarketplaceMoney;
 }
 
@@ -123,6 +150,7 @@ export interface MarketplaceProvider {
     unattributed: number;
   };
   leads: MarketplaceLeadCounts;
+  detail: MarketplaceDetail;
   money: MarketplaceMoney;
   connections: MarketplaceConnection[];
   recent: MarketplaceEvent[];
