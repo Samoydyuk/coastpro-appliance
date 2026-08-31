@@ -28,6 +28,7 @@ export const core = {
   'nav.channels': 'Channels',
   'nav.spend': 'Ad spend',
   'nav.search': 'Search',
+  'nav.marketplace': 'Marketplaces',
   'nav.presence': 'Listings',
   'nav.content': 'Content',
   'nav.live': 'Live now',

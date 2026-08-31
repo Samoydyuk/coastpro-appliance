@@ -77,6 +77,11 @@ const GROUPS: Group[] = [
       { href: '/admin/channels', label: 'nav.channels', ranged: true },
       { href: '/admin/spend', label: 'nav.spend', ranged: true },
       { href: '/admin/search', label: 'nav.search', ranged: true },
+      // Not ranged, the same reasoning as Listings below it: the figure the
+      // screen exists for is when a lead last arrived, measured to today. A
+      // date window over that would hide a webhook that stopped in June behind
+      // a quiet week.
+      { href: '/admin/marketplace', label: 'nav.marketplace' },
       { href: '/admin/presence', label: 'nav.presence' },
       { href: '/admin/marketing', label: 'nav.content' },
     ],

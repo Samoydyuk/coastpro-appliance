@@ -412,6 +412,88 @@ export const marketing = {
     'Two sentences that can sit under a photo anywhere: what was wrong, what was done. No call ' +
     'to action, no hashtags.',
 
+  // Marketplaces. Leads bought from Thumbtack, and whether they still arrive.
+  'marketplace.title': 'Marketplaces',
+  'marketplace.subtitle':
+    'Leads bought over the last {days} days. The last delivery is measured to now, not to that window.',
+  'marketplace.notConnected': 'Marketplace leads',
+  'marketplace.lastDelivery': 'Last delivery',
+  'marketplace.never': 'Never',
+  'marketplace.leadsBought': 'Leads bought',
+  'marketplace.repliedTo': '{n} answered',
+  'marketplace.becameCustomers': 'Became customers',
+  'marketplace.lostAndUnanswered': '{lost} lost · {unanswered} never answered',
+  'marketplace.costPerCustomer': 'Cost per customer',
+  'marketplace.unknown': 'Unknown',
+  'marketplace.costPartialShort': 'part of the window only',
+
+  'marketplace.stale':
+    'Nothing has arrived from {provider} for {days}. A webhook that has quietly stopped and a quiet ' +
+    'week look exactly the same from here, so check the webhook is still listed in Thumbtack before ' +
+    'concluding the work has dried up.',
+  'marketplace.neverAnything':
+    'No delivery has ever arrived. Until one does, nothing on this page can tell you whether the ' +
+    'webhook is wired up wrongly or simply has had nothing to send.',
+  'marketplace.someFailed':
+    '{failed} of {total} deliveries were not handled. The lead inside each of them never reached the inbox.',
+  'marketplace.unattributed':
+    '{n} of them arrived on the key but matched no linked business — either the payload carried no ' +
+    'business id, or that business is connected to a different JobPocket account.',
+
+  'marketplace.businesses': 'Linked businesses',
+  'marketplace.businessesSub':
+    'Thumbtack allows one business per webhook, so two businesses means two webhooks — told apart by the business id inside each payload',
+  'marketplace.noBusinesses': 'No business is linked yet.',
+  'marketplace.col.business': 'Business',
+  'marketplace.col.lastDelivery': 'Last delivery',
+  'marketplace.col.deliveries': 'Deliveries',
+  'marketplace.col.failed': 'Failed',
+  'marketplace.col.leads': 'Leads',
+  'marketplace.col.customers': 'Customers',
+  'marketplace.on': 'Taking leads',
+  'marketplace.off': 'Switched off',
+
+  'marketplace.money': 'What the leads cost',
+  'marketplace.moneySub': 'Every marketplace lead of the last {days} days, and the work it became',
+  'marketplace.charged': 'Charged',
+  'marketplace.refunded': 'Refunded',
+  'marketplace.netCost': 'Lead cost',
+  'marketplace.pending': 'Still refundable',
+  'marketplace.invoiced': 'Invoiced',
+  'marketplace.paid': 'Paid',
+  'marketplace.noCost':
+    'No cost has been recorded against these leads, so what they were worth cannot be set against ' +
+    'what they cost. That is unknown, not free.',
+  'marketplace.costPartial':
+    'Only {n} of {total} leads carry a recorded cost, so every figure below covers that much of the window and no more.',
+  'marketplace.moneyHint':
+    'Thumbtack reports the price it charged before any refund, and publishes no event at all when it ' +
+    'gives one back — so a lead refunded inside their 72-hour window still shows here at full price. ' +
+    'And if this same webhook is also wired into Zapier, one lead can arrive twice: the revenue would ' +
+    'be counted twice while its cost is counted once.',
+
+  'marketplace.log': 'Delivery log',
+  'marketplace.logSub': 'What actually arrived, newest first',
+  'marketplace.col.type': 'Event',
+  'marketplace.col.arrived': 'Arrived',
+  'marketplace.col.outcome': 'Outcome',
+  'marketplace.handled': 'Handled',
+  'marketplace.notHandled': 'Not handled',
+  'marketplace.noEvents': 'Nothing has arrived in this window.',
+
+  'marketplace.setup': 'Setting it up',
+  'marketplace.setupSub': 'Free and self-serve — there is no partner agreement to sign',
+  'marketplace.setupUrl': 'The webhook address',
+  'marketplace.setupWhere':
+    'In Thumbtack: profile photo → Integrations → Manage webhooks → Create webhook.',
+  'marketplace.setupAuth':
+    'Thumbtack asks for a username and a password. Both come from the JobPocket integration key, ' +
+    'minted in JobPocket under Settings → Integrations → Thumbtack. It is shown once, there, and ' +
+    'never on this page — a key that appears on a screen is a key that ends up in a screenshot.',
+  'marketplace.setupOne':
+    'One webhook per business. A second Thumbtack business needs a second webhook pointing at the ' +
+    'same address with the same credential; the business id inside each payload is what tells them apart.',
+
   // Plurals. English needs two forms; Ukrainian needs four.
   'marketing.plural.piece.one': '{n} piece',
   'marketing.plural.piece.few': '{n} pieces',

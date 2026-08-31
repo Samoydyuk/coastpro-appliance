@@ -409,6 +409,88 @@ export const marketing: Record<keyof typeof source, string> = {
     'Два речення, які можна поставити під будь-яким фото: що було не так, що зробили. Без ' +
     'заклику до дії та хештегів.',
 
+  // Маркетплейси. Куплені звернення з Thumbtack і чи вони взагалі ще надходять.
+  'marketplace.title': 'Маркетплейси',
+  'marketplace.subtitle':
+    'Звернення, куплені за останні {days} днів. Час останньої доставки рахується від сьогодні, а не від цього періоду.',
+  'marketplace.notConnected': 'Звернення з маркетплейсів',
+  'marketplace.lastDelivery': 'Остання доставка',
+  'marketplace.never': 'Жодної',
+  'marketplace.leadsBought': 'Куплено звернень',
+  'marketplace.repliedTo': 'відповіли на {n}',
+  'marketplace.becameCustomers': 'Стали клієнтами',
+  'marketplace.lostAndUnanswered': 'втрачено {lost} · без відповіді {unanswered}',
+  'marketplace.costPerCustomer': 'Ціна одного клієнта',
+  'marketplace.unknown': 'Невідомо',
+  'marketplace.costPartialShort': 'лише частина періоду',
+
+  'marketplace.stale':
+    'Від {provider} нічого не надходило вже {days}. Вебхук, який тихо зламався, і просто спокійний ' +
+    'тиждень звідси виглядають однаково, тож перевірте, чи вебхук досі є в списку в Thumbtack, ' +
+    'перш ніж вирішити, що роботи просто немає.',
+  'marketplace.neverAnything':
+    'Жодної доставки ще не було. Поки не надійде перша, ця сторінка не може сказати, чи вебхук ' +
+    'налаштовано неправильно, чи просто не було чого надсилати.',
+  'marketplace.someFailed':
+    'Не оброблено {failed} доставок із {total}. Звернення з кожної з них так і не потрапило у вхідні.',
+  'marketplace.unattributed':
+    'З них {n} надійшли з ключем, але не збіглися з жодним підключеним бізнесом — або в тілі запиту ' +
+    'не було ідентифікатора бізнесу, або цей бізнес підключений до іншого акаунта JobPocket.',
+
+  'marketplace.businesses': 'Підключені бізнеси',
+  'marketplace.businessesSub':
+    'Thumbtack дозволяє один бізнес на вебхук, тож два бізнеси — це два вебхуки; розрізняються за ідентифікатором бізнесу в тілі запиту',
+  'marketplace.noBusinesses': 'Жодного бізнесу ще не підключено.',
+  'marketplace.col.business': 'Бізнес',
+  'marketplace.col.lastDelivery': 'Остання доставка',
+  'marketplace.col.deliveries': 'Доставок',
+  'marketplace.col.failed': 'Збоїв',
+  'marketplace.col.leads': 'Звернень',
+  'marketplace.col.customers': 'Клієнтів',
+  'marketplace.on': 'Приймає звернення',
+  'marketplace.off': 'Вимкнено',
+
+  'marketplace.money': 'Скільки коштували звернення',
+  'marketplace.moneySub': 'Усі звернення з маркетплейсів за останні {days} днів і робота, якою вони стали',
+  'marketplace.charged': 'Нараховано',
+  'marketplace.refunded': 'Повернуто',
+  'marketplace.netCost': 'Вартість звернень',
+  'marketplace.pending': 'Ще можуть повернути',
+  'marketplace.invoiced': 'Виставлено',
+  'marketplace.paid': 'Оплачено',
+  'marketplace.noCost':
+    'За цими зверненнями не записано жодної витрати, тож немає з чим порівняти зароблене. Це ' +
+    'невідомо, а не безкоштовно.',
+  'marketplace.costPartial':
+    'Вартість записана лише для {n} звернень із {total}, тож усі цифри нижче покривають саме стільки, і не більше.',
+  'marketplace.moneyHint':
+    'Thumbtack повідомляє ціну до будь-якого повернення і взагалі не надсилає події, коли гроші ' +
+    'повертає, — тож звернення, за яке повернули кошти в їхнє 72-годинне вікно, тут усе одно ' +
+    'показане за повною ціною. А якщо цей самий вебхук під’єднано ще й до Zapier, одне звернення ' +
+    'може прийти двічі: виручку порахує двічі, а вартість — один раз.',
+
+  'marketplace.log': 'Журнал доставок',
+  'marketplace.logSub': 'Що насправді надійшло, найновіше зверху',
+  'marketplace.col.type': 'Подія',
+  'marketplace.col.arrived': 'Надійшло',
+  'marketplace.col.outcome': 'Результат',
+  'marketplace.handled': 'Оброблено',
+  'marketplace.notHandled': 'Не оброблено',
+  'marketplace.noEvents': 'За цей період нічого не надходило.',
+
+  'marketplace.setup': 'Як налаштувати',
+  'marketplace.setupSub': 'Безкоштовно і самостійно — жодних партнерських угод підписувати не треба',
+  'marketplace.setupUrl': 'Адреса вебхука',
+  'marketplace.setupWhere':
+    'У Thumbtack: фото профілю → Integrations → Manage webhooks → Create webhook.',
+  'marketplace.setupAuth':
+    'Thumbtack просить логін і пароль. Обидва беруться з ключа інтеграції JobPocket, який ' +
+    'створюється в JobPocket у Налаштуваннях → Інтеграції → Thumbtack. Він показується один раз, ' +
+    'там, і ніколи на цій сторінці — ключ, який з’являється на екрані, рано чи пізно потрапляє на скріншот.',
+  'marketplace.setupOne':
+    'Один вебхук на один бізнес. Для другого бізнесу в Thumbtack потрібен другий вебхук на ту саму ' +
+    'адресу і з тим самим ключем; розрізняє їх ідентифікатор бізнесу в тілі кожного запиту.',
+
   // Множина: в англійській дві форми, в українській — чотири.
   'marketing.plural.piece.one': '{n} матеріал',
   'marketing.plural.piece.few': '{n} матеріали',

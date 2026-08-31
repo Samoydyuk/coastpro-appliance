@@ -32,6 +32,7 @@ export const core: Record<keyof typeof source, string> = {
   'nav.channels': 'Канали',
   'nav.spend': 'Витрати на рекламу',
   'nav.search': 'Пошук',
+  'nav.marketplace': 'Маркетплейси',
   'nav.presence': 'Довідники',
   'nav.content': 'Контент',
   'nav.live': 'Зараз на сайті',

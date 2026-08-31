@@ -509,7 +509,7 @@ interface StatusResult {
   token: string;
   found: boolean;
   externalId?: string | null;
-  status?: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED';
+  status?: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'CANCELLED' | 'LOST' | 'UNANSWERED';
   respondedAt?: string | null;
   job?: {
     id: string;
@@ -535,10 +535,22 @@ export function deriveState(result: StatusResult, previous: string | null): stri
   const job = result.job;
   if (result.status === 'PENDING') return 'pending';
   if (result.status === 'DECLINED') return 'declined';
+  // Wanted it, somebody else got it. Read as its own outcome rather than as a
+  // decline: on a paid channel how often this happens is most of what is being
+  // judged, and folding it into "I said no" hides exactly that.
+  if (result.status === 'LOST') return 'lost';
+  // Nobody ever answered — the customer went quiet. Where a marketplace's
+  // no-response refund attaches, so it must not read as work won.
+  if (result.status === 'UNANSWERED') return 'unanswered';
   if (result.status === 'CANCELLED') {
     return previous && previous !== 'pending' ? 'cancelled_post' : 'cancelled_pre';
   }
 
+  // Accepted, with no job behind it yet. Every status that is not work in
+  // progress has been named above, and that matters: this line used to be
+  // reached by LOST and UNANSWERED too, which marked a lead booked, set
+  // `booked_at`, and left it being polled for ever. On a channel where most
+  // leads are lost, the close rate read as very nearly perfect.
   if (!job) return 'accepted';
   if (job.paymentStatus === 'PAID' || job.status === 'PAID') return 'paid';
   if (job.paymentStatus === 'REFUNDED') return 'refunded';
@@ -563,6 +575,11 @@ function conflictFor(state: string, currentStatus: string): string | null {
   if (state === 'declined' && ['booked', 'won'].includes(currentStatus)) {
     return 'declined_after_booked';
   }
+  // Somebody marked this booked here and JobPocket says it went elsewhere, or
+  // was never answered. One of the two is wrong and a person has to say which.
+  if ((state === 'lost' || state === 'unanswered') && ['booked', 'won'].includes(currentStatus)) {
+    return `${state}_after_booked`;
+  }
   if (state.startsWith('cancelled') && ['booked', 'won'].includes(currentStatus)) {
     return 'cancelled_after_booked';
   }
@@ -572,8 +589,12 @@ function conflictFor(state: string, currentStatus: string): string | null {
 
 /** How long until this lead is worth asking about again. */
 function nextPollInterval(state: string): string | null {
-  if (['declined', 'cancelled_pre', 'cancelled_post', 'refunded', 'gone'].includes(state)) {
-    return null; // settled
+  // `lost` and `unanswered` are endings, not waypoints: the request went to
+  // somebody else or died of silence, and neither comes back. Asking again
+  // daily for ever is the failure this list exists to prevent.
+  const settled = ['declined', 'lost', 'unanswered', 'cancelled_pre', 'cancelled_post', 'refunded', 'gone'];
+  if (settled.includes(state)) {
+    return null;
   }
   return '1 day';
 }
