@@ -1,6 +1,8 @@
 import { db, quietly } from '@/lib/db';
 import { openSecret } from '@/lib/secrets';
 import { queueWonConversion, flushConversionQueue } from '@/lib/conversions';
+import { CHANNELS, CHANNEL_LABELS, type Channel } from '@/lib/attribution';
+import { pushChannelSpend, type SpendEntry } from '@/lib/channels/client';
 
 /**
  * Talking to JobPocket.
@@ -231,6 +233,7 @@ interface LeadRow {
   device: string | null;
   geo_city: string | null;
   geo_region: string | null;
+  lt_channel: string | null;
   lt_source: string | null;
   lt_medium: string | null;
   lt_campaign: string | null;
@@ -288,6 +291,25 @@ async function sendLead(lead: LeadRow, config: JobPocketConfig): Promise<PushOut
       ? `https://coastpro.us${lead.lt_landing_path}`
       : undefined,
     referrerUrl: lead.lt_referrer ?? undefined,
+    /**
+     * The channel this console already worked out, and the one line that lets a
+     * Google Ads enquiry be counted against Google Ads spend.
+     *
+     * JobPocket compares it literally against `LeadChannel.sourceMatch`, and
+     * `mirrorAdSpend` below files the month's invoice under the same slug — so
+     * the lead and the money it cost meet on one row without anybody mapping
+     * anything by hand. `utmSource` beside it is the raw tag and is not a
+     * substitute: `google` and `google_ads` and an untagged click with a `gclid`
+     * are all this channel, and only `lib/attribution.ts` knows that.
+     *
+     * Checked against `CHANNELS` rather than passed straight through. JobPocket
+     * answers an unrecognised shape with a 400, and a 400 is terminal here —
+     * `recordPushOutcome` marks the lead `failed` and never tries it again. A
+     * customer reaching the contractor's phone must not depend on a column that
+     * only feeds a report, so an unfamiliar value is left off and the rest of
+     * the attribution still lands.
+     */
+    channel: CHANNELS.includes(lead.lt_channel as never) ? lead.lt_channel ?? undefined : undefined,
     utmSource: lead.lt_source ?? undefined,
     utmMedium: lead.lt_medium ?? undefined,
     utmCampaign: lead.lt_campaign ?? undefined,
@@ -444,7 +466,7 @@ export async function pushLeadNow(leadId: string | null): Promise<PushOutcome> {
       select id, name, email, phone, address, city, zip, appliance, brand, problem, message,
              service_name, preferred_start, preferred_end,
              device, geo_city, geo_region,
-             lt_source, lt_medium, lt_campaign, lt_term, lt_content,
+             lt_channel, lt_source, lt_medium, lt_campaign, lt_term, lt_content,
              lt_landing_path, lt_referrer,
              gclid, gbraid, wbraid, fbclid, msclkid, ttclid
       from leads where id = ${leadId}::uuid
@@ -785,4 +807,172 @@ export async function syncJobPocketOutcomes(limit = 50) {
   }
 
   return { polled: open.length, promoted, conflicts };
+}
+
+// ---------------------------------------------------------------------------
+// Sending the spend the other way
+// ---------------------------------------------------------------------------
+
+/**
+ * Which `ad_spend.source` values are a platform's own figure.
+ *
+ * An allowlist, and the direction matters. Anything not named here — the
+ * `manual` a person types on `/admin/spend`, the `manual_entry` somebody copies
+ * off a dashboard with no API, and any importer a later version adds without
+ * touching this line — is reported as hand-typed. Calling an importer's number
+ * hand-typed loses a little confidence; calling a hand-typed number a statement
+ * is a claim nobody can check, and the channels page exists to say which is
+ * which. `manual_csv` counts as a statement: the file is the platform's export,
+ * even though a person had to fetch it.
+ */
+const IMPORTER_SOURCES: string[] = ['google_ads_script', 'meta_api', 'gbp_api', 'manual_csv'];
+
+interface SpendGroupRow {
+  channel: string;
+  period_start: string;
+  period_end: string;
+  cost_cents: number;
+  row_count: number;
+  imported_count: number;
+}
+
+/**
+ * The console's `ad_spend`, mirrored into JobPocket as period totals.
+ *
+ * Source of truth does not move: spend is still entered here and imported here.
+ * What moves is where payback is *computed*, because only JobPocket holds both
+ * halves — the ad money this table records and the marketplace charges that
+ * never touch this database. `lib/channels/client.ts` opens with the full
+ * argument.
+ *
+ * Three months, not one: the last two full months plus the one in progress, so
+ * a late correction to July's invoice still reaches JobPocket in August.
+ * Re-sending is the normal case rather than the exception — JobPocket keys each
+ * figure on the channel and the two dates and upserts, so a month sent thirty
+ * nights running is one row that keeps being corrected.
+ *
+ * Every channel gets a row for every month in the window, including the months
+ * it spent nothing. That is what makes an emptied month reachable: if the owner
+ * deletes August's Google Ads rows on `/admin/spend`, a query that only
+ * returned what exists would simply stop mentioning August, and JobPocket would
+ * go on reporting the old figure for ever. A zero is JobPocket's instruction to
+ * delete the row rather than store a nought, which is the difference between a
+ * month reading as *unknown* and reading as *free*.
+ */
+export async function mirrorAdSpend(): Promise<
+  | { ok: true; entries: number; written: number; deleted: number; totalCents: number }
+  | { ok: false; reason: string }
+> {
+  const sql = db();
+  if (!sql) return { ok: false, reason: 'no database' };
+
+  /**
+   * Read, never tripped.
+   *
+   * `flushLeadPushQueue` runs first in the same cron, against the same host, so
+   * by the time this runs the breaker already carries this invocation's own
+   * evidence — and if fifty lead pushes have just timed out there is nothing to
+   * learn from a fifty-first attempt. It must not be *set* from here, though:
+   * an opened breaker makes the next visitor's lead skip its push, and a
+   * customer arriving on the contractor's phone outranks a figure on a report.
+   */
+  if (breakerIsOpen()) return { ok: false, reason: 'circuit open' };
+
+  const rows = await quietly(
+    async () =>
+      (await sql`
+        with months as (
+          select generate_series(
+                   date_trunc('month', current_date) - interval '2 months',
+                   date_trunc('month', current_date),
+                   interval '1 month'
+                 )::date as period_start
+        ),
+        -- A year, so a channel that has gone quiet is still offered a zero and
+        -- can still be cleared. Restricting this to the window would mean a
+        -- channel whose every row was deleted vanished from the query in the
+        -- same breath as it needed clearing.
+        channels as (
+          select distinct channel
+          from ad_spend
+          where day >= date_trunc('month', current_date) - interval '12 months'
+        ),
+        totals as (
+          select channel,
+                 date_trunc('month', day)::date as period_start,
+                 coalesce(sum(cost_cents), 0)::int as cost_cents,
+                 count(*)::int as row_count,
+                 count(*) filter (where source = any(${IMPORTER_SOURCES}::text[]))::int
+                   as imported_count
+          from ad_spend
+          where day >= date_trunc('month', current_date) - interval '2 months'
+          group by 1, 2
+        )
+        select channels.channel,
+               to_char(months.period_start, 'YYYY-MM-DD') as period_start,
+               -- The calendar month's last day even for the month in progress,
+               -- and that is what keeps the key stable: an end that followed
+               -- today would make tonight's "Aug 1 – Aug 29" a different figure
+               -- from last night's "Aug 1 – Aug 28", and the month would
+               -- accumulate one row per night instead of being corrected.
+               to_char(
+                 (months.period_start + interval '1 month' - interval '1 day')::date,
+                 'YYYY-MM-DD'
+               ) as period_end,
+               coalesce(totals.cost_cents, 0)     as cost_cents,
+               coalesce(totals.row_count, 0)      as row_count,
+               coalesce(totals.imported_count, 0) as imported_count
+        from channels
+        cross join months
+        left join totals on totals.channel = channels.channel
+                        and totals.period_start = months.period_start
+        order by months.period_start, channels.channel
+      `) as unknown as SpendGroupRow[]
+  );
+
+  if (!rows) return { ok: false, reason: 'could not read ad_spend' };
+  if (!rows.length) return { ok: true, entries: 0, written: 0, deleted: 0, totalCents: 0 };
+
+  const entries: SpendEntry[] = rows.map((row) => ({
+    channel: row.channel,
+    /**
+     * English, from the constant rather than through `t()`. This is only used
+     * if JobPocket has to create the channel, and it is then that channel's
+     * name for good — in the phone app, on the owner's screen and in every
+     * later report. Whichever language the console happened to be set to on the
+     * night of the first sync has no business deciding that.
+     */
+    label: CHANNEL_LABELS[row.channel as Channel] ?? row.channel,
+    /**
+     * Midday, not the bare date, and this is the difference between August's
+     * spend appearing in an August report and vanishing from it.
+     *
+     * JobPocket stamps the charge with the period's first day and every report
+     * there filters on it. A bare `2026-08-01` reads as midnight UTC, which is
+     * five o'clock the previous afternoon in the shop's timezone — before the
+     * start of any window the console asks for, so the month's whole spend
+     * would fall outside its own month. Midday UTC lands on the right calendar
+     * day for every timezone on earth, and JobPocket takes the key off the ISO
+     * day, so the key is unchanged.
+     */
+    periodStart: `${row.period_start}T12:00:00.000Z`,
+    periodEnd: `${row.period_end}T12:00:00.000Z`,
+    amountCents: Number(row.cost_cents),
+    origin:
+      Number(row.row_count) > 0 && Number(row.imported_count) === Number(row.row_count)
+        ? 'STATEMENT'
+        : 'MANUAL',
+  }));
+
+  try {
+    const result = await pushChannelSpend(entries);
+    return { ok: true, ...result };
+  } catch (error) {
+    // Swallowed here rather than thrown at the cron. This is the least
+    // important thing that route does, and a JobPocket key that was rotated
+    // this afternoon must not stop tonight's conversion upload.
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[jobpocket] ad spend mirror failed:', message);
+    return { ok: false, reason: message.slice(0, 300) };
+  }
 }

@@ -1,7 +1,8 @@
 import { operationsConfig, OperationsApiError } from '@/lib/bookings/client';
 
 /**
- * Reading the paid marketplaces out of JobPocket.
+ * Reading the paid marketplaces out of JobPocket, and writing back the one
+ * figure nobody can push.
  *
  * A Thumbtack lead never touches this website. It has no visitor, no session
  * and no click id, so it cannot go in the console's own `leads` table and
@@ -11,7 +12,9 @@ import { operationsConfig, OperationsApiError } from '@/lib/bookings/client';
  * JobPocket's lead ledger, and the console asks JobPocket what both add up to.
  *
  * Same bargain as `lib/money/client.ts`: JobPocket computes, the console draws.
- * Money arrives as whole cents and is formatted, never recalculated.
+ * Money arrives as whole cents and is formatted, never recalculated. The two
+ * writes at the bottom do not break that bargain — they hand JobPocket a figure
+ * to keep, and every total on the screen still comes back from JobPocket.
  *
  * The request helper below is this file's own rather than borrowed from the
  * money client. It is four lines of fetch either way, and sharing it would mean
@@ -21,7 +24,7 @@ import { operationsConfig, OperationsApiError } from '@/lib/bookings/client';
 
 const REQUEST_TIMEOUT_MS = 10_000;
 
-async function call<T>(path: string): Promise<T> {
+async function call<T>(path: string, init?: RequestInit): Promise<T> {
   const config = await operationsConfig();
   if (!config) {
     throw new OperationsApiError(
@@ -34,7 +37,12 @@ async function call<T>(path: string): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${config.baseUrl}${path}`, {
-      headers: { Authorization: `Bearer ${config.apiKey}` },
+      ...init,
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        'Content-Type': 'application/json',
+        ...(init?.headers ?? {}),
+      },
       cache: 'no-store',
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
@@ -86,6 +94,16 @@ export interface MarketplaceDetail {
   /** The customer's own photograph or file — usually the model plate. */
   withAttachment: number;
   withProposedTime: number;
+  /**
+   * A street line, and not just the town.
+   *
+   * Counted because it stopped being a constant. Everything here used to say a
+   * marketplace lead carries a town and never a street — that came from a third
+   * party's write-up of Thumbtack's API, and the first payload a live account
+   * sent carried one. It is the figure on this table that decides whether a lead
+   * can be planned without ringing the customer first.
+   */
+  withAddress: number;
   /** Neither a name nor a town. */
   anonymous: number;
   /**
@@ -100,6 +118,21 @@ export interface MarketplaceMoney {
    *  whose statement nobody has entered has not given its leads away. */
   leadCostCents: number | null;
   chargedCents: number;
+  /**
+   * `chargedCents` split by where each figure came from, keyed by
+   * `LeadCostOrigin` — `API` for what the marketplace pushed, `MANUAL` for what
+   * somebody typed, and three more for statements, allocations and standing
+   * prices. All five keys are always present and they sum to `chargedCents`.
+   *
+   * The enum's own comment in JobPocket's schema says these "differ enormously
+   * in how far they can be trusted, and the report is required to say which one
+   * it is standing on". This is the field that lets the page say it.
+   *
+   * Only reaches charges hanging off a lead that arrived in the window, which
+   * is nearly always none of the hand-entered ones — those hang off nothing at
+   * all and are counted in `MarketplaceReport.manual` instead.
+   */
+  chargedByOrigin: Record<string, number>;
   refundedCents: number;
   /** Still inside the marketplace's refund window, so still provisional. */
   pendingCents: number;
@@ -156,16 +189,128 @@ export interface MarketplaceProvider {
   recent: MarketplaceEvent[];
 }
 
+/**
+ * One lead cost somebody typed in.
+ *
+ * It has a channel and, usually, nothing else. `bookingRequestId` is null for
+ * most of them and that is the ordinary case, not a fault: a lead that arrived
+ * before the webhook existed never reached JobPocket, so there is no request to
+ * hang the cost on. JobPocket's schema names this case in the field's own
+ * comment, which is why the console can show it as a plain row rather than an
+ * error.
+ */
+export interface ManualCharge {
+  id: string;
+  channelId: string;
+  /** Set only when the owner knew which job the lead became. Usually null. */
+  bookingRequestId: string | null;
+  chargedAt: string;
+  amountCents: number;
+  kind: string;
+  status: string;
+  /** `MANUAL` throughout this list — that is what put it in the list. */
+  origin: string;
+  /** The marketplace's own id for the lead, when the owner could see one. */
+  externalId: string | null;
+  description: string | null;
+}
+
 export interface MarketplaceReport {
   period: { from: string; to: string; days: number; label: string; timezone: string };
   scope: { companies: Array<{ id: string; name: string }>; ownBusiness: string };
   providers: MarketplaceProvider[];
+  /**
+   * Top-level, not inside a provider, because a typed-in charge has no
+   * connection and no business id to file it under. Dated by the day the
+   * marketplace charged rather than by the cohort of leads, so it answers "what
+   * did I type in for this stretch" — which is a different question from the
+   * one every figure above answers, and the reason the page keeps them apart.
+   */
+  manual: {
+    rows: number;
+    chargedCents: number;
+    /** More typed in than one page holds; `charges` and the total cover the listed ones. */
+    truncated: boolean;
+    charges: ManualCharge[];
+  };
 }
 
 export async function getMarketplace(from: Date, to: Date): Promise<MarketplaceReport> {
   return call(
     `/v1/reports/marketplace?from=${from.toISOString()}&to=${to.toISOString()}`
   );
+}
+
+/**
+ * The marketplace a hand-entered charge belongs to.
+ *
+ * One value, because JobPocket accepts one: the endpoint's `provider` is
+ * restricted to the keys of its own `PROVIDER_CHANNELS`, and that table decides
+ * which `LeadChannel` the charge lands on. A second marketplace turns this into
+ * a select on the form and a second entry here — until then a dropdown of one
+ * would be a control that cannot be used.
+ */
+export const MANUAL_CHARGE_PROVIDER = 'THUMBTACK';
+
+export interface ManualChargeInput {
+  provider: string;
+  /** An instant, not a bare date — see the route handler for why it is midday. */
+  chargedAt: string;
+  amountCents: number;
+  description?: string;
+  externalId?: string;
+  bookingRequestId?: string;
+}
+
+export interface ManualChargeResult {
+  ok: true;
+  /** False when an `externalId` matched and the earlier entry was corrected instead. */
+  created: boolean;
+  keyedOn: 'externalId' | null;
+  /**
+   * Same channel, same day, same amount, already typed in.
+   *
+   * A warning and never a refusal: two leads at $25 on one Tuesday is an
+   * ordinary week, so the server hands the collision back and lets the person
+   * who was reading the billing page decide.
+   */
+  possibleDuplicates: ManualCharge[];
+  charge: ManualCharge;
+}
+
+/**
+ * Writing down what a lead cost, because nothing will ever push it.
+ *
+ * Thumbtack's webhook only goes forward and they publish no backfill — reaching
+ * a past negotiation needs the partner OAuth API, which is gated — so a lead
+ * that arrived before the integration did can be recorded in exactly one way:
+ * somebody reads the billing page and types it.
+ *
+ * JobPocket writes it as a `LeadCharge` with no lead attached and
+ * `origin: MANUAL`, which is what keeps a typed figure from ever being counted
+ * as one the marketplace sent. This side cannot ask for anything else: `origin`,
+ * `kind` and `status` are not part of the body and JobPocket strips them.
+ */
+export async function recordManualCharge(input: ManualChargeInput): Promise<ManualChargeResult> {
+  return call('/v1/reports/marketplace/charges', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+/**
+ * Taking a typed figure back.
+ *
+ * The first thing anybody does after typing a number by hand is type it wrong,
+ * and a wrong lead cost is subtracted from the channel's profit and divided into
+ * cost-per-customer on every screen that draws either. JobPocket refuses this
+ * for a charge the marketplace sent — that one is a fact nothing here could put
+ * back.
+ */
+export async function deleteManualCharge(
+  id: string
+): Promise<{ ok: true; id: string; origin: string }> {
+  return call(`/v1/reports/marketplace/charges/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
 /**

@@ -42,6 +42,16 @@ export const marketing = {
   'marketing.col.visits': 'Visits',
   'marketing.col.leads': 'Leads',
   'marketing.col.calls': 'Calls',
+  // The channels table counts leads twice over, from two different systems, so
+  // neither column may borrow the other's word. `enquiries` is a form filled in
+  // on this website; `jpLeads` is what reached JobPocket, which includes every
+  // marketplace lead that never came near the site. In Ukrainian the two are
+  // "звернення" and "ліди" — one column under both names would be unreadable.
+  'marketing.col.enquiries': 'Enquiries',
+  'marketing.col.jpLeads': 'Leads',
+  'marketing.col.costPerJpLead': 'Cost / lead',
+  'marketing.col.jobs': 'Jobs',
+  'marketing.col.return': 'Return',
   'marketing.col.convRate': 'Conv. rate',
   'marketing.col.booked': 'Booked',
   'marketing.col.won': 'Won',
@@ -114,8 +124,40 @@ export const marketing = {
   'marketing.channels.revenueSub': 'Invoiced in JobPocket, for work that began as an enquiry',
   'marketing.channels.noWon': 'No won jobs with a value recorded yet.',
   'marketing.channels.every': 'Every channel',
-  'marketing.channels.everySub': 'Traffic, requests, cost and what came back',
+  'marketing.channels.everySub': 'Traffic and enquiries from this site; spend and payback from JobPocket',
   'marketing.channels.nothing': 'Nothing recorded in this period.',
+  // The three things this table has to admit about itself, folded into two
+  // lines. The page already carries an attribution note and a tagging note, and
+  // a sixth paragraph of caveats is read by nobody.
+  'marketing.channels.sourceNote':
+    'Visits, enquiries, calls and conversion rate are this site’s own tracking — a session, a ' +
+    'form, a call to a tracked number. Everything from Spend rightwards comes from JobPocket, ' +
+    'the only place a marketplace lead and a website enquiry sit in the same ledger. A ' +
+    'Thumbtack customer never visited the site, so the first four columns are blank on those ' +
+    'rows rather than zero: they were never offered the chance, and a nought there would read ' +
+    'as a channel that is failing.',
+  'marketing.channels.unattributedNote':
+    'JobPocket billed {amount} in this period that carries no channel at all — {share} of ' +
+    'everything it billed. Dispatcher work, calls to the shop’s own line and customers who ' +
+    'already had the number arrive with nothing to attribute, so this table explains where the ' +
+    'rest came from, not the whole business.',
+  'marketing.channels.unattributedNone':
+    'Nothing JobPocket billed in this period is missing a channel.',
+  'marketing.channels.spendKindNote':
+    'Spend is not all one kind of fact. Of what these channels billed, {reported} was reported ' +
+    'by the platform or marketplace that charged it and {typed} was typed in by hand. A ' +
+    'channel with no spend at all shows a dash rather than zero — nobody has entered its ' +
+    'invoice, which is a different thing from it having been free. And a month’s advertising ' +
+    'invoice is one figure for the whole month, so it counts in whichever range contains the ' +
+    'first of that month: read this table by calendar month.',
+  'marketing.channels.spendNotMirrored':
+    'No spend has reached JobPocket for this period yet, so the cost and return columns are ' +
+    'blank. Figures entered on the spend page are sent across overnight; if they are still ' +
+    'blank tomorrow, check the JobPocket key in Settings.',
+  'marketing.channels.paybackUnavailable':
+    'JobPocket did not answer for this period, so spend, leads, jobs and return are blank — ' +
+    'the columns from this site’s own tracking are unaffected. Ranges longer than a year ' +
+    'cannot be asked for; otherwise check the JobPocket key in Settings.',
   'marketing.channels.inside': 'Inside the channels',
   'marketing.channels.insideSub': 'The same numbers, one level down',
   'marketing.channels.group.campaign': 'Campaign',
@@ -460,13 +502,16 @@ export const marketing = {
   'marketplace.col.share': 'Share',
   'marketplace.withPhoto': 'A photo or a file',
   'marketplace.withTime': 'A time the customer said they were free',
+  'marketplace.withAddress': 'A street address, not just a town',
   'marketplace.anonymousLead': 'Neither a name nor a town',
   'marketplace.detailHint':
     'A marketplace can start sending less without sending anything different — same webhook, same ' +
     'event, same count — and nothing else on this page would move. A lead with a photo of the model ' +
     'plate is one you can prepare for before driving out; a lead with neither a name nor a town is ' +
-    'barely an introduction. Read the shares rather than the counts: the counts follow how busy the ' +
-    'quarter was.',
+    'barely an introduction. The street address is the line that decides whether a job can be planned ' +
+    'without ringing first, and it is counted here rather than assumed: this page used to state that ' +
+    'Thumbtack never sends one, and the first payload a live account sent carried one. Read the shares ' +
+    'rather than the counts: the counts follow how busy the quarter was.',
   'marketplace.detailPurged':
     'Another {n} of {total} leads arrived in this window and have since been destroyed under ' +
     'Thumbtack’s five-business-day rule. They are left out above rather than counted as empty — ' +
@@ -490,6 +535,58 @@ export const marketing = {
     'gives one back — so a lead refunded inside their 72-hour window still shows here at full price. ' +
     'And if this same webhook is also wired into Zapier, one lead can arrive twice: the revenue would ' +
     'be counted twice while its cost is counted once.',
+
+  // Where each figure came from. The five are JobPocket's `LeadCostOrigin`, and
+  // they are labelled by how far each one can be trusted, not by which table it
+  // was written from.
+  'marketplace.origin.API': 'What the marketplace sent',
+  'marketplace.origin.STATEMENT': 'Read off a statement',
+  'marketplace.origin.ALLOCATED': 'Divided out of a monthly total',
+  'marketplace.origin.DEFAULT': 'The channel’s standing price',
+  'marketplace.origin.MANUAL': 'Typed in by hand',
+  'marketplace.originHint':
+    'What the marketplace sent can be checked against their billing page; what was typed in is one ' +
+    'person’s reading of that page on one afternoon — and for a lead that arrived before the webhook ' +
+    'did, it is the only record there will ever be. They are counted apart so the second kind never ' +
+    'quietly passes for the first.',
+
+  // Costs entered by hand. Thumbtack's webhook only pushes forward and there is
+  // no backfill, so a lead from before it was connected can be recorded no
+  // other way.
+  'marketplace.manual.title': 'Costs typed in by hand',
+  'marketplace.manual.sub':
+    'Leads that arrived before the webhook did, and any it missed — dated by the day the marketplace charged, not the day it was entered',
+  'marketplace.manual.day': 'Charged on',
+  'marketplace.manual.what': 'What it was for',
+  'marketplace.manual.whatPlaceholder': 'Dryer not heating, Palm Coast',
+  'marketplace.manual.theirId': 'Their lead id',
+  'marketplace.manual.theirIdHint':
+    'The lead id is optional and worth pasting when the billing page shows one: with it, entering the ' +
+    'same lead twice corrects the first entry instead of charging you for it twice.',
+  'marketplace.manual.add': 'Record',
+  'marketplace.manual.added': 'Recorded {amount}, charged {day}.',
+  'marketplace.manual.corrected':
+    'That lead id was already recorded, so the earlier entry now reads {amount}, charged {day}.',
+  'marketplace.manual.undo': 'Undo',
+  'marketplace.manual.duplicate':
+    'A charge of this amount is already recorded on this day. Two leads can cost the same, so this may ' +
+    'well be right — but check it is not the same one entered twice.',
+  'marketplace.manual.badDay': 'Pick the day the marketplace charged.',
+  'marketplace.manual.badAmount': 'Enter the amount as the billing page shows it — 25, or 25.50.',
+  'marketplace.manual.failed': 'Could not record that.',
+  'marketplace.manual.removeFailed': 'Could not remove that.',
+  'marketplace.manual.noServer': 'The console could not reach its own server.',
+  'marketplace.manual.none': 'Nothing has been typed in for this period.',
+  'marketplace.manual.total': 'Typed in, in total',
+  'marketplace.manual.remove': 'Remove',
+  'marketplace.manual.removing': 'Removing…',
+  'marketplace.manual.removeConfirm': 'Remove the {amount} charged on {day}?',
+  'marketplace.manual.truncated':
+    'More was typed in for this period than is listed here. These are the most recent, and the total counts these.',
+  'marketplace.manual.hint':
+    'These are not in the table above, and cannot be. Most of them belong to leads that never reached ' +
+    'JobPocket at all — there is nothing on this side to attach the cost to — so the figures above are ' +
+    'what the leads that did arrive cost, and this is what was entered by hand over the same stretch of time.',
 
   'marketplace.log': 'Delivery log',
   'marketplace.logSub': 'What actually arrived, newest first',

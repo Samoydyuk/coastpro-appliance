@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { flushConversionQueue } from '@/lib/conversions';
-import { flushLeadPushQueue, syncJobPocketOutcomes } from '@/lib/jobpocket';
+import { flushLeadPushQueue, mirrorAdSpend, syncJobPocketOutcomes } from '@/lib/jobpocket';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -38,7 +38,15 @@ export async function GET(request: NextRequest) {
     const pushed = await flushLeadPushQueue(50);
     const synced = await syncJobPocketOutcomes(50);
     const result = await flushConversionQueue(50);
-    return NextResponse.json({ ok: true, pushed, synced, ...result });
+
+    // Last, and deliberately. This one feeds nothing below it — it pushes the
+    // last three months of `ad_spend` up to JobPocket so `/admin/channels` can
+    // put ad money and marketplace money on one table. It reports its own
+    // failures instead of raising them, so a rotated key or a slow host costs
+    // this line and nothing else; the three calls above matter more than it
+    // does, and they have already happened.
+    const spend = await mirrorAdSpend();
+    return NextResponse.json({ ok: true, pushed, synced, ...result, spend });
   } catch (error) {
     console.error('Conversion cron failed:', error);
     return NextResponse.json({ error: 'Flush failed' }, { status: 500 });

@@ -1,5 +1,5 @@
 import { count, dateTime, money, percent } from '@/lib/admin/format';
-import { getMarketplace, providerLabel } from '@/lib/marketplace/client';
+import { getMarketplace, providerLabel, MANUAL_CHARGE_PROVIDER } from '@/lib/marketplace/client';
 import type { MarketplaceProvider } from '@/lib/marketplace/client';
 import { OperationsApiError } from '@/lib/bookings/client';
 import {
@@ -14,9 +14,10 @@ import {
   Warning,
 } from '@/components/admin/ui';
 import { NotConnected } from '@/components/admin/NotConnected';
+import { ManualLeadCost } from '@/components/admin/ManualLeadCost';
 import { STATUS } from '@/components/admin/palette';
 import { serverTranslator } from '@/lib/i18n/server';
-import type { Translator } from '@/lib/i18n';
+import type { Translator, TranslationKey } from '@/lib/i18n';
 
 export const dynamic = 'force-dynamic';
 
@@ -125,28 +126,81 @@ export default async function MarketplacePage() {
 
   const { providers } = report;
 
+  /**
+   * The two deploys are separate and one of them can be weeks behind.
+   *
+   * This console ships by hand from a laptop and JobPocket ships to Railway,
+   * where a failed deploy leaves the old container serving happily — so a
+   * console that knows about `manual` can easily be talking to an API that does
+   * not. Reading straight through would take the whole page down with it, and
+   * this page is the one somebody opens to find out whether the marketplace is
+   * still working. An empty panel is a far smaller lie than a 500.
+   */
+  const manual = report.manual ?? { rows: 0, chargedCents: 0, truncated: false, charges: [] };
+
   return (
     <div className="space-y-6">
       <Header t={t} />
       {failure ? <Warning>{failure}</Warning> : null}
 
       {providers.length === 0 ? (
-        <>
-          {/* Not an empty table. Nothing has ever arrived, which is a different
-              sentence from "no leads this quarter" and needs different advice. */}
-          <Warning>{t('marketplace.neverAnything')}</Warning>
-          <SetupPanel t={t} />
-        </>
+        /* Not an empty table. Nothing has ever arrived, which is a different
+           sentence from "no leads this quarter" and needs different advice. */
+        <Warning>{t('marketplace.neverAnything')}</Warning>
       ) : (
-        <>
-          {providers.map((provider) => (
-            <ProviderBlock key={provider.provider} provider={provider} t={t} />
-          ))}
-          <SetupPanel t={t} />
-        </>
+        providers.map((provider) => (
+          <ProviderBlock key={provider.provider} provider={provider} t={t} />
+        ))
       )}
+
+      {/* Shown whether or not a marketplace has ever delivered, and the empty
+          case is the one it was built for: a lead that arrived before the
+          webhook existed has no provider block to sit under, because nothing
+          about it ever reached JobPocket. */}
+      <ManualLeadCost
+        provider={MANUAL_CHARGE_PROVIDER}
+        charges={manual.charges}
+        chargedCents={manual.chargedCents}
+        truncated={manual.truncated}
+      />
+
+      <SetupPanel t={t} />
     </div>
   );
+}
+
+/**
+ * `LeadCostOrigin`, in the schema's own order, and only the ones carrying money.
+ *
+ * A row of zeros says nothing; a missing row says the total is standing
+ * entirely on the origins that are here. An origin this page has no word for
+ * yet is drawn under its raw enum name rather than dropped — a figure that
+ * silently left the breakdown would make it disagree with the total above it,
+ * and a wrong sum is worse than an ugly label.
+ */
+const ORIGIN_ORDER = ['API', 'STATEMENT', 'ALLOCATED', 'DEFAULT', 'MANUAL'] as const;
+
+const ORIGIN_LABELS: Record<string, TranslationKey> = {
+  API: 'marketplace.origin.API',
+  STATEMENT: 'marketplace.origin.STATEMENT',
+  ALLOCATED: 'marketplace.origin.ALLOCATED',
+  DEFAULT: 'marketplace.origin.DEFAULT',
+  MANUAL: 'marketplace.origin.MANUAL',
+};
+
+function originRows(split: Record<string, number> | undefined): Array<[string, number]> {
+  // Undefined only while an older JobPocket is still answering — the same
+  // deploy-order gap the `manual` block above allows for. No breakdown then,
+  // and the total above it carries on being drawn.
+  if (!split) return [];
+
+  const known = ORIGIN_ORDER.filter((origin) => (split[origin] ?? 0) > 0).map(
+    (origin) => [origin, split[origin]] as [string, number]
+  );
+  const unknown = Object.entries(split).filter(
+    ([origin, cents]) => cents > 0 && !ORIGIN_ORDER.includes(origin as (typeof ORIGIN_ORDER)[number])
+  );
+  return [...known, ...unknown];
 }
 
 function Header({ t }: { t: Translator }) {
@@ -317,6 +371,17 @@ function ProviderBlock({ provider, t }: { provider: MarketplaceProvider; t: Tran
               of={detail.measured}
               t={t}
             />
+            {/* The row that decides whether a lead can be worked without ringing
+                first — and a real variable rather than a constant, which is why
+                it is on the table at all: this page used to take it as read that
+                a bought lead never carries a street, and the first payload a
+                live account sent carried one. */}
+            <DetailRow
+              label={t('marketplace.withAddress')}
+              n={detail.withAddress}
+              of={detail.measured}
+              t={t}
+            />
             <DetailRow
               label={t('marketplace.anonymousLead')}
               n={detail.anonymous}
@@ -356,6 +421,18 @@ function ProviderBlock({ provider, t }: { provider: MarketplaceProvider; t: Tran
               <Td>{t('marketplace.charged')}</Td>
               <Td numeric>{money(figures.chargedCents, t.lang)}</Td>
             </tr>
+            {/* What that total is standing on. Indented because it is a
+                breakdown of the line above and not a figure of its own. */}
+            {originRows(figures.chargedByOrigin).map(([origin, cents]) => (
+              <tr key={origin}>
+                <Td className="pl-5 text-gray-600">
+                  {ORIGIN_LABELS[origin] ? t(ORIGIN_LABELS[origin]) : origin}
+                </Td>
+                <Td numeric className="text-gray-600">
+                  {money(cents, t.lang)}
+                </Td>
+              </tr>
+            ))}
             <tr>
               <Td>{t('marketplace.refunded')}</Td>
               <Td numeric className="text-gray-600">
@@ -397,6 +474,10 @@ function ProviderBlock({ provider, t }: { provider: MarketplaceProvider; t: Tran
             </tr>
           </tbody>
         </Table>
+
+        {/* What the breakdown above is for. Two numbers in the same column,
+            in the same currency, that are not the same kind of fact. */}
+        {figures.chargedCents > 0 ? <Hint>{t('marketplace.originHint')}</Hint> : null}
 
         {figures.leadCostCents === null ? (
           <Hint>{t('marketplace.noCost')}</Hint>
