@@ -460,7 +460,12 @@ export async function getFunnel(range: DateRange): Promise<FunnelStage[]> {
     { key: 'visits', label: 'Visits', value: row?.visits ?? 0, note: 'Real people, bots removed' },
     { key: 'engaged', label: 'Engaged', value: row?.engaged ?? 0, note: '15s+ on site, or a second page' },
     { key: 'intent', label: 'Showed intent', value: row?.intent ?? 0, note: 'Started a form or tapped the number' },
-    { key: 'asked', label: 'Asked for service', value: row?.asked ?? 0, note: 'Submitted a form or called' },
+    // "Or called" was a claim this cannot make. A tap on a tel: link is where
+    // our knowledge ends — whether the call connected, or was ever placed, is
+    // only visible once tracking numbers are live. Until then this stage counts
+    // attempts, which is why it can read higher than the requests tile: that
+    // one counts what actually arrived.
+    { key: 'asked', label: 'Asked for service', value: row?.asked ?? 0, note: 'Submitted a form, or tapped to call — a tap is not a confirmed call' },
     { key: 'booked', label: 'Booked a visit', value: outcomes?.booked ?? 0, note: 'Appointment on the calendar' },
     { key: 'won', label: 'Paid job', value: outcomes?.won ?? 0, note: 'Marked won in the lead inbox' },
   ];
