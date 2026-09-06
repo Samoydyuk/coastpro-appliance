@@ -96,7 +96,22 @@ export default function TermsPage() {
               carried out by someone else afterwards, or an appliance that was already at the end of
               its serviceable life and was accepted for repair on that basis.
             </p>
+            <p>
+              Where you supply the part yourself, we warrant our labour in fitting it and nothing
+              more: a part we did not choose and did not buy is not one we can stand behind. We will
+              say so at the time and it is noted on your paperwork.
+            </p>
             <p>Maintenance work such as dryer vent cleaning is not a repair and carries no repair warranty.</p>
+            <p>
+              Some jobs carry a longer or shorter period than the standard{' '}
+              {siteConfig.trustSignals.warrantyDays} days, agreed before the work starts. Where they
+              do, the period written on your estimate or invoice is the one that applies. You can
+              check it, and the date it runs to, at any time under{' '}
+              <Link href="/my" className="underline underline-offset-4 hover:text-ink">
+                your repairs
+              </Link>
+              .
+            </p>
           </LegalSection>
 
           <LegalSection number="06" title="Payment">

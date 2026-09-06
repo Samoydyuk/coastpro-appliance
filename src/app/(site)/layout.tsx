@@ -97,9 +97,9 @@ const jsonLd = {
     longitude: -117.8265,
   },
   areaServed: {
-    '@type': 'County',
+    '@type': 'AdministrativeArea',
     name: 'Orange County',
-    containedIn: {
+    containedInPlace: {
       '@type': 'State',
       name: 'California',
     },

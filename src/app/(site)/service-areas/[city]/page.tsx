@@ -70,8 +70,8 @@ export default async function CityPage({ params }: CityPageProps) {
     areaServed: {
       '@type': 'City',
       name: area.name,
-      containedIn: {
-        '@type': 'County',
+      containedInPlace: {
+        '@type': 'AdministrativeArea',
         name: area.county,
       },
     },

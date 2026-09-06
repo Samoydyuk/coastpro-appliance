@@ -65,9 +65,9 @@ export default async function BrandAppliancePage({ params }: PageProps) {
       provider: { '@id': `${siteConfig.seo.siteUrl}/#organization` },
       brand: { '@type': 'Brand', name: brand.name },
       areaServed: {
-        '@type': 'County',
+        '@type': 'AdministrativeArea',
         name: 'Orange County',
-        containedIn: { '@type': 'State', name: 'California' },
+        containedInPlace: { '@type': 'State', name: 'California' },
       },
     },
     breadcrumbSchema([

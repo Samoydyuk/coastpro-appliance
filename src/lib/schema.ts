@@ -57,9 +57,9 @@ export function serviceSchema(input: {
     url: `${BASE}${input.path}`,
     provider: { '@id': `${BASE}/#organization` },
     areaServed: {
-      '@type': 'County',
+      '@type': 'AdministrativeArea',
       name: 'Orange County',
-      containedIn: { '@type': 'State', name: 'California' },
+      containedInPlace: { '@type': 'State', name: 'California' },
     },
     offers: {
       '@type': 'Offer',

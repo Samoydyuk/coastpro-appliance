@@ -315,7 +315,7 @@ export default async function ReportPage({ params }: Props) {
             Payment
           </div>
           <div className="mt-1 font-heading text-base font-bold uppercase tracking-label text-ink">
-            {paymentLabel(report.job.paymentStatus)}
+            {paymentLabel(report.job.paymentStatus, money.balanceCents, money.paidCents)}
           </div>
         </div>
         <div className="text-right">
@@ -411,6 +411,22 @@ export default async function ReportPage({ params }: Props) {
           Same-day service available · Upfront, honest pricing
         </p>
       </div>
+
+      {/* The bridge out of a single visit and into all of them.
+          This page is the one thing a customer is actually sent — a link in a
+          text, the day the work was done. Months later, when the question is
+          "is this still under warranty", that text is buried and this address
+          is unguessable. So the durable route is named here, on the page they
+          already have, while they still have it: a phone number they will
+          still own, instead of a token they will have lost.
+          Print-hidden, like the CTA above — it is a next step, not a record. */}
+      <p className="mt-6 text-center text-[13px] text-gray-600 print:hidden">
+        Checking a warranty later?{' '}
+        <Link href="/my" className="text-ink underline underline-offset-4 hover:text-primary-600">
+          Look up all your visits
+        </Link>{' '}
+        with the phone number you booked with — no password, nothing to keep.
+      </p>
     </article>
   );
 }
@@ -653,8 +669,15 @@ function statusLabel(value: string): string {
  *
  * "UNPAID" is accurate and reads like an accusation; the customer is being told
  * what they still owe, which is a different sentence.
+ *
+ * The status flag and the arithmetic can disagree, and when they do the
+ * arithmetic wins. A job marked PAID that has taken $50 of $70 printed
+ * "Paid in full — thank you" directly above "Balance due $20.00" — two lines
+ * that contradict each other, on the document a customer keeps and may later
+ * quote back at us. The flag is set by hand on a job; the amounts are summed
+ * from payments that actually cleared. Only one of those is evidence.
  */
-function paymentLabel(value: string): string {
+function paymentLabel(value: string, balanceCents: number, paidCents: number): string {
   const labels: Record<string, string> = {
     PAID: 'Paid in full — thank you',
     UNPAID: 'Balance outstanding',
@@ -662,6 +685,14 @@ function paymentLabel(value: string): string {
     REFUNDED: 'Refunded',
     WRITTEN_OFF: 'Closed — no balance due',
   };
+
+  // Only PAID is overridden. REFUNDED and WRITTEN_OFF are deliberate statements
+  // about a balance the business has stopped chasing, not claims that it is
+  // settled, so they still read correctly beside an outstanding figure.
+  if (value === 'PAID' && balanceCents > 0) {
+    return paidCents > 0 ? 'Part paid' : 'Balance outstanding';
+  }
+
   return labels[value] ?? statusLabel(value);
 }
 

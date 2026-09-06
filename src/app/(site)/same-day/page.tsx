@@ -11,7 +11,7 @@ import { breadcrumbSchema } from '@/lib/schema';
 export const metadata: Metadata = {
   title: 'Same-Day Appliance Repair Orange County | CoastPro',
   description:
-    'Same-day appliance repair across Orange County when you book early enough. What same-day actually means, when it is realistic, and what happens when it is not. Call (949) 749-0006.',
+    'Same-day appliance repair across Orange County when you book early enough — what same-day really means, and when it is not realistic. Call (949) 749-0006.',
 };
 
 /**
@@ -38,9 +38,9 @@ export default function SameDayPage() {
       url: `${siteConfig.seo.siteUrl}/same-day`,
       provider: { '@id': `${siteConfig.seo.siteUrl}/#organization` },
       areaServed: {
-        '@type': 'County',
+        '@type': 'AdministrativeArea',
         name: 'Orange County',
-        containedIn: { '@type': 'State', name: 'California' },
+        containedInPlace: { '@type': 'State', name: 'California' },
       },
     },
   ];

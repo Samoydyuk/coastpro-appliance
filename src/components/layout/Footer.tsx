@@ -130,6 +130,15 @@ export function Footer() {
                   Repair notes
                 </Link>
               </li>
+              {/* The way back in. A past customer checking whether their
+                  warranty still runs has no other route to it — the page is
+                  noindex, so a search will never surface it, and a link they
+                  were texted months ago is long gone from the thread. */}
+              <li>
+                <Link href="/my" className={linkClass}>
+                  Your repairs &amp; warranty
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

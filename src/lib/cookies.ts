@@ -10,6 +10,8 @@ export const SESSION_COOKIE = 'cp_sid';
 export const CHANNEL_COOKIE = 'cp_ch';
 /** The admin panel's own session. */
 export const ADMIN_COOKIE = 'cp_admin';
+/** A customer who has proved their phone number, for /my. */
+export const CUSTOMER_COOKIE = 'cp_customer';
 
 /**
  * Marks a browser as the business's own.
@@ -40,6 +42,17 @@ export const SESSION_MAX_AGE = 60 * 30;
  * laptop is still signed in.
  */
 export const ADMIN_MAX_AGE = 60 * 60 * 24;
+
+/**
+ * Thirty days for a customer, where an admin gets one.
+ *
+ * The asymmetry is not carelessness. The admin cookie opens the schedule, the
+ * customer book and the money; this one opens one household's own repair
+ * history, to that household. Making somebody re-prove their phone number every
+ * day to check whether their own warranty has run out would mean nobody checks,
+ * and the cost of getting back in is a text message.
+ */
+export const CUSTOMER_MAX_AGE = 60 * 60 * 24 * 30;
 
 export function newId(): string {
   return crypto.randomUUID().replace(/-/g, '');

@@ -63,7 +63,7 @@ export default async function ServiceCityPage({ params }: PageProps) {
       areaServed: {
         '@type': 'City',
         name: area.name,
-        containedIn: { '@type': 'AdministrativeArea', name: 'Orange County, California' },
+        containedInPlace: { '@type': 'AdministrativeArea', name: 'Orange County, California' },
       },
     },
     breadcrumbSchema([

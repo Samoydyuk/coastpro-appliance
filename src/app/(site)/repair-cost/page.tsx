@@ -11,7 +11,7 @@ import { breadcrumbSchema } from '@/lib/schema';
 export const metadata: Metadata = {
   title: 'Appliance Repair Cost in Orange County | CoastPro',
   description:
-    'What appliance repair actually costs in Orange County — published ranges for every machine we work on, which faults sit at each end, and how the service call fits in. Call (949) 749-0006.',
+    'What appliance repair actually costs in Orange County — published ranges for every machine, and how the service call fits in. Call (949) 749-0006.',
 };
 
 /**

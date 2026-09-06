@@ -671,11 +671,43 @@ create index if not exists marketing_publication_content_idx
   on marketing_publication (content_id, published_at desc);
 
 -- ---------------------------------------------------------------------------
+-- Reconciliation ticks — one row per dispatcher visit somebody has checked.
+--
+-- The dispatcher's own "Reconciled" says they agree the money is settled. This
+-- says the owner has been through the row himself: the parts, the payment, the
+-- paperwork. They are different claims and neither substitutes for the other,
+-- which is why this cannot live in the sync service's word for it.
+--
+-- Keyed by the dispatcher's job number, not by any JobPocket id, because the
+-- rows worth ticking include the ones JobPocket has no copy of at all.
+--
+-- It lives here rather than in the sync service's SQLite for one reason: this
+-- database is backed up and that volume is not. A tick is somebody's afternoon.
+-- ---------------------------------------------------------------------------
+create table if not exists ihord_checks (
+  job_number      text primary key,
+  checked         boolean     not null default true,
+  note            text,
+  -- What the parts on this visit actually cost, typed in by hand.
+  --
+  -- The dispatcher reimburses parts in full, so this is the figure their
+  -- "parts" column has to be checked against. It is kept separately from the
+  -- line items in JobPocket rather than derived from them: a receipt in a van
+  -- often predates anyone entering it, and the reconciliation cannot wait for
+  -- the app to be tidy. Null means nothing has been claimed for this visit.
+  parts_cost_cents integer,
+  checked_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------------------------
 -- Columns added to tables that already exist.
 --
 -- `create table if not exists` above does nothing to a live table, so anything
 -- added after the first deploy has to be repeated here. See the header.
 -- ---------------------------------------------------------------------------
+alter table ihord_checks add column if not exists parts_cost_cents integer;
+
 alter table marketing_job add column if not exists released boolean not null default true;
 alter table marketing_content add column if not exists flags jsonb not null default '[]';
 

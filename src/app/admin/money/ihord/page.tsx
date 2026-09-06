@@ -133,6 +133,18 @@ export default async function IhordPage({
       </h1>
       <p className="mt-1 text-sm text-gray-600">{t('ihord.subtitle')}</p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
+        {/* Two ways of reading the same window: the four figures, or every visit
+            in turn with somewhere to record that it has been checked. */}
+        <span className="rounded-card border border-ink bg-ink px-3 py-1.5 font-heading text-[10px] font-semibold uppercase tracking-label text-cream">
+          {t('ihord.tab.summary')}
+        </span>
+        <Link
+          href={`/admin/money/ihord/worklist?period=${period}`}
+          className="rounded-card border border-primary-500/25 px-3 py-1.5 font-heading text-[10px] font-semibold uppercase tracking-label text-gray-600 transition-colors hover:border-ink hover:text-ink"
+        >
+          {t('ihord.tab.worklist')}
+        </Link>
+        <span className="mx-1 h-4 w-px bg-primary-500/25" aria-hidden />
         {PERIODS.map((option) => (
           <Link
             key={option.key}
